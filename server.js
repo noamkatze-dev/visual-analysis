@@ -154,3 +154,22 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Visual Analysis running at http://localhost:${PORT}`);
 });
+
+{
+  "name": "visual-analysis",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0",
+    "better-sqlite3": "^9.4.3",
+    "fluent-ffmpeg": "^2.1.2",
+    "uuid": "^9.0.0"
+  }
+}
+
