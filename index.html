@@ -27,7 +27,6 @@ html, body {
   height: 100vh;
 }
 
-/* ── PHASES ── */
 .phase {
   position: absolute;
   inset: 0;
@@ -177,7 +176,6 @@ html, body {
   display: none;
 }
 
-/* ── BUG 6 FIX: calCanvas lives at #app root, not inside phaseCal ── */
 #calCanvas {
   position: absolute;
   inset: 0;
@@ -437,7 +435,6 @@ html, body {
   transition: transform 400ms ease, opacity 300ms ease;
   z-index: 50;
 }
-/* ── BUG 3 FIX: gallery-open sets opacity AND pointer-events ── */
 #phaseGallery.gallery-open {
   transform: translateY(0);
   opacity: 1;
@@ -563,7 +560,7 @@ html, body {
     </div>
   </div>
 
-  <!-- PHASE 1: CALIBRATION — BUG 6 FIX: calCanvas removed from here -->
+  <!-- PHASE 1: CALIBRATION -->
   <div id="phaseCal" class="phase">
     <div id="calIntroBlock">
       <div class="cal-title">HEAD TRACKING CALIBRATION</div>
@@ -630,7 +627,7 @@ html, body {
     </div>
   </div>
 
-  <!-- BUG 6 FIX: calCanvas at top level of #app, outside every opacity-animated ancestor -->
+  <!-- calCanvas at top level of #app, outside every opacity-animated ancestor -->
   <canvas id="calCanvas"></canvas>
 
 </div>
@@ -657,9 +654,9 @@ const CAL_PTS = [
   [0.1, 0.5], [0.5, 0.5], [0.9, 0.5],
   [0.1, 0.9], [0.5, 0.9], [0.9, 0.9],
 ];
-const CAL_FILL_RATE  = 0.012;
-const CAL_DRAIN_RATE = 0.018;
-const CAL_VAR_THRESH = 0.0015;
+const CAL_FILL_RATE  = 0.65;
+const CAL_DRAIN_RATE = 0.20;
+const CAL_VAR_THRESH = 0.003;
 
 // ══════════════════════════════════════════════════════════════════
 // STATE
@@ -730,13 +727,11 @@ const heatCtx = heatCanvas.getContext('2d');
 const lineCtx = lineCanvas.getContext('2d');
 const dotCtx  = dotCanvas.getContext('2d');
 
-// Offscreen canvas for frame capture
 const offCanvas = document.createElement('canvas');
 offCanvas.width  = 1280;
 offCanvas.height = 720;
 const offCtx = offCanvas.getContext('2d');
 
-// Sobel analysis canvas
 const anaCanvas = document.createElement('canvas');
 anaCanvas.width  = W_ANA;
 anaCanvas.height = H_ANA;
@@ -797,10 +792,8 @@ nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitName()
 nameInput.addEventListener('animationend', () => nameInput.classList.remove('shake'));
 
 // ══════════════════════════════════════════════════════════════════
-// CALIBRATION — EXACT FUNCTIONS
+// CALIBRATION FUNCTIONS
 // ══════════════════════════════════════════════════════════════════
-
-// BUG 7 FIX: return 0 (neutral/stable) when fewer than 4 samples exist
 function stability(samples) {
   if (samples.length < 4) return 0;
   const n  = samples.length;
@@ -811,7 +804,6 @@ function stability(samples) {
   return vx + vy;
 }
 
-// BUG 2 FIX: correct stable least-squares affine fit
 function fitAffine(screenPts, headPts) {
   const n = screenPts.length;
   const A = [], bx = [], by = [];
@@ -877,14 +869,12 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      // dim background ring
       ctx.beginPath();
       ctx.arc(px, py, 22, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(0,0,0,0.08)';
       ctx.lineWidth   = 1.5;
       ctx.stroke();
 
-      // fill arc
       if (fill > 0) {
         ctx.beginPath();
         ctx.arc(px, py, 22, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * fill);
@@ -893,7 +883,6 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
         ctx.stroke();
       }
 
-      // center dot
       ctx.beginPath();
       ctx.arc(px, py, 5, 0, Math.PI * 2);
       ctx.fillStyle = '#ff1500';
@@ -905,9 +894,8 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
         recent.push([p.x, p.y]);
         if (recent.length > 20) recent.shift();
         const v = stability(recent);
-        if (v < CAL_VAR_THRESH) {
-          fill = Math.min(1,
-                  fill + CAL_FILL_RATE);
+        if (v < CAL_VAR_THRESH || samples.length < 8) {
+          fill = Math.min(1, fill + CAL_FILL_RATE);
           captured.push([p.x, p.y]);
         } else {
           fill = Math.max(0, fill - CAL_DRAIN_RATE);
@@ -951,7 +939,6 @@ async function runCalibration(getLandmarks) {
   drawDone(ctx, W, H);
 }
 
-// BUG 2 FIX: use cx/cy arrays correctly
 function startHeadTracking(getLandmarks) {
   function loop() {
     const lm = getLandmarks();
@@ -988,7 +975,7 @@ function enablePointerFallback() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// BUG 1 FIX: boot() shows canvas + loading message IMMEDIATELY
+// BOOT — shows canvas + loading message immediately
 // ══════════════════════════════════════════════════════════════════
 async function boot() {
   calIntroBlock.style.display = 'none';
@@ -1054,7 +1041,6 @@ async function boot() {
     enablePointerFallback();
     state.calMap = { cx: [1, 0, 0], cy: [0, 1, 0] };
 
-    // Quick visual pass through dots in pointer mode
     const ctxF = calCanvas.getContext('2d');
     const WF   = calCanvas.width;
     const HF   = calCanvas.height;
@@ -1141,15 +1127,12 @@ function buildPool(edgeData) {
     for (let ay = DOT_STEP; ay < H_ANA - DOT_STEP; ay += DOT_STEP) {
       for (let ax = DOT_STEP; ax < W_ANA - DOT_STEP; ax += DOT_STEP) {
         if (edgeData[ay * W_ANA + ax] > thresh) {
-          const nx = ax / W_ANA;
-          const ny = ay / H_ANA;
-          pool.push(makeDot(nx, ny, W, H));
+          pool.push(makeDot(ax / W_ANA, ay / H_ANA, W, H));
         }
       }
     }
   }
 
-  // Guarantee minimum pool size with random fill
   while (pool.length < 200) {
     pool.push(makeDot(
       Math.random() * 0.92 + 0.04,
@@ -1213,7 +1196,6 @@ function applyGaze(pool, dt) {
   const gy         = state.sGY * H;
   const revealDist = W * REVEAL_FRAC;
 
-  // Gaze speed (normalized units per frame)
   state.gazeHistory.push([state.sGX, state.sGY]);
   if (state.gazeHistory.length > 5) state.gazeHistory.shift();
   if (state.gazeHistory.length >= 2) {
@@ -1224,7 +1206,6 @@ function applyGaze(pool, dt) {
     state.gazeSpeed = Math.sqrt(dx*dx + dy*dy) / state.gazeHistory.length;
   }
 
-  // Nearest dot
   let nearestIdx  = -1;
   let nearestDist = Infinity;
   for (let i = 0; i < pool.length; i++) {
@@ -1235,7 +1216,6 @@ function applyGaze(pool, dt) {
     if (dd < nearestDist) { nearestDist = dd; nearestIdx = i; }
   }
 
-  // Switch rate
   if (nearestIdx !== state.lastDotIndex && nearestIdx !== -1) {
     state.lastDotIndex = nearestIdx;
     const now = performance.now();
@@ -1244,7 +1224,6 @@ function applyGaze(pool, dt) {
     state.switchRate = state.switchTimestamps.length;
   }
 
-  // Update dwell and visits per dot
   for (let i = 0; i < pool.length; i++) {
     const dot  = pool[i];
     const near = (i === nearestIdx && nearestDist < revealDist);
@@ -1260,11 +1239,9 @@ function applyGaze(pool, dt) {
         dot.revealed = true;
         state.totalRevealed++;
 
-        // Recalc avgDwellMs
-        const rev       = pool.filter(d => d.revealed);
+        const rev        = pool.filter(d => d.revealed);
         state.avgDwellMs = rev.reduce((s, d) => s + d.dwellMs, 0) / (rev.length || 1);
 
-        // Horizontal sweep detection
         const recent4 = pool
           .filter(d => d.revealed && d.lastVisitTs > 0)
           .sort((a, b) => a.lastVisitTs - b.lastVisitTs)
@@ -1296,7 +1273,6 @@ function applyGaze(pool, dt) {
     }
   }
 
-  // Rolling avgDwellMs update
   const rev = pool.filter(d => d.revealed);
   if (rev.length) state.avgDwellMs = rev.reduce((s, d) => s + d.dwellMs, 0) / rev.length;
 
@@ -1324,11 +1300,10 @@ let sessionInterval = null;
 let frameInterval   = null;
 let anaInterval     = null;
 
-// Per-concept state
 let c1State       = {};
 let c2Lines       = [];
 let c2PrevIdx     = -1;
-let c2PrevTime    = 0;   // BUG 5 FIX: performance.now() based
+let c2PrevTime    = 0;
 let c3Path        = [];
 let c4Trail       = [];
 let c5List        = [];
@@ -1365,11 +1340,10 @@ function startConcept(conceptNum) {
   state.gazeSpeed        = 0;
   prevEdge               = null;
 
-  // Reset per-concept state
   c1State       = {};
   c2Lines       = [];
   c2PrevIdx     = -1;
-  c2PrevTime    = performance.now(); // BUG 5 FIX: init to now so first switch is timed correctly
+  c2PrevTime    = performance.now();
   c3Path        = [];
   c4Trail       = [];
   c5List        = [];
@@ -1384,12 +1358,10 @@ function startConcept(conceptNum) {
   dotCtx.clearRect(0,  0, dotCanvas.width,  dotCanvas.height);
   annLayer.innerHTML = '';
 
-  // Build dot pool from edge data
   let edgeData;
   try { edgeData = sobel(conceptVideo); } catch(e) { edgeData = null; }
   state.pool = buildPool(edgeData);
 
-  // UI
   conceptNameLabel.textContent = String(conceptNum).padStart(2, '0') + '  ' + CONCEPT_NAMES[conceptNum];
   conceptSubLabel.textContent  = conceptNum === 3 ? 'PATH · 0 NODES'
                                 : conceptNum === 6 ? 'REVISITS · 0'
@@ -1401,7 +1373,6 @@ function startConcept(conceptNum) {
   document.body.style.cursor = 'none';
   gazeDot.style.display      = 'block';
 
-  // 1-second countdown timer
   let elapsed = 0;
   sessionInterval = setInterval(() => {
     elapsed++;
@@ -1412,19 +1383,14 @@ function startConcept(conceptNum) {
     if (elapsed >= 90) endSessionToGallery();
   }, 1000);
 
-  // Frame capture every 3 seconds
   frameInterval = setInterval(captureFrame, 3000);
+  anaInterval   = setInterval(() => analyze(conceptVideo), ANA_INTERVAL);
 
-  // Sobel re-analysis
-  anaInterval = setInterval(() => analyze(conceptVideo), ANA_INTERVAL);
-
-  // Render loop
   let lastT = performance.now();
   function loop(now) {
     const dt = Math.min((now - lastT) / 1000, 0.1);
     lastT = now;
 
-    // Accurate per-frame sessionMs
     state.sessionMs = now - state.sessionStart;
 
     const W  = dotCanvas.width;
@@ -1432,7 +1398,6 @@ function startConcept(conceptNum) {
     const gx = state.sGX * W;
     const gy = state.sGY * H;
 
-    // Gaze cursor
     gazeDot.style.left = gx + 'px';
     gazeDot.style.top  = gy + 'px';
 
@@ -1456,7 +1421,7 @@ function startConcept(conceptNum) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// BUG 4 FIX: split endSession into cleanupSession + two destinations
+// SESSION CLEANUP — split destinations
 // ══════════════════════════════════════════════════════════════════
 function cleanupSession() {
   clearInterval(sessionInterval);
@@ -1500,7 +1465,6 @@ function endSessionToGallery() {
   openGallery(concept);
 }
 
-// BUG 4 FIX: back → menu, end/timer → gallery
 conceptBack.addEventListener('click',   endSessionToMenu);
 conceptEndBtn.addEventListener('click', endSessionToGallery);
 
@@ -1557,12 +1521,10 @@ function renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
 
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 2 — SACCADE
-// BUG 5 FIX: use performance.now() for sub-second timing
 // ══════════════════════════════════════════════════════════════════
 function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist) {
   const revealDist = W * REVEAL_FRAC;
 
-  // Base dots
   for (const dot of state.pool) {
     if (!dot.revealed) continue;
     dotCtx.beginPath();
@@ -1571,7 +1533,6 @@ function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist) {
     dotCtx.fill();
   }
 
-  // Detect saccade on dot switch
   if (
     nearestIdx >= 0 &&
     nearestDist < revealDist &&
@@ -1588,11 +1549,10 @@ function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist) {
     if (dist > 0.08 && ms < 300) {
       c2Lines.push({ x1: prev.px, y1: prev.py, x2: curr.px, y2: curr.py, alpha: 0.6 });
     }
-    c2PrevTime = nowMs; // always update on dot switch
+    c2PrevTime = nowMs;
   }
   if (nearestIdx >= 0 && nearestDist < revealDist) c2PrevIdx = nearestIdx;
 
-  // Draw and decay lines
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
   c2Lines = c2Lines.filter(ln => {
     ln.alpha -= dt * 0.75;
@@ -1663,7 +1623,6 @@ function renderGazePoint(dt, W, H, gx, gy, now) {
     dotCtx.fill();
   }
 
-  // Concentric rings staggered by phase
   const ringDefs = [{ offset: 0 }, { offset: 500 }, { offset: 1000 }];
   for (const rd of ringDefs) {
     const t     = ((now - rd.offset) % 1500) / 1500;
@@ -1693,8 +1652,8 @@ function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
   if (nearestIdx >= 0 && nearestDist < revealDist) {
     const dot = state.pool[nearestIdx];
     if (!c5List.find(f => f.idx === nearestIdx) && dot.dwellMs > 600) {
-      const order   = c5List.length;
-      const ts      = Math.floor(state.sessionMs);
+      const order = c5List.length;
+      const ts    = Math.floor(state.sessionMs);
       c5List.push({ idx: nearestIdx, order, ts });
 
       const labelEl       = document.createElement('div');
@@ -1728,8 +1687,6 @@ function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
 // CONCEPT 6 — REVISIT
 // ══════════════════════════════════════════════════════════════════
 function renderRevisit(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
-  const revealDist = W * REVEAL_FRAC;
-
   for (let i = 0; i < state.pool.length; i++) {
     const dot = state.pool[i];
     if (!dot.revealed) continue;
@@ -1848,7 +1805,6 @@ async function openGallery(conceptNum) {
 
   await refreshGallery(conceptNum);
 
-  // Hide concept view if transitioning from it
   if (activePhaseEl === phaseConcept) {
     phaseConcept.classList.remove('active');
     activePhaseEl = null;
@@ -1896,7 +1852,7 @@ async function refreshGallery(conceptNum) {
     nameEl.className   = 'galleryCardName';
     nameEl.textContent = s.user_name || '—';
 
-    const durEl   = document.createElement('div');
+    const durEl     = document.createElement('div');
     durEl.className = 'galleryCardDuration';
     const d = s.duration_seconds || 0;
     durEl.textContent =
