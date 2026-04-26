@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,399 +6,551 @@
 <title>VISUAL ANALYSIS</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-
-html,body{
-  width:100%;height:100%;
-  background:#ffffff;
-  font-family:'Heebo',sans-serif;
-  color:#000000;
-  overflow:hidden;
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-#app{
-  position:relative;
-  width:100vw;height:100vh;
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  font-family: 'Heebo', sans-serif;
+  color: #000000;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
 }
 
 /* ── PHASES ── */
-.phase{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  background:#ffffff;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 300ms ease;
+.phase {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
 }
-.phase.active{
-  opacity:1;
-  pointer-events:all;
+.phase.active {
+  opacity: 1;
+  pointer-events: all;
 }
 
 /* ── PHASE 0 — NAME ENTRY ── */
-#phaseNameEntry .block{
-  display:flex;flex-direction:column;
-  align-items:center;gap:32px;
-  width:320px;
+#phaseNameEntry .block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: 320px;
 }
-#phaseNameEntry .t-title{
-  font-weight:100;font-size:28px;
-  letter-spacing:0.35em;color:#000;
-  text-align:center;
+#phaseNameEntry .t-title {
+  font-weight: 100;
+  font-size: 28px;
+  letter-spacing: 0.35em;
+  color: #000;
+  text-align: center;
 }
-#phaseNameEntry .t-sep{
-  width:300px;height:1px;
-  background:rgba(0,0,0,0.08);
+#phaseNameEntry .t-sep {
+  width: 300px;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
 }
-#phaseNameEntry .t-label{
-  font-weight:300;font-size:11px;
-  letter-spacing:0.2em;text-transform:uppercase;
-  color:rgba(0,0,0,0.35);text-align:center;
+#phaseNameEntry .t-label {
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+  text-align: center;
 }
-#phaseNameEntry .input-row{
-  display:flex;align-items:center;gap:14px;
+#phaseNameEntry .input-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
-#nameInput{
-  border:none;outline:none;background:transparent;
-  border-bottom:1px solid rgba(0,0,0,0.2);
-  font-family:'Heebo',sans-serif;font-weight:300;
-  font-size:18px;color:#000;
-  width:240px;text-align:center;
-  caret-color:#ff1500;padding:4px 0;
-  transition:border-bottom-color 300ms ease;
+#nameInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  font-family: 'Heebo', sans-serif;
+  font-weight: 300;
+  font-size: 18px;
+  color: #000;
+  width: 240px;
+  text-align: center;
+  caret-color: #ff1500;
+  padding: 4px 0;
+  transition: border-bottom-color 300ms ease;
 }
-#nameInput:focus{border-bottom-color:rgba(0,0,0,0.6);}
-#nameArrow{
-  border:none;background:none;
-  color:rgba(0,0,0,0.3);font-size:20px;
-  cursor:pointer;
-  font-family:'Heebo',sans-serif;
-  transition:color 300ms ease;
-  padding:0;line-height:1;
+#nameInput:focus {
+  border-bottom-color: rgba(0,0,0,0.6);
 }
-#nameArrow:hover{color:#000;}
+#nameArrow {
+  border: none;
+  background: none;
+  color: rgba(0,0,0,0.3);
+  font-size: 20px;
+  cursor: pointer;
+  font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+  padding: 0;
+  line-height: 1;
+}
+#nameArrow:hover {
+  color: #000;
+}
 
-@keyframes shake{
-  0%,100%{transform:translateX(0);}
-  20%{transform:translateX(-7px);}
-  40%{transform:translateX(7px);}
-  60%{transform:translateX(-5px);}
-  80%{transform:translateX(5px);}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-7px); }
+  40%       { transform: translateX(7px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
 }
-.shake{animation:shake 0.38s ease;}
+.shake {
+  animation: shake 0.38s ease;
+}
 
 /* ── PHASE 1 — CALIBRATION ── */
-#phaseCal{background:#ffffff;flex-direction:column;}
-#calIntroBlock{
-  display:flex;flex-direction:column;
-  align-items:center;gap:28px;
-  text-align:center;
+#phaseCal {
+  background: #ffffff;
+  flex-direction: column;
 }
-#calIntroBlock .cal-title{
-  font-weight:100;font-size:20px;
-  letter-spacing:0.3em;color:#000;
+#calIntroBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  text-align: center;
 }
-#calIntroBlock .cal-sep{
-  width:280px;height:1px;
-  background:rgba(0,0,0,0.08);
+#calIntroBlock .cal-title {
+  font-weight: 100;
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  color: #000;
 }
-#calIntroBlock .cal-body{
-  font-weight:300;font-size:13px;
-  line-height:2;color:rgba(0,0,0,0.45);
-  letter-spacing:0.05em;
+#calIntroBlock .cal-sep {
+  width: 280px;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
 }
-#btnCalBegin{
-  background:transparent;
-  border:1px solid rgba(0,0,0,0.3);
-  color:#000;
-  font-family:'Heebo',sans-serif;
-  font-weight:300;font-size:11px;
-  letter-spacing:0.25em;text-transform:uppercase;
-  padding:12px 32px;cursor:pointer;
-  transition:border-color 300ms ease,color 300ms ease;
+#calIntroBlock .cal-body {
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 2;
+  color: rgba(0,0,0,0.45);
+  letter-spacing: 0.05em;
 }
-#btnCalBegin:hover{border-color:#000;color:#000;}
-#calCanvas{
-  position:fixed;inset:0;
-  width:100%;height:100%;
-  display:none;
+#btnCalBegin {
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.3);
+  color: #000;
+  font-family: 'Heebo', sans-serif;
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 12px 32px;
+  cursor: pointer;
+  transition: border-color 300ms ease, color 300ms ease;
 }
-#calDoneMsg{
-  font-weight:100;font-size:18px;
-  letter-spacing:0.4em;color:#000;
-  text-transform:uppercase;
-  display:none;
+#btnCalBegin:hover {
+  border-color: #000;
+  color: #000;
+}
+#calDoneMsg {
+  font-weight: 100;
+  font-size: 18px;
+  letter-spacing: 0.4em;
+  color: #000;
+  text-transform: uppercase;
+  display: none;
+}
+
+/* ── BUG 6 FIX: calCanvas lives at #app root, not inside phaseCal ── */
+#calCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  z-index: 999;
 }
 
 /* ── PHASE 2 — MAIN MENU ── */
-#phaseMenu{background:#ffffff;}
-#menuUserLabel{
-  position:fixed;top:22px;right:24px;
-  font-weight:300;font-size:10px;
-  color:rgba(0,0,0,0.2);
-  letter-spacing:0.15em;text-transform:uppercase;
-  pointer-events:none;
+#phaseMenu {
+  background: #ffffff;
 }
-#menuGalleryBtn{
-  position:fixed;bottom:24px;right:24px;
-  font-weight:300;font-size:10px;
-  color:rgba(0,0,0,0.2);
-  letter-spacing:0.2em;text-transform:uppercase;
-  cursor:pointer;background:none;border:none;
-  font-family:'Heebo',sans-serif;
-  transition:color 300ms ease;
-  z-index:10;
+#menuUserLabel {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(0,0,0,0.2);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  pointer-events: none;
 }
-#menuGalleryBtn:hover{color:#000;}
-#menuBlock{
-  display:flex;flex-direction:column;
-  align-items:flex-start;
-  width:320px;
+#menuGalleryBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(0,0,0,0.2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+  z-index: 10;
 }
-#menuBlock .m-title{
-  font-weight:100;font-size:28px;
-  letter-spacing:0.35em;color:#000;
-  margin-bottom:24px;
+#menuGalleryBtn:hover {
+  color: #000;
 }
-#menuBlock .m-sep{
-  width:100%;height:1px;
-  background:rgba(0,0,0,0.08);
+#menuBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 320px;
 }
-#menuBlock .m-sep-top{margin-bottom:4px;}
-#menuBlock .m-sep-bot{margin-top:4px;}
+#menuBlock .m-title {
+  font-weight: 100;
+  font-size: 28px;
+  letter-spacing: 0.35em;
+  color: #000;
+  margin-bottom: 24px;
+}
+#menuBlock .m-sep {
+  width: 100%;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+}
+#menuBlock .m-sep-top { margin-bottom: 4px; }
+#menuBlock .m-sep-bot { margin-top: 4px; }
 
-.conceptRow{
-  display:flex;align-items:center;
-  height:52px;width:100%;
-  cursor:default;position:relative;
-  padding-left:20px;
+.conceptRow {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  width: 100%;
+  cursor: default;
+  position: relative;
+  padding-left: 20px;
 }
-.conceptRow .bullet{
-  position:absolute;left:0;
-  font-size:14px;color:#ff1500;
-  opacity:0;
-  transition:opacity 300ms ease;
-  line-height:1;
+.conceptRow .bullet {
+  position: absolute;
+  left: 0;
+  font-size: 14px;
+  color: #ff1500;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  line-height: 1;
 }
-.conceptRow:hover .bullet{opacity:1;}
-.conceptRow .num{
-  font-weight:300;font-size:14px;
-  color:rgba(0,0,0,0.25);
-  margin-right:16px;min-width:24px;
+.conceptRow:hover .bullet { opacity: 1; }
+.conceptRow .num {
+  font-weight: 300;
+  font-size: 14px;
+  color: rgba(0,0,0,0.25);
+  margin-right: 16px;
+  min-width: 24px;
 }
-.conceptRow .cname{
-  font-weight:300;font-size:14px;
-  color:#000;
+.conceptRow .cname {
+  font-weight: 300;
+  font-size: 14px;
+  color: #000;
 }
 
 /* ── PHASE 3 — CONCEPT VIEW ── */
-#phaseConcept{background:#000;padding:0;}
-#conceptVideo{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  object-fit:cover;
+#phaseConcept {
+  background: #000;
+  padding: 0;
 }
-#heatCanvas,#lineCanvas,#dotCanvas{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  pointer-events:none;
+#conceptVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
-#heatCanvas{z-index:2;}
-#lineCanvas{z-index:3;}
-#dotCanvas{z-index:4;}
-#annLayer{
-  position:absolute;inset:0;
-  overflow:hidden;
-  pointer-events:none;
-  z-index:5;
+#heatCanvas,
+#lineCanvas,
+#dotCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
-#gazeDot{
-  position:absolute;
-  width:18px;height:18px;
-  border-radius:50%;
-  border:1.5px solid #ff1500;
-  pointer-events:none;
-  transform:translate(-50%,-50%);
-  display:none;
-  z-index:90;
+#heatCanvas { z-index: 2; }
+#lineCanvas  { z-index: 3; }
+#dotCanvas   { z-index: 4; }
+#annLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
 }
-
-/* concept UI overlays */
-#conceptBack{
-  position:fixed;top:20px;left:22px;
-  font-weight:300;font-size:10px;
-  letter-spacing:0.2em;
-  color:rgba(255,255,255,0.5);
-  text-transform:uppercase;
-  cursor:pointer;background:none;border:none;
-  font-family:'Heebo',sans-serif;
-  transition:color 300ms ease;
-  z-index:200;
+#gazeDot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #ff1500;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 90;
 }
-#conceptBack:hover{color:#ffffff;}
-#conceptNameLabel{
-  position:fixed;top:20px;right:22px;
-  font-weight:300;font-size:10px;
-  color:rgba(255,255,255,0.4);
-  letter-spacing:0.15em;text-transform:uppercase;
-  z-index:200;text-align:right;
-  pointer-events:none;
+#conceptBack {
+  position: fixed;
+  top: 20px;
+  left: 22px;
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+  z-index: 200;
 }
-#conceptSubLabel{
-  position:fixed;top:34px;right:22px;
-  font-weight:100;font-size:10px;
-  color:rgba(255,255,255,0.2);
-  letter-spacing:0.2em;text-transform:uppercase;
-  z-index:200;
-  pointer-events:none;
+#conceptBack:hover { color: #ffffff; }
+#conceptNameLabel {
+  position: fixed;
+  top: 20px;
+  right: 22px;
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  z-index: 200;
+  text-align: right;
+  pointer-events: none;
 }
-#conceptEndBtn{
-  position:fixed;bottom:34px;right:22px;
-  font-weight:300;font-size:10px;
-  letter-spacing:0.2em;
-  color:rgba(255,255,255,0.3);
-  text-transform:uppercase;
-  cursor:pointer;background:none;border:none;
-  font-family:'Heebo',sans-serif;
-  transition:color 300ms ease;
-  z-index:200;
+#conceptSubLabel {
+  position: fixed;
+  top: 34px;
+  right: 22px;
+  font-weight: 100;
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 200;
+  pointer-events: none;
 }
-#conceptEndBtn:hover{color:#ffffff;}
-#progressWrap{
-  position:fixed;bottom:22px;
-  left:50%;transform:translateX(-50%);
-  width:220px;z-index:200;
-  display:flex;flex-direction:column;
-  align-items:center;gap:6px;
+#conceptEndBtn {
+  position: fixed;
+  bottom: 34px;
+  right: 22px;
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+  z-index: 200;
 }
-#progressTrack{
-  width:100%;height:1px;
-  background:rgba(255,255,255,0.1);
-  position:relative;
+#conceptEndBtn:hover { color: #ffffff; }
+#progressWrap {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
-#progressFill{
-  position:absolute;top:0;left:0;
-  height:100%;background:#ff1500;
-  width:0%;
-  transition:width 1s linear;
+#progressTrack {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  position: relative;
 }
-#conceptCountdown{
-  font-weight:100;font-size:11px;
-  color:rgba(255,255,255,0.3);
-  letter-spacing:0.15em;
+#progressFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #ff1500;
+  width: 0%;
+  transition: width 1s linear;
 }
-
-.dot-label{
-  position:absolute;
-  font-weight:300;font-size:9.5px;
-  letter-spacing:0.18em;text-transform:uppercase;
-  color:#ff1500;
-  text-shadow:0 0 8px rgba(255,255,255,0.9);
-  pointer-events:none;
-  white-space:nowrap;
-  transform:translate(-50%,-160%);
+#conceptCountdown {
+  font-weight: 100;
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.15em;
+}
+.dot-label {
+  position: absolute;
+  font-weight: 300;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ff1500;
+  text-shadow: 0 0 8px rgba(255,255,255,0.9);
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, -160%);
 }
 
 /* ── PHASE 4 — GALLERY ── */
-#phaseGallery{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;
-  background:#ffffff;
-  overflow-y:auto;
-  align-items:stretch;
-  justify-content:flex-start;
-  transform:translateY(100%);
-  transition:transform 400ms ease;
-  z-index:50;
-  pointer-events:none;
+#phaseGallery {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow-y: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 400ms ease, opacity 300ms ease;
+  z-index: 50;
 }
-#phaseGallery.gallery-open{
-  transform:translateY(0);
-  pointer-events:all;
+/* ── BUG 3 FIX: gallery-open sets opacity AND pointer-events ── */
+#phaseGallery.gallery-open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: all;
 }
-#galleryHeader{
-  padding:44px 44px 22px;
-  border-bottom:1px solid rgba(0,0,0,0.08);
-  flex-shrink:0;
+#galleryHeader {
+  padding: 44px 44px 22px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
 }
-#galleryTitle{
-  font-weight:100;font-size:22px;
-  letter-spacing:0.35em;color:#000;
-  text-transform:uppercase;
-  margin-bottom:8px;
+#galleryTitle {
+  font-weight: 100;
+  font-size: 22px;
+  letter-spacing: 0.35em;
+  color: #000;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
-#galleryCount{
-  font-weight:300;font-size:11px;
-  color:rgba(0,0,0,0.3);
-  letter-spacing:0.15em;text-transform:uppercase;
+#galleryCount {
+  font-weight: 300;
+  font-size: 11px;
+  color: rgba(0,0,0,0.3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
-#galleryGrid{
-  flex:1;
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:1px;
-  background:#e0e0e0;
-  min-height:0;
+#galleryGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #e0e0e0;
+  min-height: 0;
 }
-.galleryCard{
-  background:#ffffff;
-  display:flex;flex-direction:column;
-  cursor:pointer;
-  transition:background 300ms ease;
+.galleryCard {
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: background 300ms ease;
 }
-.galleryCard:hover{background:#fafafa;}
-.galleryCard video{
-  width:100%;aspect-ratio:16/9;
-  object-fit:cover;display:block;
+.galleryCard:hover { background: #fafafa; }
+.galleryCard video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
 }
-.galleryCardInfo{
-  padding:12px 14px 16px;
-  display:flex;flex-direction:column;gap:4px;
+.galleryCardInfo {
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.galleryCardName{
-  font-weight:300;font-size:11px;
-  color:rgba(0,0,0,0.5);letter-spacing:0.08em;
+.galleryCardName {
+  font-weight: 300;
+  font-size: 11px;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 0.08em;
 }
-.galleryCardDuration{
-  font-weight:100;font-size:10px;
-  color:rgba(0,0,0,0.2);letter-spacing:0.1em;
+.galleryCardDuration {
+  font-weight: 100;
+  font-size: 10px;
+  color: rgba(0,0,0,0.2);
+  letter-spacing: 0.1em;
 }
-.galleryCardLabels{
-  font-weight:300;font-size:10px;
-  color:#ff1500;letter-spacing:0.06em;
-  margin-top:4px;line-height:1.8;
-  white-space:pre-line;
+.galleryCardLabels {
+  font-weight: 300;
+  font-size: 10px;
+  color: #ff1500;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  line-height: 1.8;
+  white-space: pre-line;
 }
-#galleryEmpty{
-  grid-column:1/-1;
-  display:flex;align-items:center;justify-content:center;
-  padding:80px 0;
-  font-weight:100;font-size:14px;
-  letter-spacing:0.3em;color:rgba(0,0,0,0.15);
-  text-transform:uppercase;
+#galleryEmpty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  font-weight: 100;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  color: rgba(0,0,0,0.15);
+  text-transform: uppercase;
 }
-#galleryBottom{
-  padding:18px 44px;
-  border-top:1px solid rgba(0,0,0,0.08);
-  display:flex;align-items:center;
-  justify-content:space-between;
-  flex-shrink:0;
+#galleryBottom {
+  padding: 18px 44px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
 }
-.galleryNavBtn{
-  font-weight:300;font-size:10px;
-  letter-spacing:0.2em;color:rgba(0,0,0,0.25);
-  text-transform:uppercase;cursor:pointer;
-  background:none;border:none;
-  font-family:'Heebo',sans-serif;
-  transition:color 300ms ease;
+.galleryNavBtn {
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(0,0,0,0.25);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
 }
-.galleryNavBtn:hover{color:#000;}
+.galleryNavBtn:hover { color: #000; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- PHASE 0 — NAME ENTRY -->
+  <!-- PHASE 0: NAME ENTRY -->
   <div id="phaseNameEntry" class="phase active">
     <div class="block">
       <div class="t-title">VISUAL ANALYSIS</div>
@@ -412,7 +563,7 @@ html,body{
     </div>
   </div>
 
-  <!-- PHASE 1 — CALIBRATION -->
+  <!-- PHASE 1: CALIBRATION — BUG 6 FIX: calCanvas removed from here -->
   <div id="phaseCal" class="phase">
     <div id="calIntroBlock">
       <div class="cal-title">HEAD TRACKING CALIBRATION</div>
@@ -425,11 +576,10 @@ html,body{
       </div>
       <button id="btnCalBegin">BEGIN CALIBRATION</button>
     </div>
-    <canvas id="calCanvas"></canvas>
     <div id="calDoneMsg">SYNCHRONIZED</div>
   </div>
 
-  <!-- PHASE 2 — MAIN MENU -->
+  <!-- PHASE 2: MAIN MENU -->
   <div id="phaseMenu" class="phase">
     <div id="menuUserLabel"></div>
     <div id="menuBlock">
@@ -447,7 +597,7 @@ html,body{
     <button id="menuGalleryBtn">VIEW GALLERY →</button>
   </div>
 
-  <!-- PHASE 3 — CONCEPT VIEW -->
+  <!-- PHASE 3: CONCEPT VIEW -->
   <div id="phaseConcept" class="phase">
     <video id="conceptVideo" src="statue.mp4" autoplay loop muted playsinline></video>
     <canvas id="heatCanvas"></canvas>
@@ -467,7 +617,7 @@ html,body{
     </div>
   </div>
 
-  <!-- PHASE 4 — GALLERY -->
+  <!-- PHASE 4: GALLERY -->
   <div id="phaseGallery">
     <div id="galleryHeader">
       <div id="galleryTitle"></div>
@@ -479,6 +629,9 @@ html,body{
       <button class="galleryNavBtn" id="galleryAllBtn">ALL CONCEPTS →</button>
     </div>
   </div>
+
+  <!-- BUG 6 FIX: calCanvas at top level of #app, outside every opacity-animated ancestor -->
+  <canvas id="calCanvas"></canvas>
 
 </div>
 <script type="module">
@@ -540,43 +693,54 @@ const state = {
 // ══════════════════════════════════════════════════════════════════
 // DOM REFS
 // ══════════════════════════════════════════════════════════════════
-const el = id => document.getElementById(id);
+const byId = id => document.getElementById(id);
 
-const phaseNameEntry  = el('phaseNameEntry');
-const phaseCal        = el('phaseCal');
-const phaseMenu       = el('phaseMenu');
-const phaseConcept    = el('phaseConcept');
-const phaseGallery    = el('phaseGallery');
+const phaseNameEntry   = byId('phaseNameEntry');
+const phaseCal         = byId('phaseCal');
+const phaseMenu        = byId('phaseMenu');
+const phaseConcept     = byId('phaseConcept');
+const phaseGallery     = byId('phaseGallery');
+const nameInput        = byId('nameInput');
+const nameArrow        = byId('nameArrow');
+const calIntroBlock    = byId('calIntroBlock');
+const calCanvas        = byId('calCanvas');
+const calDoneMsg       = byId('calDoneMsg');
+const btnCalBegin      = byId('btnCalBegin');
+const menuUserLabel    = byId('menuUserLabel');
+const menuGalleryBtn   = byId('menuGalleryBtn');
+const conceptVideo     = byId('conceptVideo');
+const heatCanvas       = byId('heatCanvas');
+const lineCanvas       = byId('lineCanvas');
+const dotCanvas        = byId('dotCanvas');
+const annLayer         = byId('annLayer');
+const gazeDot          = byId('gazeDot');
+const conceptBack      = byId('conceptBack');
+const conceptNameLabel = byId('conceptNameLabel');
+const conceptSubLabel  = byId('conceptSubLabel');
+const conceptEndBtn    = byId('conceptEndBtn');
+const progressFill     = byId('progressFill');
+const conceptCountdown = byId('conceptCountdown');
+const galleryTitle     = byId('galleryTitle');
+const galleryCount     = byId('galleryCount');
+const galleryGrid      = byId('galleryGrid');
+const galleryBackBtn   = byId('galleryBackBtn');
+const galleryAllBtn    = byId('galleryAllBtn');
 
-const nameInput       = el('nameInput');
-const nameArrow       = el('nameArrow');
-const calIntroBlock   = el('calIntroBlock');
-const calCanvas       = el('calCanvas');
-const calDoneMsg      = el('calDoneMsg');
-const btnCalBegin     = el('btnCalBegin');
-const menuUserLabel   = el('menuUserLabel');
-const menuGalleryBtn  = el('menuGalleryBtn');
-const conceptVideo    = el('conceptVideo');
-const heatCanvas      = el('heatCanvas');
-const lineCanvas      = el('lineCanvas');
-const dotCanvas       = el('dotCanvas');
-const annLayer        = el('annLayer');
-const gazeDot         = el('gazeDot');
-const conceptBack     = el('conceptBack');
-const conceptNameLabel= el('conceptNameLabel');
-const conceptSubLabel = el('conceptSubLabel');
-const conceptEndBtn   = el('conceptEndBtn');
-const progressFill    = el('progressFill');
-const conceptCountdown= el('conceptCountdown');
-const galleryTitle    = el('galleryTitle');
-const galleryCount    = el('galleryCount');
-const galleryGrid     = el('galleryGrid');
-const galleryBackBtn  = el('galleryBackBtn');
-const galleryAllBtn   = el('galleryAllBtn');
+const heatCtx = heatCanvas.getContext('2d');
+const lineCtx = lineCanvas.getContext('2d');
+const dotCtx  = dotCanvas.getContext('2d');
 
-const heatCtx  = heatCanvas.getContext('2d');
-const lineCtx  = lineCanvas.getContext('2d');
-const dotCtx   = dotCanvas.getContext('2d');
+// Offscreen canvas for frame capture
+const offCanvas = document.createElement('canvas');
+offCanvas.width  = 1280;
+offCanvas.height = 720;
+const offCtx = offCanvas.getContext('2d');
+
+// Sobel analysis canvas
+const anaCanvas = document.createElement('canvas');
+anaCanvas.width  = W_ANA;
+anaCanvas.height = H_ANA;
+const anaCtx = anaCanvas.getContext('2d', { willReadFrequently: true });
 
 // ══════════════════════════════════════════════════════════════════
 // PHASE MANAGEMENT
@@ -595,26 +759,22 @@ function showPhase(phaseEl) {
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(proto + '://' + location.host);
-  ws.onopen = () => { state.ws = ws; };
-  ws.onmessage = (ev) => {
+  ws.onopen    = () => { state.ws = ws; };
+  ws.onclose   = () => { state.ws = null; setTimeout(connectWS, 2000); };
+  ws.onerror   = () => ws.close();
+  ws.onmessage = ev => {
     try {
       const msg = JSON.parse(ev.data);
-      if (msg.type === 'gallery_update') {
-        if (phaseGallery.classList.contains('gallery-open')) {
-          refreshGallery(state.currentConcept);
-        }
+      if (msg.type === 'gallery_update' && phaseGallery.classList.contains('gallery-open')) {
+        refreshGallery(galleryFilterConcept);
       }
     } catch(e) {}
   };
-  ws.onclose = () => { state.ws = null; setTimeout(connectWS, 2000); };
-  ws.onerror = () => ws.close();
 }
 connectWS();
 
 function wsSend(obj) {
-  if (state.ws && state.ws.readyState === 1) {
-    state.ws.send(JSON.stringify(obj));
-  }
+  if (state.ws && state.ws.readyState === 1) state.ws.send(JSON.stringify(obj));
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -637,10 +797,12 @@ nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitName()
 nameInput.addEventListener('animationend', () => nameInput.classList.remove('shake'));
 
 // ══════════════════════════════════════════════════════════════════
-// CALIBRATION — EXACT COPY
+// CALIBRATION — EXACT FUNCTIONS
 // ══════════════════════════════════════════════════════════════════
+
+// BUG 7 FIX: return 0 (neutral/stable) when fewer than 4 samples exist
 function stability(samples) {
-  if (samples.length < 4) return 1;
+  if (samples.length < 4) return 0;
   const n  = samples.length;
   const mx = samples.reduce((s, p) => s + p[0], 0) / n;
   const my = samples.reduce((s, p) => s + p[1], 0) / n;
@@ -649,44 +811,34 @@ function stability(samples) {
   return vx + vy;
 }
 
-function fitAffine(screen, head) {
-  const n  = screen.length;
-  let sumX = 0, sumY = 0, sumZ = 0;
-  let sumXX = 0, sumYY = 0, sumZZ = 0;
-  let sumXY = 0, sumXZ = 0, sumYZ = 0;
-  let sumSx = 0, sumSy = 0, sumTx = 0, sumTy = 0;
-  let sumXSx = 0, sumYSx = 0, sumZSx = 0;
-  let sumXSy = 0, sumYSy = 0, sumZSy = 0;
+// BUG 2 FIX: correct stable least-squares affine fit
+function fitAffine(screenPts, headPts) {
+  const n = screenPts.length;
+  const A = [], bx = [], by = [];
   for (let i = 0; i < n; i++) {
-    const [hx, hy, hz] = [head[i][0], head[i][1], 1];
-    const [sx, sy]     = [screen[i][0], screen[i][1]];
-    sumX   += hx; sumY += hy; sumZ += hz;
-    sumXX  += hx * hx; sumYY += hy * hy; sumZZ += hz * hz;
-    sumXY  += hx * hy; sumXZ += hx * hz; sumYZ += hy * hz;
-    sumSx  += sx; sumSy += sy;
-    sumTx  += sx; sumTy += sy;
-    sumXSx += hx * sx; sumYSx += hy * sx; sumZSx += hz * sx;
-    sumXSy += hx * sy; sumYSy += hy * sy; sumZSy += hz * sy;
+    A.push([headPts[i][0], headPts[i][1], 1]);
+    bx.push(screenPts[i][0]);
+    by.push(screenPts[i][1]);
   }
-  const A = [
-    [sumXX, sumXY, sumXZ],
-    [sumXY, sumYY, sumYZ],
-    [sumXZ, sumYZ, sumZZ],
-  ];
-  const bx = [sumXSx, sumYSx, sumZSx];
-  const by = [sumXSy, sumYSy, sumZSy];
-  const Ai = inv3(A);
-  return { cx: mv3(Ai, bx), cy: mv3(Ai, by) };
+  function lsq(M, b) {
+    const Mt  = M[0].map((_, c) => M.map(r => r[c]));
+    const MtM = Mt.map(r => Mt[0].map((_, c) =>
+      r.reduce((s, v, k) => s + v * M[k][c], 0)));
+    const Mtb = Mt.map(r =>
+      r.reduce((s, v, k) => s + v * b[k], 0));
+    return mv3(inv3(MtM), Mtb);
+  }
+  return { cx: lsq(A, bx), cy: lsq(A, by) };
 }
 
 function inv3(m) {
-  const [[a,b,c],[d,e,f],[g,h,k]] = m;
-  const det = a*(e*k - f*h) - b*(d*k - f*g) + c*(d*h - e*g);
-  const inv = 1 / det;
+  const [[a, b, c], [d, e, f], [g, h, k]] = m;
+  const det = a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
+  const s   = 1 / det;
   return [
-    [ (e*k-f*h)*inv, -(b*k-c*h)*inv,  (b*f-c*e)*inv],
-    [-(d*k-f*g)*inv,  (a*k-c*g)*inv, -(a*f-c*d)*inv],
-    [ (d*h-e*g)*inv, -(a*h-b*g)*inv,  (a*e-b*d)*inv],
+    [ (e*k - f*h) * s, -(b*k - c*h) * s,  (b*f - c*e) * s],
+    [-(d*k - f*g) * s,  (a*k - c*g) * s, -(a*f - c*d) * s],
+    [ (d*h - e*g) * s, -(a*h - b*g) * s,  (a*e - b*d) * s],
   ];
 }
 
@@ -704,13 +856,11 @@ function resizeCal() {
 }
 
 function drawIntro(ctx, W, H) {
-  ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 }
 
 function drawDone(ctx, W, H) {
-  ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 }
@@ -719,16 +869,15 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
   return new Promise(resolve => {
     const px = nx * W;
     const py = ny * H;
-    let fill     = 0;
-    const recent = [];
+    let fill = 0;
+    const recent   = [];
     const captured = [];
 
     function frame() {
-      ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      // outer dim ring
+      // dim background ring
       ctx.beginPath();
       ctx.arc(px, py, 22, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(0,0,0,0.08)';
@@ -757,7 +906,8 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
         if (recent.length > 20) recent.shift();
         const v = stability(recent);
         if (v < CAL_VAR_THRESH) {
-          fill = Math.min(1, fill + CAL_FILL_RATE);
+          fill = Math.min(1,
+                  fill + CAL_FILL_RATE);
           captured.push([p.x, p.y]);
         } else {
           fill = Math.max(0, fill - CAL_DRAIN_RATE);
@@ -780,8 +930,8 @@ async function awaitDot(ctx, W, H, nx, ny, getLandmarks) {
 }
 
 async function runCalibration(getLandmarks) {
-  const W = calCanvas.width  = window.innerWidth;
-  const H = calCanvas.height = window.innerHeight;
+  const W   = calCanvas.width  = window.innerWidth;
+  const H   = calCanvas.height = window.innerHeight;
   const ctx = calCanvas.getContext('2d');
   drawIntro(ctx, W, H);
 
@@ -792,7 +942,6 @@ async function runCalibration(getLandmarks) {
     const hp = await awaitDot(ctx, W, H, nx, ny, getLandmarks);
     screenPts.push([nx, ny]);
     headPts.push(hp);
-    ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
     await new Promise(r => setTimeout(r, 180));
@@ -802,16 +951,17 @@ async function runCalibration(getLandmarks) {
   drawDone(ctx, W, H);
 }
 
+// BUG 2 FIX: use cx/cy arrays correctly
 function startHeadTracking(getLandmarks) {
   function loop() {
     const lm = getLandmarks();
-    if (lm) {
-      const p  = lm[1];
+    if (lm && state.calMap) {
+      const p        = lm[1];
       const { cx, cy } = state.calMap;
       const rx = cx[0] * p.x + cx[1] * p.y + cx[2];
       const ry = cy[0] * p.x + cy[1] * p.y + cy[2];
-      state.rawGX = Math.max(0, Math.min(1, rx));
-      state.rawGY = Math.max(0, Math.min(1, ry));
+      state.rawGX  = Math.max(0, Math.min(1, rx));
+      state.rawGY  = Math.max(0, Math.min(1, ry));
       state.gazeOn = true;
     } else {
       state.gazeOn = false;
@@ -829,7 +979,6 @@ function enablePointerFallback() {
     state.rawGY  = e.clientY / window.innerHeight;
     state.gazeOn = true;
   });
-  // still drive the smoothing loop
   function loop() {
     state.sGX += (state.rawGX - state.sGX) * GAZE_LERP;
     state.sGY += (state.rawGY - state.sGY) * GAZE_LERP;
@@ -839,13 +988,107 @@ function enablePointerFallback() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ANALYSIS HELPERS — EXACT COPY
+// BUG 1 FIX: boot() shows canvas + loading message IMMEDIATELY
 // ══════════════════════════════════════════════════════════════════
-const anaCanvas = document.createElement('canvas');
-anaCanvas.width  = W_ANA;
-anaCanvas.height = H_ANA;
-const anaCtx = anaCanvas.getContext('2d', { willReadFrequently: true });
+async function boot() {
+  calIntroBlock.style.display = 'none';
+  calCanvas.style.display     = 'block';
+  resizeCal();
+  const ctx = calCanvas.getContext('2d');
+  const W   = calCanvas.width;
+  const H   = calCanvas.height;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.font      = '300 11px Heebo, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOADING…', W / 2, H / 2);
 
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        delegate: 'GPU',
+      },
+      outputFaceBlendshapes: false,
+      runningMode: 'VIDEO',
+      numFaces: 1,
+    });
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const camEl  = document.createElement('video');
+    camEl.srcObject   = stream;
+    camEl.autoplay    = true;
+    camEl.muted       = true;
+    camEl.playsInline = true;
+    await new Promise(r => { camEl.onloadeddata = r; });
+
+    let landmarksRef = null;
+
+    function getLandmarks() {
+      try {
+        const res = faceLandmarker.detectForVideo(camEl, performance.now());
+        landmarksRef = (res && res.faceLandmarks && res.faceLandmarks[0])
+          ? res.faceLandmarks[0]
+          : null;
+      } catch(e) {
+        landmarksRef = null;
+      }
+      return landmarksRef;
+    }
+
+    (function detectLoop() {
+      getLandmarks();
+      requestAnimationFrame(detectLoop);
+    })();
+
+    await runCalibration(() => landmarksRef);
+    startHeadTracking(() => landmarksRef);
+
+  } catch(err) {
+    console.warn('MediaPipe/webcam unavailable — pointer fallback:', err);
+    enablePointerFallback();
+    state.calMap = { cx: [1, 0, 0], cy: [0, 1, 0] };
+
+    // Quick visual pass through dots in pointer mode
+    const ctxF = calCanvas.getContext('2d');
+    const WF   = calCanvas.width;
+    const HF   = calCanvas.height;
+    for (const [nx, ny] of CAL_PTS) {
+      ctxF.fillStyle = '#ffffff';
+      ctxF.fillRect(0, 0, WF, HF);
+      ctxF.beginPath();
+      ctxF.arc(nx * WF, ny * HF, 5, 0, Math.PI * 2);
+      ctxF.fillStyle = '#ff1500';
+      ctxF.fill();
+      await new Promise(r => setTimeout(r, 260));
+    }
+    ctxF.fillStyle = '#ffffff';
+    ctxF.fillRect(0, 0, WF, HF);
+  }
+
+  calCanvas.style.display  = 'none';
+  calDoneMsg.style.display = 'block';
+  await new Promise(r => setTimeout(r, 900));
+  calDoneMsg.style.display = 'none';
+
+  menuUserLabel.textContent = state.userName;
+  showPhase(phaseMenu);
+}
+
+btnCalBegin.addEventListener('click', () => {
+  calIntroBlock.style.opacity    = '0';
+  calIntroBlock.style.transition = 'opacity 300ms ease';
+  setTimeout(boot, 320);
+});
+
+// ══════════════════════════════════════════════════════════════════
+// ANALYSIS HELPERS
+// ══════════════════════════════════════════════════════════════════
 let prevEdge = null;
 
 function sobel(video) {
@@ -861,10 +1104,10 @@ function sobel(video) {
     for (let x = 1; x < W_ANA - 1; x++) {
       const i  = y * W_ANA + x;
       const gx = -gray[i-W_ANA-1] + gray[i-W_ANA+1]
-                 -2*gray[i-1]      + 2*gray[i+1]
-                 -gray[i+W_ANA-1]  + gray[i+W_ANA+1];
-      const gy =  gray[i-W_ANA-1]  + 2*gray[i-W_ANA] + gray[i-W_ANA+1]
-                 -gray[i+W_ANA-1]  - 2*gray[i+W_ANA] - gray[i+W_ANA+1];
+                 - 2*gray[i-1]    + 2*gray[i+1]
+                 - gray[i+W_ANA-1]+ gray[i+W_ANA+1];
+      const gy =  gray[i-W_ANA-1] + 2*gray[i-W_ANA] + gray[i-W_ANA+1]
+                 - gray[i+W_ANA-1]- 2*gray[i+W_ANA] - gray[i+W_ANA+1];
       out[i] = Math.sqrt(gx*gx + gy*gy);
     }
   }
@@ -888,31 +1131,48 @@ function rMotion(curr, prev) {
 }
 
 function buildPool(edgeData) {
+  const W    = window.innerWidth;
+  const H    = window.innerHeight;
   const pool = [];
-  const stats = rStats(edgeData);
-  const thresh = stats.mean + stats.std * DOT_THRESH;
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  for (let ay = DOT_STEP; ay < H_ANA - DOT_STEP; ay += DOT_STEP) {
-    for (let ax = DOT_STEP; ax < W_ANA - DOT_STEP; ax += DOT_STEP) {
-      if (edgeData[ay * W_ANA + ax] > thresh) {
-        pool.push({
-          nx: ax / W_ANA,
-          ny: ay / H_ANA,
-          px: (ax / W_ANA) * W,
-          py: (ay / H_ANA) * H,
-          blur:      MAX_BLUR,
-          revealed:  false,
-          labelEl:   null,
-          dwellMs:   0,
-          visitCount:    0,
-          lastVisitTs:   0,
-          wasNear:       false,
-        });
+
+  if (edgeData) {
+    const stats  = rStats(edgeData);
+    const thresh = stats.mean + stats.std * DOT_THRESH;
+    for (let ay = DOT_STEP; ay < H_ANA - DOT_STEP; ay += DOT_STEP) {
+      for (let ax = DOT_STEP; ax < W_ANA - DOT_STEP; ax += DOT_STEP) {
+        if (edgeData[ay * W_ANA + ax] > thresh) {
+          const nx = ax / W_ANA;
+          const ny = ay / H_ANA;
+          pool.push(makeDot(nx, ny, W, H));
+        }
       }
     }
   }
+
+  // Guarantee minimum pool size with random fill
+  while (pool.length < 200) {
+    pool.push(makeDot(
+      Math.random() * 0.92 + 0.04,
+      Math.random() * 0.92 + 0.04,
+      W, H
+    ));
+  }
   return pool;
+}
+
+function makeDot(nx, ny, W, H) {
+  return {
+    nx, ny,
+    px: nx * W,
+    py: ny * H,
+    revealed:    false,
+    label:       null,
+    labelEl:     null,
+    dwellMs:     0,
+    visitCount:  0,
+    lastVisitTs: 0,
+    wasNear:     false,
+  };
 }
 
 function sizeWrapper() {
@@ -926,71 +1186,65 @@ function sizeWrapper() {
 
 function makeLabel(dot) {
   const s = state;
-  if (dot.dwellMs > 1200)                                          return 'ATTENTION LOCKED';
-  if (dot.visitCount >= 3)                                         return 'REPEATED GLANCE';
-  if (dot.visitCount >= 2 && dot.dwellMs < 150)                   return 'IGNORED AGAIN';
-  if (s.totalRevealed < 5 && s.sessionMs > 15000)                 return 'LOW ENGAGEMENT';
-  if (s.avgDwellMs < 200 && s.switchRate > 3)                     return 'FOCUS UNSTABLE';
-  if (s.totalRevealed > 30 && s.avgDwellMs < 200)                 return 'SCAN WITHOUT PROCESSING';
-  if (s.gazeSpeed < 0.002 && dot.dwellMs < 300)                   return 'VISUAL DRIFT';
-  if (dot.visitCount === 0 && s.sessionMs > 20000)                return 'SKIPPED AREA';
-  if (s.horizontalSweep)                                           return 'SEARCH PATTERN DETECTED';
+  if (dot.dwellMs > 1200)                                return 'ATTENTION LOCKED';
+  if (dot.visitCount >= 3)                               return 'REPEATED GLANCE';
+  if (dot.visitCount >= 2 && dot.dwellMs < 150)         return 'IGNORED AGAIN';
+  if (s.totalRevealed < 5 && s.sessionMs > 15000)       return 'LOW ENGAGEMENT';
+  if (s.avgDwellMs < 200 && s.switchRate > 3)           return 'FOCUS UNSTABLE';
+  if (s.totalRevealed > 30 && s.avgDwellMs < 200)       return 'SCAN WITHOUT PROCESSING';
+  if (s.gazeSpeed < 0.002 && dot.dwellMs < 300)         return 'VISUAL DRIFT';
+  if (dot.visitCount === 0 && s.sessionMs > 20000)      return 'SKIPPED AREA';
+  if (s.horizontalSweep)                                 return 'SEARCH PATTERN DETECTED';
   return 'ATTENTION LOCKED';
-}
-
-function drawDots(pool, ctx, W, H, concept) {
-  ctx.clearRect(0, 0, W, H);
-  if (concept === 4) return; // concept 4 hides all dots
-  if (concept === 5) return; // concept 5 manages its own rendering
-
-  for (const dot of pool) {
-    if (!dot.revealed) continue;
-    const x = dot.px;
-    const y = dot.py;
-
-    if (concept === 1) {
-      // handled by concept1 renderer
-    } else if (concept === 6) {
-      // handled by concept6 renderer
-    } else {
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,21,0,0.55)';
-      ctx.fill();
-    }
-  }
 }
 
 function analyze(video) {
   try {
     const edge = sobel(video);
-    const motion = rMotion(edge, prevEdge);
+    rMotion(edge, prevEdge);
     prevEdge = edge;
-    // Optionally rebuild pool weights — kept lightweight here
-    return { edge, motion };
-  } catch(e) {
-    return null;
-  }
+  } catch(e) {}
 }
 
 function applyGaze(pool, dt) {
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  const gx = state.sGX * W;
-  const gy = state.sGY * H;
+  const W          = window.innerWidth;
+  const H          = window.innerHeight;
+  const gx         = state.sGX * W;
+  const gy         = state.sGY * H;
   const revealDist = W * REVEAL_FRAC;
 
-  let nearestIdx  = -1;
-  let nearestDist = Infinity;
-
-  for (let i = 0; i < pool.length; i++) {
-    const dot = pool[i];
-    const dx  = dot.px - gx;
-    const dy  = dot.py - gy;
-    const d   = Math.sqrt(dx*dx + dy*dy);
-    if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+  // Gaze speed (normalized units per frame)
+  state.gazeHistory.push([state.sGX, state.sGY]);
+  if (state.gazeHistory.length > 5) state.gazeHistory.shift();
+  if (state.gazeHistory.length >= 2) {
+    const a  = state.gazeHistory[0];
+    const b  = state.gazeHistory[state.gazeHistory.length - 1];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    state.gazeSpeed = Math.sqrt(dx*dx + dy*dy) / state.gazeHistory.length;
   }
 
+  // Nearest dot
+  let nearestIdx  = -1;
+  let nearestDist = Infinity;
+  for (let i = 0; i < pool.length; i++) {
+    const d  = pool[i];
+    const dx = d.px - gx;
+    const dy = d.py - gy;
+    const dd = Math.sqrt(dx*dx + dy*dy);
+    if (dd < nearestDist) { nearestDist = dd; nearestIdx = i; }
+  }
+
+  // Switch rate
+  if (nearestIdx !== state.lastDotIndex && nearestIdx !== -1) {
+    state.lastDotIndex = nearestIdx;
+    const now = performance.now();
+    state.switchTimestamps.push(now);
+    state.switchTimestamps = state.switchTimestamps.filter(t => now - t < 1000);
+    state.switchRate = state.switchTimestamps.length;
+  }
+
+  // Update dwell and visits per dot
   for (let i = 0; i < pool.length; i++) {
     const dot  = pool[i];
     const near = (i === nearestIdx && nearestDist < revealDist);
@@ -1004,33 +1258,34 @@ function applyGaze(pool, dt) {
       }
       if (!dot.revealed) {
         dot.revealed = true;
-        dot.blur     = 0;
         state.totalRevealed++;
 
-        // Update avgDwellMs
-        const revealed = pool.filter(d => d.revealed);
-        state.avgDwellMs = revealed.reduce((s, d) => s + d.dwellMs, 0) / (revealed.length || 1);
+        // Recalc avgDwellMs
+        const rev       = pool.filter(d => d.revealed);
+        state.avgDwellMs = rev.reduce((s, d) => s + d.dwellMs, 0) / (rev.length || 1);
 
-        const label = makeLabel(dot);
-        dot.label   = label;
-        state.labelsRevealed.push(label);
-        state.analysisLog.push({ label, count: state.totalRevealed, ts: state.sessionMs });
-
-        // Track horizontal sweep
-        const lastRevealed = pool.filter(d => d.revealed).slice(-4);
-        if (lastRevealed.length === 4) {
-          const avgY = lastRevealed.reduce((s, d) => s + d.ny, 0) / 4;
-          const sameY = lastRevealed.every(d => Math.abs(d.ny - avgY) < 0.03);
-          const incX  = lastRevealed[0].nx < lastRevealed[1].nx &&
-                        lastRevealed[1].nx < lastRevealed[2].nx &&
-                        lastRevealed[2].nx < lastRevealed[3].nx;
+        // Horizontal sweep detection
+        const recent4 = pool
+          .filter(d => d.revealed && d.lastVisitTs > 0)
+          .sort((a, b) => a.lastVisitTs - b.lastVisitTs)
+          .slice(-4);
+        if (recent4.length === 4) {
+          const avgY  = recent4.reduce((s, d) => s + d.ny, 0) / 4;
+          const sameY = recent4.every(d => Math.abs(d.ny - avgY) < 0.03);
+          const incX  = recent4[0].nx < recent4[1].nx &&
+                        recent4[1].nx < recent4[2].nx &&
+                        recent4[2].nx < recent4[3].nx;
           state.horizontalSweep = sameY && incX;
         }
 
-        // DOM label
-        const labelEl = document.createElement('div');
-        labelEl.className = 'dot-label';
-        labelEl.textContent = label;
+        const labelText = makeLabel(dot);
+        dot.label = labelText;
+        state.labelsRevealed.push(labelText);
+        state.analysisLog.push({ label: labelText, count: state.totalRevealed, ts: state.sessionMs });
+
+        const labelEl       = document.createElement('div');
+        labelEl.className   = 'dot-label';
+        labelEl.textContent = labelText;
         labelEl.style.left  = dot.px + 'px';
         labelEl.style.top   = dot.py + 'px';
         annLayer.appendChild(labelEl);
@@ -1041,124 +1296,12 @@ function applyGaze(pool, dt) {
     }
   }
 
-  // Update avgDwellMs periodically
+  // Rolling avgDwellMs update
   const rev = pool.filter(d => d.revealed);
   if (rev.length) state.avgDwellMs = rev.reduce((s, d) => s + d.dwellMs, 0) / rev.length;
 
-  // Switch rate
-  if (nearestIdx !== state.lastDotIndex && nearestIdx !== -1) {
-    state.lastDotIndex = nearestIdx;
-    const now = performance.now();
-    state.switchTimestamps.push(now);
-    state.switchTimestamps = state.switchTimestamps.filter(t => now - t < 1000);
-    state.switchRate = state.switchTimestamps.length;
-  }
-
-  // Gaze speed
-  state.gazeHistory.push([state.sGX, state.sGY]);
-  if (state.gazeHistory.length > 5) state.gazeHistory.shift();
-  if (state.gazeHistory.length >= 2) {
-    const a = state.gazeHistory[0];
-    const b = state.gazeHistory[state.gazeHistory.length - 1];
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    state.gazeSpeed = Math.sqrt(dx*dx + dy*dy) / state.gazeHistory.length;
-  }
-
   return { nearestIdx, nearestDist };
 }
-
-// ══════════════════════════════════════════════════════════════════
-// CALIBRATION BOOT
-// ══════════════════════════════════════════════════════════════════
-async function boot() {
-  let landmarksRef = null;
-  let useFallback  = false;
-
-  try {
-    const vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
-    );
-    const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-        delegate: 'GPU',
-      },
-      outputFaceBlendshapes: false,
-      runningMode: 'VIDEO',
-      numFaces: 1,
-    });
-
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    const camEl  = document.createElement('video');
-    camEl.srcObject  = stream;
-    camEl.autoplay   = true;
-    camEl.muted      = true;
-    camEl.playsInline = true;
-    await new Promise(r => { camEl.onloadeddata = r; });
-
-    function getLandmarks() {
-      try {
-        const res = faceLandmarker.detectForVideo(camEl, performance.now());
-        if (res && res.faceLandmarks && res.faceLandmarks[0]) {
-          landmarksRef = res.faceLandmarks[0];
-        } else {
-          landmarksRef = null;
-        }
-      } catch(e) { landmarksRef = null; }
-      return landmarksRef;
-    }
-
-    // drive detection loop before calibration dots start
-    (function detectLoop() {
-      getLandmarks();
-      requestAnimationFrame(detectLoop);
-    })();
-
-    // show canvas, run calibration
-    calIntroBlock.style.display  = 'none';
-    calCanvas.style.display      = 'block';
-    resizeCal();
-    await runCalibration(() => landmarksRef);
-    startHeadTracking(() => landmarksRef);
-
-  } catch(err) {
-    console.warn('MediaPipe/webcam unavailable, using pointer fallback:', err);
-    useFallback = true;
-    enablePointerFallback();
-    // create a fake calMap identity-ish so nothing breaks
-    state.calMap = { cx: [1, 0, 0], cy: [0, 1, 0] };
-    calIntroBlock.style.display  = 'none';
-    calCanvas.style.display      = 'block';
-    resizeCal();
-    const ctx = calCanvas.getContext('2d');
-    // quick flash through dots with pointer
-    const W = calCanvas.width, H = calCanvas.height;
-    for (const [nx, ny] of CAL_PTS) {
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
-      ctx.beginPath(); ctx.arc(nx*W, ny*H, 5, 0, Math.PI*2);
-      ctx.fillStyle = '#ff1500'; ctx.fill();
-      await new Promise(r => setTimeout(r, 260));
-    }
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
-  }
-
-  // show SYNCHRONIZED then menu
-  calCanvas.style.display = 'none';
-  calDoneMsg.style.display = 'block';
-  await new Promise(r => setTimeout(r, 900));
-  calDoneMsg.style.display = 'none';
-
-  menuUserLabel.textContent = state.userName;
-  showPhase(phaseMenu);
-}
-
-btnCalBegin.addEventListener('click', () => {
-  calIntroBlock.style.opacity    = '0';
-  calIntroBlock.style.transition = 'opacity 300ms ease';
-  setTimeout(boot, 320);
-});
 
 // ══════════════════════════════════════════════════════════════════
 // MAIN MENU
@@ -1169,12 +1312,8 @@ const CONCEPT_NAMES = [
 ];
 
 document.querySelectorAll('.conceptRow').forEach(row => {
-  row.addEventListener('click', () => {
-    const c = parseInt(row.dataset.c, 10);
-    startConcept(c);
-  });
+  row.addEventListener('click', () => startConcept(parseInt(row.dataset.c, 10)));
 });
-
 menuGalleryBtn.addEventListener('click', () => openGallery(null));
 
 // ══════════════════════════════════════════════════════════════════
@@ -1185,20 +1324,20 @@ let sessionInterval = null;
 let frameInterval   = null;
 let anaInterval     = null;
 
-// per-concept extra state
-let c1State   = {};        // { [idx]: { r, pulseStart } }
-let c2Lines   = [];        // saccade lines
-let c2PrevIdx = -1;
-let c2PrevMs  = 0;
-let c3Path    = [];        // scan path [{px,py}]
-let c4Trail   = [];        // gaze trail [{x,y}]
-let c5List    = [];        // [{idx,order,ts,px,py,labelEl}]
-let c6Arcs    = [];        // bezier arcs
-let c6Count   = 0;
+// Per-concept state
+let c1State       = {};
+let c2Lines       = [];
+let c2PrevIdx     = -1;
+let c2PrevTime    = 0;   // BUG 5 FIX: performance.now() based
+let c3Path        = [];
+let c4Trail       = [];
+let c5List        = [];
+let c6Arcs        = [];
+let c6Count       = 0;
 let c6VisitedOnce = {};
-let c7Heat    = null;      // Float32Array HEAT_W*HEAT_H
-const HEAT_W  = 60;
-const HEAT_H  = 34;
+let c7Heat        = null;
+const HEAT_W      = 60;
+const HEAT_H      = 34;
 
 function generateSessionId() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -1208,48 +1347,53 @@ function generateSessionId() {
 }
 
 function startConcept(conceptNum) {
-  state.currentConcept  = conceptNum;
-  state.sessionId       = generateSessionId();
-  state.sessionStart    = performance.now();
-  state.sessionMs       = 0;
-  state.labelsRevealed  = [];
-  state.analysisLog     = [];
-  state.frameBuffer     = [];
-  state.prevPx          = null;
-  state.gazeHistory     = [];
-  state.totalRevealed   = 0;
-  state.avgDwellMs      = 0;
-  state.switchRate      = 0;
-  state.lastDotIndex    = -1;
+  state.currentConcept   = conceptNum;
+  state.sessionId        = generateSessionId();
+  state.sessionStart     = performance.now();
+  state.sessionMs        = 0;
+  state.labelsRevealed   = [];
+  state.analysisLog      = [];
+  state.frameBuffer      = [];
+  state.prevPx           = null;
+  state.gazeHistory      = [];
+  state.totalRevealed    = 0;
+  state.avgDwellMs       = 0;
+  state.switchRate       = 0;
+  state.lastDotIndex     = -1;
   state.switchTimestamps = [];
   state.horizontalSweep  = false;
   state.gazeSpeed        = 0;
-  prevEdge = null;
+  prevEdge               = null;
 
-  // reset per-concept state
-  c1State = {};
-  c2Lines = []; c2PrevIdx = -1; c2PrevMs = 0;
-  c3Path  = [];
-  c4Trail = [];
-  c5List  = [];
-  c6Arcs  = []; c6Count = 0; c6VisitedOnce = {};
-  c7Heat  = new Float32Array(HEAT_W * HEAT_H);
+  // Reset per-concept state
+  c1State       = {};
+  c2Lines       = [];
+  c2PrevIdx     = -1;
+  c2PrevTime    = performance.now(); // BUG 5 FIX: init to now so first switch is timed correctly
+  c3Path        = [];
+  c4Trail       = [];
+  c5List        = [];
+  c6Arcs        = [];
+  c6Count       = 0;
+  c6VisitedOnce = {};
+  c7Heat        = new Float32Array(HEAT_W * HEAT_H);
 
-  // size canvases
   sizeWrapper();
   heatCtx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
-  dotCtx.clearRect(0, 0, dotCanvas.width,  dotCanvas.height);
+  dotCtx.clearRect(0,  0, dotCanvas.width,  dotCanvas.height);
   annLayer.innerHTML = '';
 
-  // build dot pool
+  // Build dot pool from edge data
   let edgeData;
-  try { edgeData = sobel(conceptVideo); } catch(e) { edgeData = new Float32Array(W_ANA*H_ANA); }
+  try { edgeData = sobel(conceptVideo); } catch(e) { edgeData = null; }
   state.pool = buildPool(edgeData);
 
-  // UI labels
-  conceptNameLabel.textContent = String(conceptNum).padStart(2,'0') + '  ' + CONCEPT_NAMES[conceptNum];
-  conceptSubLabel.textContent  = '';
+  // UI
+  conceptNameLabel.textContent = String(conceptNum).padStart(2, '0') + '  ' + CONCEPT_NAMES[conceptNum];
+  conceptSubLabel.textContent  = conceptNum === 3 ? 'PATH · 0 NODES'
+                                : conceptNum === 6 ? 'REVISITS · 0'
+                                : '';
   progressFill.style.width     = '0%';
   conceptCountdown.textContent = '01:30';
 
@@ -1257,60 +1401,53 @@ function startConcept(conceptNum) {
   document.body.style.cursor = 'none';
   gazeDot.style.display      = 'block';
 
-  // session timer
-  const TOTAL = 90;
+  // 1-second countdown timer
   let elapsed = 0;
   sessionInterval = setInterval(() => {
     elapsed++;
-    state.sessionMs = elapsed * 1000;
-    const pct = (elapsed / TOTAL) * 100;
-    progressFill.style.width = pct + '%';
-    const rem = Math.max(0, TOTAL - elapsed);
-    const m = String(Math.floor(rem / 60)).padStart(2, '0');
-    const s = String(rem % 60).padStart(2, '0');
-    conceptCountdown.textContent = m + ':' + s;
-    if (elapsed >= TOTAL) endSession();
+    progressFill.style.width = ((elapsed / 90) * 100) + '%';
+    const rem = Math.max(0, 90 - elapsed);
+    conceptCountdown.textContent =
+      String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0');
+    if (elapsed >= 90) endSessionToGallery();
   }, 1000);
 
-  // frame capture every 3s
-  frameInterval = setInterval(() => captureFrame(), 3000);
+  // Frame capture every 3 seconds
+  frameInterval = setInterval(captureFrame, 3000);
 
-  // sobel re-analysis
-  anaInterval = setInterval(() => { analyze(conceptVideo); }, ANA_INTERVAL);
+  // Sobel re-analysis
+  anaInterval = setInterval(() => analyze(conceptVideo), ANA_INTERVAL);
 
-  // kick render loop
+  // Render loop
   let lastT = performance.now();
   function loop(now) {
     const dt = Math.min((now - lastT) / 1000, 0.1);
     lastT = now;
 
-    // update smoothed gaze
-    // (already running in startHeadTracking / enablePointerFallback)
+    // Accurate per-frame sessionMs
+    state.sessionMs = now - state.sessionStart;
 
-    // gaze dot position
-    const W = window.innerWidth;
-    const H = window.innerHeight;
+    const W  = dotCanvas.width;
+    const H  = dotCanvas.height;
     const gx = state.sGX * W;
     const gy = state.sGY * H;
+
+    // Gaze cursor
     gazeDot.style.left = gx + 'px';
     gazeDot.style.top  = gy + 'px';
 
-    // apply gaze to pool
     const { nearestIdx, nearestDist } = applyGaze(state.pool, dt);
 
-    // render concept layer
-    const W2 = dotCanvas.width;
-    const H2 = dotCanvas.height;
-    dotCtx.clearRect(0, 0, W2, H2);
+    dotCtx.clearRect(0, 0, W, H);
 
     switch (conceptNum) {
-      case 1: renderFixation(dt, W2, H2, gx, gy, nearestIdx, nearestDist); break;
-      case 2: renderSaccade(dt, W2, H2, gx, gy, nearestIdx, nearestDist, now); break;
-      case 3: renderScanPath(dt, W2, H2, gx, gy); break;
-      case 4: renderGazePoint(dt, W2, H2, gx, gy, now); break;
-      case 5: renderFirstFixation(dt, W2, H2, gx, gy, nearestIdx, nearestDist, now); break;
-      case 6: renderRevisit(dt, W2, H2, gx, gy, nearestIdx, nearestDist, now); break;
-      case 7: renderHeatmap(dt, W2, H2, gx, gy); break;
+      case 1: renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now); break;
+      case 2: renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist);       break;
+      case 3: renderScanPath(dt, W, H, gx, gy);                               break;
+      case 4: renderGazePoint(dt, W, H, gx, gy, now);                         break;
+      case 5: renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist); break;
+      case 6: renderRevisit(dt, W, H, gx, gy, nearestIdx, nearestDist, now);  break;
+      case 7: renderHeatmap(dt, W, H, gx, gy);                                break;
     }
 
     conceptRAF = requestAnimationFrame(loop);
@@ -1318,48 +1455,64 @@ function startConcept(conceptNum) {
   conceptRAF = requestAnimationFrame(t => { lastT = t; loop(t); });
 }
 
-function endSession() {
+// ══════════════════════════════════════════════════════════════════
+// BUG 4 FIX: split endSession into cleanupSession + two destinations
+// ══════════════════════════════════════════════════════════════════
+function cleanupSession() {
   clearInterval(sessionInterval);
   clearInterval(frameInterval);
   clearInterval(anaInterval);
   cancelAnimationFrame(conceptRAF);
+  sessionInterval = null;
+  frameInterval   = null;
+  anaInterval     = null;
+  conceptRAF      = null;
 
   document.body.style.cursor = '';
   gazeDot.style.display      = 'none';
-
-  const duration = Math.floor(state.sessionMs / 1000);
+  annLayer.innerHTML         = '';
+  dotCtx.clearRect(0,  0, dotCanvas.width,  dotCanvas.height);
+  lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
+  heatCtx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
 
   wsSend({
     type:      'end',
     session:   state.sessionId,
     user_name: state.userName,
     concept:   state.currentConcept,
-    duration,
+    duration:  Math.floor(state.sessionMs / 1000),
     labels:    state.labelsRevealed,
     analysis:  state.analysisLog,
   });
+}
 
+function endSessionToMenu() {
+  cleanupSession();
+  state.currentConcept = null;
+  showPhase(phaseMenu);
+  menuUserLabel.textContent = state.userName;
+}
+
+function endSessionToGallery() {
   const concept = state.currentConcept;
+  cleanupSession();
+  state.currentConcept = null;
   openGallery(concept);
 }
 
-conceptBack.addEventListener('click',   endSession);
-conceptEndBtn.addEventListener('click', endSession);
+// BUG 4 FIX: back → menu, end/timer → gallery
+conceptBack.addEventListener('click',   endSessionToMenu);
+conceptEndBtn.addEventListener('click', endSessionToGallery);
 
 // ══════════════════════════════════════════════════════════════════
 // FRAME CAPTURE
 // ══════════════════════════════════════════════════════════════════
-const offCanvas = document.createElement('canvas');
-offCanvas.width  = 1280;
-offCanvas.height = 720;
-const offCtx = offCanvas.getContext('2d');
-
 function captureFrame() {
   offCtx.clearRect(0, 0, 1280, 720);
-  try { offCtx.drawImage(conceptVideo,  0, 0, 1280, 720); } catch(e) {}
-  try { offCtx.drawImage(heatCanvas,    0, 0, 1280, 720); } catch(e) {}
-  try { offCtx.drawImage(lineCanvas,    0, 0, 1280, 720); } catch(e) {}
-  try { offCtx.drawImage(dotCanvas,     0, 0, 1280, 720); } catch(e) {}
+  try { offCtx.drawImage(conceptVideo, 0, 0, 1280, 720); } catch(e) {}
+  try { offCtx.drawImage(heatCanvas,   0, 0, 1280, 720); } catch(e) {}
+  try { offCtx.drawImage(lineCanvas,   0, 0, 1280, 720); } catch(e) {}
+  try { offCtx.drawImage(dotCanvas,    0, 0, 1280, 720); } catch(e) {}
   const dataUrl = offCanvas.toDataURL('image/png', 0.72);
   state.frameBuffer.push(dataUrl);
   wsSend({ type: 'frame', session: state.sessionId, data: dataUrl });
@@ -1368,22 +1521,20 @@ function captureFrame() {
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 1 — FIXATION
 // ══════════════════════════════════════════════════════════════════
-function renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
+function renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
   const revealDist = W * REVEAL_FRAC;
   for (let i = 0; i < state.pool.length; i++) {
     const dot  = state.pool[i];
     if (!dot.revealed) continue;
-    const near = (i === nearestIdx && nearestDist < revealDist);
-    const dwell = dot.dwellMs;
+    const near = (i === nearestIdx && nearestDist < revealDist && dot.dwellMs > 800);
 
     if (!c1State[i]) c1State[i] = { r: 2, growing: false, pulseStart: 0 };
     const s = c1State[i];
 
-    if (near && dwell > 800) {
-      // grow to 10, pulse
-      if (!s.growing) { s.growing = true; s.pulseStart = performance.now(); }
+    if (near) {
+      if (!s.growing) { s.growing = true; s.pulseStart = now; }
       s.r = Math.min(10, s.r + (10 - s.r) * 0.12);
-      const t     = ((performance.now() - s.pulseStart) % 1200) / 1200;
+      const t     = ((now - s.pulseStart) % 1200) / 1200;
       const scale = 1 + 0.15 * Math.sin(t * Math.PI * 2);
       dotCtx.save();
       dotCtx.translate(dot.px, dot.py);
@@ -1394,12 +1545,11 @@ function renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
       dotCtx.fill();
       dotCtx.restore();
     } else {
-      // shrink back
       s.growing = false;
       s.r = Math.max(2, s.r + (2 - s.r) * 0.1);
       dotCtx.beginPath();
       dotCtx.arc(dot.px, dot.py, s.r, 0, Math.PI * 2);
-      dotCtx.fillStyle = (s.r > 2.5) ? '#ffffff' : 'rgba(255,21,0,0.55)';
+      dotCtx.fillStyle = s.r > 2.5 ? '#ffffff' : 'rgba(255,21,0,0.55)';
       dotCtx.fill();
     }
   }
@@ -1407,9 +1557,12 @@ function renderFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
 
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 2 — SACCADE
+// BUG 5 FIX: use performance.now() for sub-second timing
 // ══════════════════════════════════════════════════════════════════
-function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
-  // draw base dots
+function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist) {
+  const revealDist = W * REVEAL_FRAC;
+
+  // Base dots
   for (const dot of state.pool) {
     if (!dot.revealed) continue;
     dotCtx.beginPath();
@@ -1418,50 +1571,46 @@ function renderSaccade(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
     dotCtx.fill();
   }
 
-  // detect saccade
-  const revealDist = W * REVEAL_FRAC;
+  // Detect saccade on dot switch
   if (
     nearestIdx >= 0 &&
     nearestDist < revealDist &&
     nearestIdx !== c2PrevIdx &&
     c2PrevIdx >= 0
   ) {
-    const prev = state.pool[c2PrevIdx];
-    const curr = state.pool[nearestIdx];
-    const dx   = (curr.px - prev.px) / W;
-    const dy   = (curr.py - prev.py) / H;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const ms   = state.sessionMs - c2PrevMs;
+    const nowMs = performance.now();
+    const ms    = nowMs - c2PrevTime;
+    const prev  = state.pool[c2PrevIdx];
+    const curr  = state.pool[nearestIdx];
+    const dx    = (curr.px - prev.px) / W;
+    const dy    = (curr.py - prev.py) / H;
+    const dist  = Math.sqrt(dx*dx + dy*dy);
     if (dist > 0.08 && ms < 300) {
       c2Lines.push({ x1: prev.px, y1: prev.py, x2: curr.px, y2: curr.py, alpha: 0.6 });
     }
-    c2PrevMs = state.sessionMs;
+    c2PrevTime = nowMs; // always update on dot switch
   }
   if (nearestIdx >= 0 && nearestDist < revealDist) c2PrevIdx = nearestIdx;
 
-  // draw + decay lines
+  // Draw and decay lines
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
-  const alive = [];
-  for (const ln of c2Lines) {
+  c2Lines = c2Lines.filter(ln => {
     ln.alpha -= dt * 0.75;
-    if (ln.alpha > 0) {
-      lineCtx.beginPath();
-      lineCtx.moveTo(ln.x1, ln.y1);
-      lineCtx.lineTo(ln.x2, ln.y2);
-      lineCtx.strokeStyle = `rgba(255,21,0,${ln.alpha.toFixed(3)})`;
-      lineCtx.lineWidth   = 1;
-      lineCtx.stroke();
-      alive.push(ln);
-    }
-  }
-  c2Lines = alive;
+    if (ln.alpha <= 0) return false;
+    lineCtx.beginPath();
+    lineCtx.moveTo(ln.x1, ln.y1);
+    lineCtx.lineTo(ln.x2, ln.y2);
+    lineCtx.strokeStyle = `rgba(255,21,0,${ln.alpha.toFixed(3)})`;
+    lineCtx.lineWidth   = 1;
+    lineCtx.stroke();
+    return true;
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 3 — SCAN PATH
 // ══════════════════════════════════════════════════════════════════
 function renderScanPath(dt, W, H, gx, gy) {
-  // draw base dots
   for (const dot of state.pool) {
     if (!dot.revealed) continue;
     dotCtx.beginPath();
@@ -1470,24 +1619,22 @@ function renderScanPath(dt, W, H, gx, gy) {
     dotCtx.fill();
   }
 
-  // accumulate path
   if (state.gazeOn) {
     const last = c3Path[c3Path.length - 1];
-    if (!last || Math.hypot(last.px - gx, last.py - gy) > 3) {
-      c3Path.push({ px: gx, py: gy });
+    if (!last || Math.hypot(last.x - gx, last.y - gy) > 3) {
+      c3Path.push({ x: gx, y: gy });
       if (c3Path.length > 40) c3Path.shift();
     }
   }
 
-  // draw polyline with opacity gradient
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
   if (c3Path.length >= 2) {
     for (let i = 1; i < c3Path.length; i++) {
       const frac  = i / (c3Path.length - 1);
       const alpha = 0.06 + 0.64 * frac;
       lineCtx.beginPath();
-      lineCtx.moveTo(c3Path[i-1].px, c3Path[i-1].py);
-      lineCtx.lineTo(c3Path[i].px,   c3Path[i].py);
+      lineCtx.moveTo(c3Path[i-1].x, c3Path[i-1].y);
+      lineCtx.lineTo(c3Path[i].x,   c3Path[i].y);
       lineCtx.strokeStyle = `rgba(255,21,0,${alpha.toFixed(3)})`;
       lineCtx.lineWidth   = 1;
       lineCtx.stroke();
@@ -1501,14 +1648,11 @@ function renderScanPath(dt, W, H, gx, gy) {
 // CONCEPT 4 — GAZE POINT
 // ══════════════════════════════════════════════════════════════════
 function renderGazePoint(dt, W, H, gx, gy, now) {
-  // all dots hidden
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
 
-  // trail
-  c4Trail.push({ x: gx, y: gy, t: now });
+  c4Trail.push({ x: gx, y: gy });
   if (c4Trail.length > 12) c4Trail.shift();
 
-  // draw trail (oldest=small/faint, newest=larger)
   for (let i = 0; i < c4Trail.length; i++) {
     const frac  = i / (c4Trail.length - 1);
     const r     = 1 + 7 * frac;
@@ -1519,14 +1663,10 @@ function renderGazePoint(dt, W, H, gx, gy, now) {
     dotCtx.fill();
   }
 
-  // 3 concentric expanding rings
-  const ringDefs = [
-    { phase: 0 },
-    { phase: 0.5 },
-    { phase: 1.0 },
-  ];
+  // Concentric rings staggered by phase
+  const ringDefs = [{ offset: 0 }, { offset: 500 }, { offset: 1000 }];
   for (const rd of ringDefs) {
-    const t     = ((now * 0.001 - rd.phase) % 1.5) / 1.5;
+    const t     = ((now - rd.offset) % 1500) / 1500;
     const r     = 8 + (40 - 8) * t;
     const alpha = 0.4 * (1 - t);
     if (alpha <= 0) continue;
@@ -1537,7 +1677,6 @@ function renderGazePoint(dt, W, H, gx, gy, now) {
     dotCtx.stroke();
   }
 
-  // main gaze circle
   dotCtx.beginPath();
   dotCtx.arc(gx, gy, 8, 0, Math.PI * 2);
   dotCtx.fillStyle = '#ffffff';
@@ -1547,21 +1686,18 @@ function renderGazePoint(dt, W, H, gx, gy, now) {
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 5 — FIRST FIXATION
 // ══════════════════════════════════════════════════════════════════
-function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
+function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist) {
   const revealDist = W * REVEAL_FRAC;
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
 
-  // check for new fixation
   if (nearestIdx >= 0 && nearestDist < revealDist) {
     const dot = state.pool[nearestIdx];
-    const alreadyListed = c5List.some(f => f.idx === nearestIdx);
-    if (!alreadyListed && dot.dwellMs > 600) {
-      const order = c5List.length;
-      const ts    = state.sessionMs;
-      c5List.push({ idx: nearestIdx, order, ts, px: dot.px, py: dot.py });
+    if (!c5List.find(f => f.idx === nearestIdx) && dot.dwellMs > 600) {
+      const order   = c5List.length;
+      const ts      = Math.floor(state.sessionMs);
+      c5List.push({ idx: nearestIdx, order, ts });
 
-      // permanent label
-      const labelEl = document.createElement('div');
+      const labelEl       = document.createElement('div');
       labelEl.className   = 'dot-label';
       labelEl.textContent = order === 0
         ? `FIRST FIXATION / T+${ts}ms`
@@ -1572,7 +1708,6 @@ function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
     }
   }
 
-  // render fixation dots
   for (const fix of c5List) {
     const dot = state.pool[fix.idx];
     if (fix.order === 0) {
@@ -1595,34 +1730,26 @@ function renderFirstFixation(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
 function renderRevisit(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
   const revealDist = W * REVEAL_FRAC;
 
-  // check for revisit
-  if (nearestIdx >= 0 && nearestDist < revealDist) {
-    const dot = state.pool[nearestIdx];
-    if (dot.visitCount >= 2 && !c6VisitedOnce[nearestIdx]) {
-      c6VisitedOnce[nearestIdx] = true;
+  for (let i = 0; i < state.pool.length; i++) {
+    const dot = state.pool[i];
+    if (!dot.revealed) continue;
+
+    if (dot.visitCount >= 2 && !c6VisitedOnce[i]) {
+      c6VisitedOnce[i] = true;
       c6Count++;
       conceptSubLabel.textContent = `REVISITS · ${c6Count}`;
-
-      // find previous position for arc start
-      const prevDots = state.pool.filter((d, i) => d.revealed && i !== nearestIdx);
+      const prevDots = state.pool.filter((d, j) => d.revealed && j !== i);
       const fromDot  = prevDots[prevDots.length - 1];
-      const fx = fromDot ? fromDot.px : dot.px - 100;
-      const fy = fromDot ? fromDot.py : dot.py;
-
       c6Arcs.push({
-        x1: fx, y1: fy,
-        x2: dot.px, y2: dot.py,
-        cpY: Math.min(fy, dot.py) - 60,
+        x1: fromDot ? fromDot.px : dot.px - 120,
+        y1: fromDot ? fromDot.py : dot.py,
+        x2: dot.px,
+        y2: dot.py,
         progress: 0,
         born: now,
       });
     }
-  }
 
-  // draw dots
-  for (let i = 0; i < state.pool.length; i++) {
-    const dot = state.pool[i];
-    if (!dot.revealed) continue;
     if (dot.visitCount >= 3) {
       const scale = 1 + 0.15 * Math.sin(now * 0.001 * Math.PI * 2 * 0.8);
       dotCtx.save();
@@ -1641,14 +1768,12 @@ function renderRevisit(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
     }
   }
 
-  // animate arcs
   lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
-  const alive = [];
-  for (const arc of c6Arcs) {
+  c6Arcs = c6Arcs.filter(arc => {
     arc.progress = Math.min(1, arc.progress + dt / 0.4);
-    const steps    = Math.ceil(arc.progress * 40);
-    const cpX      = (arc.x1 + arc.x2) / 2;
-    const cpY      = arc.cpY;
+    const cpX    = (arc.x1 + arc.x2) / 2;
+    const cpY    = Math.min(arc.y1, arc.y2) - 60;
+    const steps  = Math.ceil(arc.progress * 40);
     lineCtx.beginPath();
     for (let s = 0; s <= steps; s++) {
       const t  = s / 40;
@@ -1660,25 +1785,23 @@ function renderRevisit(dt, W, H, gx, gy, nearestIdx, nearestDist, now) {
     lineCtx.strokeStyle = 'rgba(255,21,0,0.5)';
     lineCtx.lineWidth   = 1;
     lineCtx.stroke();
-    if (now - arc.born < 4000) alive.push(arc);
-  }
-  c6Arcs = alive;
+    return now - arc.born < 4000;
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
 // CONCEPT 7 — HEATMAP
 // ══════════════════════════════════════════════════════════════════
 function renderHeatmap(dt, W, H, gx, gy) {
-  // decay
   for (let i = 0; i < c7Heat.length; i++) c7Heat[i] *= 0.992;
 
-  // gaussian splat
   const hgx = Math.round(state.sGX * HEAT_W);
   const hgy = Math.round(state.sGY * HEAT_H);
   const R   = 4;
   for (let dy = -R; dy <= R; dy++) {
     for (let dx = -R; dx <= R; dx++) {
-      const hx = hgx + dx, hy = hgy + dy;
+      const hx = hgx + dx;
+      const hy = hgy + dy;
       if (hx < 0 || hx >= HEAT_W || hy < 0 || hy >= HEAT_H) continue;
       const w  = Math.exp(-(dx*dx + dy*dy) / (R * R * 0.5));
       const ii = hy * HEAT_W + hx;
@@ -1686,7 +1809,6 @@ function renderHeatmap(dt, W, H, gx, gy) {
     }
   }
 
-  // render heat to heatCanvas
   const cw = W / HEAT_W;
   const ch = H / HEAT_H;
   heatCtx.clearRect(0, 0, W, H);
@@ -1697,13 +1819,12 @@ function renderHeatmap(dt, W, H, gx, gy) {
       let color;
       if      (v < 0.15) color = `rgba(255,21,0,${(0.06 * v / 0.15).toFixed(3)})`;
       else if (v < 0.5)  color = `rgba(255,60,0,${(0.06 + 0.16 * (v - 0.15) / 0.35).toFixed(3)})`;
-      else               color = `rgba(255,21,0,${(0.22 + 0.28 * (v - 0.5)  / 0.5 ).toFixed(3)})`;
+      else               color = `rgba(255,21,0,${(0.22 + 0.28 * (v - 0.5)  / 0.5).toFixed(3)})`;
       heatCtx.fillStyle = color;
       heatCtx.fillRect(hx * cw, hy * ch, cw + 1, ch + 1);
     }
   }
 
-  // dots on top
   for (const dot of state.pool) {
     if (!dot.revealed) continue;
     dotCtx.beginPath();
@@ -1721,39 +1842,36 @@ let galleryFilterConcept = null;
 async function openGallery(conceptNum) {
   galleryFilterConcept = conceptNum;
 
-  if (conceptNum) {
-    galleryTitle.textContent = `CONCEPT ${String(conceptNum).padStart(2,'0')} — ${CONCEPT_NAMES[conceptNum]}`;
-  } else {
-    galleryTitle.textContent = 'ALL SESSIONS';
-  }
+  galleryTitle.textContent = conceptNum
+    ? `CONCEPT ${String(conceptNum).padStart(2, '0')} — ${CONCEPT_NAMES[conceptNum]}`
+    : 'ALL SESSIONS';
 
   await refreshGallery(conceptNum);
 
-  // hide concept UI if transitioning from concept
+  // Hide concept view if transitioning from it
   if (activePhaseEl === phaseConcept) {
     phaseConcept.classList.remove('active');
+    activePhaseEl = null;
   }
 
   phaseGallery.classList.add('gallery-open');
 }
 
 async function refreshGallery(conceptNum) {
-  const url = conceptNum
-    ? `/api/sessions?concept=${conceptNum}`
-    : '/api/sessions';
-
+  const url = conceptNum ? `/api/sessions?concept=${conceptNum}` : '/api/sessions';
   let sessions = [];
   try {
     const res = await fetch(url);
     sessions  = await res.json();
   } catch(e) {}
 
-  galleryCount.textContent = `${sessions.length} SESSION${sessions.length !== 1 ? 'S' : ''}`;
+  galleryCount.textContent =
+    `${sessions.length} SESSION${sessions.length !== 1 ? 'S' : ''}`;
   galleryGrid.innerHTML = '';
 
   if (!sessions.length) {
-    const empty = document.createElement('div');
-    empty.id = 'galleryEmpty';
+    const empty       = document.createElement('div');
+    empty.id          = 'galleryEmpty';
     empty.textContent = 'NO SESSIONS RECORDED YET';
     galleryGrid.appendChild(empty);
     return;
@@ -1763,10 +1881,10 @@ async function refreshGallery(conceptNum) {
     const card = document.createElement('div');
     card.className = 'galleryCard';
 
-    const vid = document.createElement('video');
-    vid.muted      = true;
-    vid.loop       = true;
-    vid.playsInline = true;
+    const vid         = document.createElement('video');
+    vid.muted         = true;
+    vid.loop          = true;
+    vid.playsInline   = true;
     if (s.video_path) vid.src = s.video_path;
     vid.addEventListener('mouseenter', () => vid.play().catch(() => {}));
     vid.addEventListener('mouseleave', () => { vid.pause(); vid.currentTime = 0; });
@@ -1774,21 +1892,22 @@ async function refreshGallery(conceptNum) {
     const info = document.createElement('div');
     info.className = 'galleryCardInfo';
 
-    const nameEl = document.createElement('div');
+    const nameEl       = document.createElement('div');
     nameEl.className   = 'galleryCardName';
     nameEl.textContent = s.user_name || '—';
 
-    const durEl = document.createElement('div');
+    const durEl   = document.createElement('div');
     durEl.className = 'galleryCardDuration';
     const d = s.duration_seconds || 0;
-    durEl.textContent = String(Math.floor(d / 60)).padStart(2,'0') + ':' + String(d % 60).padStart(2,'0');
+    durEl.textContent =
+      String(Math.floor(d / 60)).padStart(2, '0') + ':' + String(d % 60).padStart(2, '0');
 
-    const lblEl = document.createElement('div');
-    lblEl.className = 'galleryCardLabels';
-    const lArr = Array.isArray(s.labels_revealed) ? s.labels_revealed : [];
-    const lc   = {};
-    for (const l of lArr) lc[l] = (lc[l] || 0) + 1;
-    lblEl.textContent = Object.entries(lc).map(([k,v]) => `${k} ×${v}`).join('\n');
+    const lblArr = Array.isArray(s.labels_revealed) ? s.labels_revealed : [];
+    const lc     = {};
+    for (const l of lblArr) lc[l] = (lc[l] || 0) + 1;
+    const lblEl       = document.createElement('div');
+    lblEl.className   = 'galleryCardLabels';
+    lblEl.textContent = Object.entries(lc).map(([k, v]) => `${k} ×${v}`).join('\n');
 
     info.appendChild(nameEl);
     info.appendChild(durEl);
@@ -1801,19 +1920,19 @@ async function refreshGallery(conceptNum) {
 
 galleryBackBtn.addEventListener('click', () => {
   phaseGallery.classList.remove('gallery-open');
-  showPhase(phaseMenu);
-  menuUserLabel.textContent = state.userName;
+  setTimeout(() => {
+    showPhase(phaseMenu);
+    menuUserLabel.textContent = state.userName;
+  }, 400);
 });
 
-galleryAllBtn.addEventListener('click', () => {
-  openGallery(null);
-});
+galleryAllBtn.addEventListener('click', () => openGallery(null));
 
 // ══════════════════════════════════════════════════════════════════
 // RESIZE
 // ══════════════════════════════════════════════════════════════════
 window.addEventListener('resize', () => {
-  if (activePhaseEl === phaseConcept) {
+  if (state.currentConcept) {
     sizeWrapper();
     const W = window.innerWidth;
     const H = window.innerHeight;
