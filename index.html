@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VISUAL ANALYSIS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #ffffff;
+  font-family: 'Heebo', sans-serif;
+  color: #000000;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw; height: 100vh;
+  position: relative;
+}
+
+/* ─── PHASES ─── */
+.phase {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.phase.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ─── PHASE 0 — NAME ENTRY ─── */
+#phase-name .inner {
+  display: flex; flex-direction: column; align-items: center; gap: 36px;
+  width: 320px;
+}
+#phase-name .title {
+  font-weight: 100; font-size: 32px; letter-spacing: 0.3em; color: #000;
+  text-align: center;
+}
+#phase-name .sep {
+  width: 100%; height: 1px; background: rgba(0,0,0,0.08);
+}
+#phase-name .label {
+  font-weight: 300; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(0,0,0,0.35); text-align: center;
+}
+#phase-name .input-row {
+  display: flex; align-items: center; gap: 16px;
+}
+#name-input {
+  border: none; outline: none; background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  font-family: 'Heebo', sans-serif; font-weight: 300; font-size: 18px;
+  color: #000; width: 240px; text-align: center;
+  caret-color: #ff1500; padding: 4px 0;
+  transition: border-bottom 300ms ease;
+}
+#name-input:focus { border-bottom: 1px solid rgba(0,0,0,0.6); }
+#name-arrow {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 20px; color: rgba(0,0,0,0.3);
+  transition: color 300ms ease; line-height: 1;
+  padding: 0;
+}
+#name-arrow:hover { color: #000; }
+
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-6px); }
+  40%  { transform: translateX(6px); }
+  60%  { transform: translateX(-5px); }
+  80%  { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+.shake { animation: shake 0.35s ease; }
+
+/* ─── PHASE 1 — CALIBRATION ─── */
+#phase-cal {
+  flex-direction: column; background: #ffffff;
+}
+#cal-intro {
+  display: flex; flex-direction: column; align-items: center; gap: 32px;
+  text-align: center;
+}
+#cal-intro .title {
+  font-weight: 100; font-size: 22px; letter-spacing: 0.3em; color: #000;
+}
+#cal-intro .body {
+  font-weight: 300; font-size: 13px; line-height: 1.9; color: rgba(0,0,0,0.5);
+  letter-spacing: 0.05em;
+}
+#cal-intro .sep {
+  width: 260px; height: 1px; background: rgba(0,0,0,0.08);
+}
+#btn-cal-begin {
+  background: transparent; border: 1px solid rgba(0,0,0,0.3);
+  color: #000; font-family: 'Heebo', sans-serif; font-weight: 300;
+  font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+  padding: 12px 32px; cursor: pointer;
+  transition: border-color 300ms ease, color 300ms ease;
+}
+#btn-cal-begin:hover { border-color: #000; color: #000; }
+
+#cal-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: none;
+}
+#cal-status {
+  position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+  font-weight: 300; font-size: 11px; letter-spacing: 0.3em;
+  color: rgba(0,0,0,0.3); text-transform: uppercase;
+  display: none;
+}
+#cal-sync {
+  font-weight: 100; font-size: 18px; letter-spacing: 0.4em; color: #000;
+  text-transform: uppercase; display: none;
+}
+
+/* ─── PHASE 2 — MAIN MENU ─── */
+#phase-menu { background: #ffffff; }
+#phase-menu .inner {
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 320px; gap: 0;
+}
+#phase-menu .menu-title {
+  font-weight: 100; font-size: 28px; letter-spacing: 0.35em; color: #000;
+  margin-bottom: 24px;
+}
+#phase-menu .sep {
+  width: 100%; height: 1px; background: rgba(0,0,0,0.08); margin-bottom: 4px;
+}
+#phase-menu .sep-b { margin-bottom: 0; margin-top: 4px; }
+
+.concept-row {
+  display: flex; align-items: center; height: 52px; width: 100%;
+  cursor: pointer; position: relative; padding-left: 24px;
+  transition: opacity 300ms ease;
+}
+.concept-row .arrow {
+  position: absolute; left: 0; font-size: 16px; color: #ff1500;
+  opacity: 0; transition: opacity 300ms ease;
+  font-weight: 300; line-height: 1;
+}
+.concept-row:hover .arrow { opacity: 1; }
+.concept-row .num {
+  font-weight: 300; font-size: 14px; color: rgba(0,0,0,0.25);
+  margin-right: 16px; min-width: 24px;
+}
+.concept-row .name {
+  font-weight: 300; font-size: 14px; color: #000;
+}
+
+#menu-user {
+  position: fixed; top: 24px; right: 28px;
+  font-weight: 300; font-size: 10px; color: rgba(0,0,0,0.2);
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#menu-gallery-btn {
+  position: fixed; bottom: 24px; right: 28px;
+  font-weight: 300; font-size: 10px; color: rgba(0,0,0,0.2);
+  letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
+  background: none; border: none; font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+}
+#menu-gallery-btn:hover { color: #000; }
+
+/* ─── PHASE 3 — CONCEPT VIEW ─── */
+#phase-concept {
+  background: #000; padding: 0;
+}
+#concept-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+#dot-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+#overlay-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+#ann-layer {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden;
+}
+#gaze-dot {
+  position: absolute; width: 20px; height: 20px;
+  border-radius: 50%; border: 1.5px solid #ff1500;
+  pointer-events: none; transform: translate(-50%,-50%);
+  display: none;
+  z-index: 100;
+}
+
+/* concept UI overlays */
+#concept-back {
+  position: fixed; top: 20px; left: 24px;
+  font-weight: 300; font-size: 10px; letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5); cursor: pointer; z-index: 200;
+  background: none; border: none; font-family: 'Heebo', sans-serif;
+  text-transform: uppercase; transition: color 300ms ease;
+}
+#concept-back:hover { color: #fff; }
+#concept-label {
+  position: fixed; top: 20px; right: 24px;
+  font-weight: 300; font-size: 10px; color: rgba(255,255,255,0.3);
+  letter-spacing: 0.15em; text-transform: uppercase; z-index: 200;
+  text-align: right;
+}
+#concept-sublabel {
+  position: fixed; top: 34px; right: 24px;
+  font-weight: 100; font-size: 10px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.2em; text-transform: uppercase; z-index: 200;
+}
+#concept-end-btn {
+  position: fixed; bottom: 36px; right: 24px;
+  font-weight: 300; font-size: 10px; letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.3); cursor: pointer; z-index: 200;
+  background: none; border: none; font-family: 'Heebo', sans-serif;
+  text-transform: uppercase; transition: color 300ms ease;
+}
+#concept-end-btn:hover { color: #fff; }
+#progress-bar-wrap {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  width: 240px; z-index: 200;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+#progress-bar-track {
+  width: 100%; height: 1px; background: rgba(255,255,255,0.1);
+  position: relative;
+}
+#progress-bar-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: #ff1500; width: 0%;
+  transition: width 1s linear;
+}
+#concept-countdown {
+  font-weight: 100; font-size: 11px; color: rgba(255,255,255,0.3);
+  letter-spacing: 0.15em;
+}
+
+/* ─── PHASE 4 — GALLERY ─── */
+#phase-gallery {
+  display: flex; flex-direction: column;
+  background: #ffffff; overflow-y: auto;
+  align-items: stretch; justify-content: flex-start;
+  transform: translateY(100%);
+  transition: transform 400ms ease;
+  opacity: 1;
+}
+#phase-gallery.active {
+  opacity: 1; transform: translateY(0);
+  pointer-events: all;
+}
+#gallery-header {
+  padding: 48px 48px 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+#gallery-title {
+  font-weight: 100; font-size: 22px; letter-spacing: 0.35em; color: #000;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+#gallery-count {
+  font-weight: 300; font-size: 11px; color: rgba(0,0,0,0.3);
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#gallery-grid {
+  flex: 1;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: #e8e8e8;
+  min-height: 0;
+}
+.gallery-card {
+  background: #fff; cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: background 300ms ease;
+}
+.gallery-card:hover { background: #fafafa; }
+.gallery-card video {
+  width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;
+}
+.gallery-card-info {
+  padding: 12px 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.gallery-card-name {
+  font-weight: 300; font-size: 11px; color: rgba(0,0,0,0.5);
+  letter-spacing: 0.08em;
+}
+.gallery-card-duration {
+  font-weight: 100; font-size: 10px; color: rgba(0,0,0,0.2);
+  letter-spacing: 0.1em;
+}
+.gallery-card-labels {
+  font-weight: 300; font-size: 10px; color: #ff1500;
+  letter-spacing: 0.06em; margin-top: 4px;
+  line-height: 1.7;
+}
+#gallery-empty {
+  grid-column: 1/-1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 80px 0;
+  font-weight: 100; font-size: 14px; letter-spacing: 0.3em;
+  color: rgba(0,0,0,0.15); text-transform: uppercase;
+}
+#gallery-bottom {
+  padding: 20px 48px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.gallery-nav-btn {
+  font-weight: 300; font-size: 10px; letter-spacing: 0.2em;
+  color: rgba(0,0,0,0.25); text-transform: uppercase; cursor: pointer;
+  background: none; border: none; font-family: 'Heebo', sans-serif;
+  transition: color 300ms ease;
+}
+.gallery-nav-btn:hover { color: #000; }
+
+/* dot labels on ann-layer */
+.dot-label {
+  position: absolute;
+  font-weight: 300; font-size: 9.5px; letter-spacing: 0.18em;
+  color: #ff1500;
+  text-shadow: 0 0 6px rgba(255,255,255,0.95);
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, -140%);
+}
+
+/* concept 1 pulse */
+@keyframes pulse-dot {
+  0%   { transform: scale(1.0); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1.0); }
+}
+</style>
+</head>
+<body>
+<div id="root">
+
+  <!-- PHASE 0: NAME ENTRY -->
+  <div id="phase-name" class="phase active">
+    <div class="inner">
+      <div class="title">VISUAL ANALYSIS</div>
+      <div class="sep"></div>
+      <div class="label">enter your name</div>
+      <div class="input-row">
+        <input id="name-input" type="text" autocomplete="off" spellcheck="false"/>
+        <button id="name-arrow" aria-label="continue">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 1: CALIBRATION -->
+  <div id="phase-cal" class="phase">
+    <div id="cal-intro">
+      <div class="title">HEAD TRACKING CALIBRATION</div>
+      <div class="sep"></div>
+      <div class="body">
+        this calibration runs once<br/>
+        for the entire session<br/><br/>
+        point your head at each dot<br/>
+        and hold still until the ring fills
+      </div>
+      <button id="btn-cal-begin">BEGIN CALIBRATION</button>
+    </div>
+    <canvas id="cal-canvas"></canvas>
+    <div id="cal-status">CALIBRATING…</div>
+    <div id="cal-sync">SYNCHRONIZED</div>
+  </div>
+
+  <!-- PHASE 2: MAIN MENU -->
+  <div id="phase-menu" class="phase">
+    <div id="menu-user"></div>
+    <div class="inner">
+      <div class="menu-title">VISUAL ANALYSIS</div>
+      <div class="sep"></div>
+      <div class="concept-row" data-concept="1"><span class="arrow">▸</span><span class="num">01</span><span class="name">FIXATION</span></div>
+      <div class="concept-row" data-concept="2"><span class="arrow">▸</span><span class="num">02</span><span class="name">SACCADE</span></div>
+      <div class="concept-row" data-concept="3"><span class="arrow">▸</span><span class="num">03</span><span class="name">SCAN PATH</span></div>
+      <div class="concept-row" data-concept="4"><span class="arrow">▸</span><span class="num">04</span><span class="name">GAZE POINT</span></div>
+      <div class="concept-row" data-concept="5"><span class="arrow">▸</span><span class="num">05</span><span class="name">FIRST FIXATION</span></div>
+      <div class="concept-row" data-concept="6"><span class="arrow">▸</span><span class="num">06</span><span class="name">REVISIT</span></div>
+      <div class="concept-row" data-concept="7"><span class="arrow">▸</span><span class="num">07</span><span class="name">HEATMAP</span></div>
+      <div class="sep sep-b"></div>
+    </div>
+    <button id="menu-gallery-btn">VIEW GALLERY →</button>
+  </div>
+
+  <!-- PHASE 3: CONCEPT VIEW -->
+  <div id="phase-concept" class="phase">
+    <video id="concept-video" src="/statue.mp4" autoplay loop muted playsinline></video>
+    <canvas id="overlay-canvas"></canvas>
+    <canvas id="dot-canvas"></canvas>
+    <div id="ann-layer"></div>
+    <div id="gaze-dot"></div>
+
+    <button id="concept-back">← BACK</button>
+    <div id="concept-label"></div>
+    <div id="concept-sublabel"></div>
+    <button id="concept-end-btn">END SESSION →</button>
+
+    <div id="progress-bar-wrap">
+      <div id="progress-bar-track">
+        <div id="progress-bar-fill"></div>
+      </div>
+      <div id="concept-countdown">01:30</div>
+    </div>
+  </div>
+
+  <!-- PHASE 4: GALLERY -->
+  <div id="phase-gallery" class="phase">
+    <div id="gallery-header">
+      <div id="gallery-title">GALLERY</div>
+      <div id="gallery-count"></div>
+    </div>
+    <div id="gallery-grid"></div>
+    <div id="gallery-bottom">
+      <button class="gallery-nav-btn" id="gallery-back-btn">← BACK TO MENU</button>
+      <button class="gallery-nav-btn" id="gallery-all-btn">ALL CONCEPTS →</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+// ─────────────────────────────────────────────
+// MEDIAPIPE CDN
+// ─────────────────────────────────────────────
+import {
+  FaceLandmarker,
+  FilesetResolver
+} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+
+// ─────────────────────────────────────────────
+// SHARED STATE
+// ─────────────────────────────────────────────
+const state = {
+  userName: '',
+  calMap: null,
+  rawGX: 0.5, rawGY: 0.5,
+  sGX: 0.5, sGY: 0.5,
+  gazeOn: false,
+  currentConcept: null,
+  sessionId: null,
+  sessionStart: null,
+  sessionMs: 0,
+  labelsRevealed: [],
+  analysisLog: [],
+  ws: null,
+  frameBuffer: [],
+  pool: [],
+  prevPx: null,
+  gazeHistory: [],
+  totalRevealed: 0,
+  switchRate: 0,
+  lastDotIndex: -1,
+  switchTimestamps: [],
+};
+
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+const CONCEPT_NAMES = ['','FIXATION','SACCADE','SCAN PATH','GAZE POINT','FIRST FIXATION','REVISIT','HEATMAP'];
+const SESSION_DURATION = 90;
+const GAZE_LERP = 0.08;
+const REVEAL_FRAC = 0.030;
+const W_ANA = 160;
+const H_ANA = 90;
+const DOT_POOL_SIZE = 250;
+const SOBEL_INTERVAL = 600;
+
+// Calibration constants
+const CAL_PTS = [
+  [0.1,0.1],[0.5,0.1],[0.9,0.1],
+  [0.1,0.5],[0.5,0.5],[0.9,0.5],
+  [0.1,0.9],[0.5,0.9],[0.9,0.9],
+];
+const CAL_FILL_RATE = 0.012;
+const CAL_DRAIN_RATE = 0.018;
+const CAL_VAR_THRESH = 0.0015;
+
+// ─────────────────────────────────────────────
+// PHASE HELPERS
+// ─────────────────────────────────────────────
+const phases = ['phase-name','phase-cal','phase-menu','phase-concept','phase-gallery'];
+let activePhase = 'phase-name';
+
+function showPhase(id) {
+  for (const p of phases) {
+    const el = document.getElementById(p);
+    el.classList.remove('active');
+  }
+  const next = document.getElementById(id);
+  next.classList.add('active');
+  activePhase = id;
+
+  // Gallery uses transform slide — handled separately
+  if (id === 'phase-gallery') {
+    next.style.transform = 'translateY(0)';
+  }
+}
+
+// ─────────────────────────────────────────────
+// PHASE 0 — NAME ENTRY
+// ─────────────────────────────────────────────
+const nameInput = document.getElementById('name-input');
+const nameArrow = document.getElementById('name-arrow');
+
+function submitName() {
+  const val = nameInput.value.trim();
+  if (!val) {
+    nameInput.classList.remove('shake');
+    void nameInput.offsetWidth;
+    nameInput.classList.add('shake');
+    return;
+  }
+  state.userName = val;
+  showPhase('phase-cal');
+  requestAnimationFrame(() => {
+    document.getElementById('cal-intro').style.display = 'flex';
+  });
+}
+
+nameArrow.addEventListener('click', submitName);
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
+nameInput.addEventListener('animationend', () => nameInput.classList.remove('shake'));
+
+// ─────────────────────────────────────────────
+// CALIBRATION — EXACT LOGIC
+// ─────────────────────────────────────────────
+let faceLandmarker = null;
+let videoStream = null;
+let vidEl = null;
+
+function stability(samples) {
+  if (samples.length < 4) return 0;
+  const xs = samples.map(s => s[0]);
+  const ys = samples.map(s => s[1]);
+  const mx = xs.reduce((a,b)=>a+b,0)/xs.length;
+  const my = ys.reduce((a,b)=>a+b,0)/ys.length;
+  const vx = xs.reduce((a,b)=>a+(b-mx)**2,0)/xs.length;
+  const vy = ys.reduce((a,b)=>a+(b-my)**2,0)/ys.length;
+  return vx + vy;
+}
+
+function fitAffine(screen, head) {
+  const n = screen.length;
+  let A = [], b0 = [], b1 = [];
+  for (let i=0;i<n;i++) {
+    A.push([head[i][0], head[i][1], 1]);
+    b0.push(screen[i][0]);
+    b1.push(screen[i][1]);
+  }
+  function lsq(mat, vec) {
+    const At = mat[0].map((_,c)=>mat.map(r=>r[c]));
+    const AtA = At.map(r=>At[0].map((_,c)=>r.reduce((s,v,k)=>s+v*mat[k][c],0)));
+    const Atb = At.map(r=>r.reduce((s,v,k)=>s+v*vec[k],0));
+    return mv3(inv3(AtA), Atb);
+  }
+  return { cx: lsq(A,b0), cy: lsq(A,b1) };
+}
+
+function inv3(m) {
+  const [[a,b,c],[d,e,f],[g,h,i]] = m;
+  const det = a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
+  const inv = 1/det;
+  return [
+    [(e*i-f*h)*inv,(c*h-b*i)*inv,(b*f-c*e)*inv],
+    [(f*g-d*i)*inv,(a*i-c*g)*inv,(c*d-a*f)*inv],
+    [(d*h-e*g)*inv,(b*g-a*h)*inv,(a*e-b*d)*inv],
+  ];
+}
+
+function mv3(m, v) {
+  return m.map(r => r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+}
+
+async function awaitDot(ctx, cx, cy, W, H, getLandmarks) {
+  return new Promise(resolve => {
+    let fill = 0;
+    const samples = [];
+    const headSamples = [];
+
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+
+      // dot
+      const r = 8;
+      ctx.beginPath();
+      ctx.arc(cx*W, cy*H, r, 0, Math.PI*2);
+      ctx.fillStyle = '#ff1500';
+      ctx.fill();
+
+      // ring progress
+      const ringR = 20;
+      ctx.beginPath();
+      ctx.arc(cx*W, cy*H, ringR, -Math.PI/2, -Math.PI/2 + Math.PI*2*fill);
+      ctx.strokeStyle = '#ff1500';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // dim outer ring
+      ctx.beginPath();
+      ctx.arc(cx*W, cy*H, ringR, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    function tick() {
+      const lm = getLandmarks();
+      if (lm) {
+        const nx = lm[1].x;
+        const ny = lm[1].y;
+        samples.push([nx, ny]);
+        if (samples.length > 20) samples.shift();
+        const v = stability(samples);
+        if (v < CAL_VAR_THRESH) {
+          fill = Math.min(1, fill + CAL_FILL_RATE);
+          headSamples.push([nx, ny]);
+        } else {
+          fill = Math.max(0, fill - CAL_DRAIN_RATE);
+        }
+      } else {
+        fill = Math.max(0, fill - CAL_DRAIN_RATE);
+      }
+      draw();
+      if (fill >= 1) {
+        const avg = headSamples.slice(-10);
+        const ax = avg.reduce((s,x)=>s+x[0],0)/avg.length;
+        const ay = avg.reduce((s,x)=>s+x[1],0)/avg.length;
+        resolve([ax, ay]);
+      } else {
+        requestAnimationFrame(tick);
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+async function runCalibration() {
+  const canvas = document.getElementById('cal-canvas');
+  const W = canvas.width = window.innerWidth;
+  const H = canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  let lastLandmarks = null;
+
+  async function detect() {
+    if (!vidEl || vidEl.readyState < 2) {
+      requestAnimationFrame(detect);
+      return;
+    }
+    const result = faceLandmarker.detectForVideo(vidEl, performance.now());
+    if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+      lastLandmarks = result.faceLandmarks[0];
+    } else {
+      lastLandmarks = null;
+    }
+    requestAnimationFrame(detect);
+  }
+  detect();
+
+  function getLandmarks() { return lastLandmarks; }
+
+  const screenPts = [];
+  const headPts = [];
+
+  for (const [nx, ny] of CAL_PTS) {
+    const hp = await awaitDot(ctx, nx, ny, W, H, getLandmarks);
+    screenPts.push([nx, ny]);
+    headPts.push(hp);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,W,H);
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  state.calMap = fitAffine(screenPts, headPts);
+
+  // Start head tracking loop
+  startHeadTracking(getLandmarks);
+}
+
+function startHeadTracking(getLandmarks) {
+  function loop() {
+    const lm = getLandmarks();
+    if (lm) {
+      const nx = lm[1].x;
+      const ny = lm[1].y;
+      const { cx, cy } = state.calMap;
+      const rx = cx[0]*nx + cx[1]*ny + cx[2];
+      const ry = cy[0]*nx + cy[1]*ny + cy[2];
+      state.rawGX = Math.max(0, Math.min(1, rx));
+      state.rawGY = Math.max(0, Math.min(1, ry));
+      state.gazeOn = true;
+    } else {
+      state.gazeOn = false;
+    }
+    state.sGX += (state.rawGX - state.sGX) * GAZE_LERP;
+    state.sGY += (state.rawGY - state.sGY) * GAZE_LERP;
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function enablePointerFallback() {
+  document.addEventListener('mousemove', e => {
+    state.rawGX = e.clientX / window.innerWidth;
+    state.rawGY = e.clientY / window.innerHeight;
+    state.gazeOn = true;
+  });
+}
+
+document.getElementById('btn-cal-begin').addEventListener('click', async () => {
+  const intro = document.getElementById('cal-intro');
+  intro.style.opacity = '0';
+  intro.style.transition = 'opacity 300ms ease';
+
+  setTimeout(async () => {
+    intro.style.display = 'none';
+    const canvas = document.getElementById('cal-canvas');
+    canvas.style.display = 'block';
+    document.getElementById('cal-status').style.display = 'block';
+
+    try {
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+      );
+      faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'GPU',
+        },
+        outputFaceBlendshapes: false,
+        runningMode: 'VIDEO',
+        numFaces: 1,
+      });
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoStream = stream;
+      vidEl = document.createElement('video');
+      vidEl.srcObject = stream;
+      vidEl.autoplay = true;
+      vidEl.muted = true;
+      vidEl.playsInline = true;
+      await new Promise(r => { vidEl.onloadeddata = r; });
+
+      await runCalibration();
+
+    } catch (err) {
+      console.warn('MediaPipe/webcam failed, using pointer fallback:', err);
+      enablePointerFallback();
+      // Still run through calibration visually with pointer
+      document.getElementById('cal-status').textContent = 'POINTER MODE';
+      const canvas = document.getElementById('cal-canvas');
+      canvas.style.display = 'block';
+
+      // Simulate calibration dots with clicks for pointer mode
+      const W = canvas.width = window.innerWidth;
+      const H = canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+
+      async function pointerCal() {
+        for (const [nx, ny] of CAL_PTS) {
+          await new Promise(resolve => {
+            const r = 8;
+            ctx.clearRect(0,0,W,H);
+            ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+            ctx.beginPath(); ctx.arc(nx*W, ny*H, r, 0, Math.PI*2);
+            ctx.fillStyle='#ff1500'; ctx.fill();
+            ctx.beginPath(); ctx.arc(nx*W, ny*H, 20, 0, Math.PI*2);
+            ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+            setTimeout(resolve, 400);
+          });
+        }
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+      }
+      await pointerCal();
+    }
+
+    // Show SYNCHRONIZED
+    document.getElementById('cal-canvas').style.display = 'none';
+    document.getElementById('cal-status').style.display = 'none';
+    const sync = document.getElementById('cal-sync');
+    sync.style.display = 'block';
+
+    setTimeout(() => {
+      sync.style.opacity = '0';
+      sync.style.transition = 'opacity 300ms ease';
+      setTimeout(() => {
+        sync.style.display = 'none';
+        showPhase('phase-menu');
+        document.getElementById('menu-user').textContent = state.userName;
+      }, 300);
+    }, 900);
+  }, 300);
+});
+
+// ─────────────────────────────────────────────
+// MAIN MENU
+// ─────────────────────────────────────────────
+document.querySelectorAll('.concept-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const c = parseInt(row.dataset.concept);
+    startConcept(c);
+  });
+});
+
+document.getElementById('menu-gallery-btn').addEventListener('click', () => {
+  openGallery(null);
+});
+
+// ─────────────────────────────────────────────
+// WEBSOCKET
+// ─────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}`);
+  ws.onopen = () => { state.ws = ws; };
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'gallery_update' && activePhase === 'phase-gallery') {
+        refreshGallery();
+      }
+    } catch {}
+  };
+  ws.onclose = () => {
+    state.ws = null;
+    setTimeout(connectWS, 2000);
+  };
+  ws.onerror = () => ws.close();
+}
+connectWS();
+
+function wsSend(obj) {
+  if (state.ws && state.ws.readyState === 1) {
+    state.ws.send(JSON.stringify(obj));
+  }
+}
+
+// ─────────────────────────────────────────────
+// SOBEL / EDGE DETECTION
+// ─────────────────────────────────────────────
+let sobelData = null;
+let sobelTimer = null;
+const sobelCanvas = document.createElement('canvas');
+sobelCanvas.width = W_ANA; sobelCanvas.height = H_ANA;
+const sobelCtx = sobelCanvas.getContext('2d', { willReadFrequently: true });
+
+function sobel(video) {
+  sobelCtx.drawImage(video, 0, 0, W_ANA, H_ANA);
+  const img = sobelCtx.getImageData(0, 0, W_ANA, H_ANA);
+  const d = img.data;
+  const gray = new Float32Array(W_ANA * H_ANA);
+  for (let i=0;i<W_ANA*H_ANA;i++) {
+    gray[i] = (d[i*4]*0.299 + d[i*4+1]*0.587 + d[i*4+2]*0.114) / 255;
+  }
+  const out = new Float32Array(W_ANA * H_ANA);
+  for (let y=1;y<H_ANA-1;y++) {
+    for (let x=1;x<W_ANA-1;x++) {
+      const i = y*W_ANA+x;
+      const gx = -gray[i-W_ANA-1] + gray[i-W_ANA+1]
+                 - 2*gray[i-1]     + 2*gray[i+1]
+                 - gray[i+W_ANA-1] + gray[i+W_ANA+1];
+      const gy = gray[i-W_ANA-1]  + 2*gray[i-W_ANA]  + gray[i-W_ANA+1]
+                 - gray[i+W_ANA-1] - 2*gray[i+W_ANA]  - gray[i+W_ANA+1];
+      out[i] = Math.sqrt(gx*gx + gy*gy);
+    }
+  }
+  return out;
+}
+
+function rStats(arr) {
+  let sum = 0, max = 0;
+  for (const v of arr) { sum += v; if (v>max) max=v; }
+  return { mean: sum/arr.length, max };
+}
+
+function rMotion() { return { mean: 0, max: 0 }; }
+
+// ─────────────────────────────────────────────
+// DOT POOL
+// ─────────────────────────────────────────────
+function buildPool(edgeData) {
+  const pool = [];
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  if (edgeData) {
+    const { mean, max } = rStats(edgeData);
+    const thresh = mean + (max - mean) * 0.3;
+    const candidates = [];
+    for (let y=0;y<H_ANA;y++) {
+      for (let x=0;x<W_ANA;x++) {
+        if (edgeData[y*W_ANA+x] > thresh) {
+          candidates.push({ nx: x/W_ANA, ny: y/H_ANA });
+        }
+      }
+    }
+    // Sample from candidates
+    const used = new Set();
+    let attempts = 0;
+    while (pool.length < DOT_POOL_SIZE && attempts < 5000) {
+      attempts++;
+      const ci = Math.floor(Math.random() * candidates.length);
+      if (used.has(ci)) continue;
+      used.add(ci);
+      const c = candidates[ci];
+      const jx = c.nx + (Math.random()-0.5)*0.02;
+      const jy = c.ny + (Math.random()-0.5)*0.02;
+      pool.push({
+        nx: Math.max(0.02, Math.min(0.98, jx)),
+        ny: Math.max(0.02, Math.min(0.98, jy)),
+        px: 0, py: 0,
+        revealed: false,
+        dwellMs: 0,
+        visitCount: 0,
+        lastVisitTs: 0,
+        skippedFrames: 0,
+        label: null,
+        labelEl: null,
+        isActive: false,
+      });
+    }
+  }
+
+  // Fill remaining with random
+  while (pool.length < DOT_POOL_SIZE) {
+    pool.push({
+      nx: Math.random()*0.96 + 0.02,
+      ny: Math.random()*0.96 + 0.02,
+      px: 0, py: 0,
+      revealed: false,
+      dwellMs: 0,
+      visitCount: 0,
+      lastVisitTs: 0,
+      skippedFrames: 0,
+      label: null,
+      labelEl: null,
+      isActive: false,
+    });
+  }
+
+  return pool;
+}
+
+// ─────────────────────────────────────────────
+// CONCEPT VIEW
+// ─────────────────────────────────────────────
+let conceptRAF = null;
+let frameCapInterval = null;
+let progressInterval = null;
+let sobelInterval = null;
+let sessionTimeout = null;
+
+const dotCanvas = document.getElementById('dot-canvas');
+const dotCtx = dotCanvas.getContext('2d');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const overlayCtx = overlayCanvas.getContext('2d');
+const annLayer = document.getElementById('ann-layer');
+const gazeDot = document.getElementById('gaze-dot');
+const videoEl = document.getElementById('concept-video');
+
+// Per-concept extra state
+let c1State = {}; // fixation
+let c2Lines = []; // saccade lines
+let c3Path = []; // scan path nodes
+let c4Trail = []; // gaze trail
+let c5Fixations = []; // first fixation
+let c6Revisits = 0;
+let c6Arcs = [];
+let c7Heat = null; // heatmap grid
+
+const HEAT_W = 60, HEAT_H = 34;
+
+function resetConceptState() {
+  c1State = {};
+  c2Lines = [];
+  c3Path = [];
+  c4Trail = [];
+  c5Fixations = [];
+  c6Revisits = 0;
+  c6Arcs = [];
+  c7Heat = new Float32Array(HEAT_W * HEAT_H);
+}
+
+function startConcept(conceptNum) {
+  state.currentConcept = conceptNum;
+  state.sessionId = crypto.randomUUID ? crypto.randomUUID() : uuidv4fallback();
+  state.sessionStart = performance.now();
+  state.sessionMs = 0;
+  state.labelsRevealed = [];
+  state.analysisLog = [];
+  state.frameBuffer = [];
+  state.prevPx = null;
+  state.gazeHistory = [];
+  state.totalRevealed = 0;
+  state.switchRate = 0;
+  state.lastDotIndex = -1;
+  state.switchTimestamps = [];
+
+  resetConceptState();
+  annLayer.innerHTML = '';
+
+  // Resize canvases
+  dotCanvas.width = overlayCanvas.width = window.innerWidth;
+  dotCanvas.height = overlayCanvas.height = window.innerHeight;
+
+  // Build pool from sobel on video
+  const video = document.getElementById('concept-video');
+  let edges = null;
+  try { edges = sobel(video); } catch(e) {}
+  state.pool = buildPool(edges);
+
+  // Update pixel coords
+  for (const dot of state.pool) {
+    dot.px = dot.nx * window.innerWidth;
+    dot.py = dot.ny * window.innerHeight;
+  }
+
+  // UI
+  document.getElementById('concept-label').textContent = `${String(conceptNum).padStart(2,'0')} ${CONCEPT_NAMES[conceptNum]}`;
+  document.getElementById('progress-bar-fill').style.width = '0%';
+  document.getElementById('concept-countdown').textContent = '01:30';
+
+  // Concept-specific sublabel
+  if (conceptNum === 3) {
+    document.getElementById('concept-sublabel').textContent = 'PATH · 0 NODES';
+  } else if (conceptNum === 6) {
+    document.getElementById('concept-sublabel').textContent = 'REVISITS · 0';
+  } else {
+    document.getElementById('concept-sublabel').textContent = '';
+  }
+
+  showPhase('phase-concept');
+  document.body.style.cursor = 'none';
+  gazeDot.style.display = 'block';
+
+  // Start Sobel re-analysis
+  sobelInterval = setInterval(() => {
+    try {
+      const newEdges = sobel(videoEl);
+      // Optionally rebuild pool partially — here we just update edge weights
+    } catch(e) {}
+  }, SOBEL_INTERVAL);
+
+  // Start session timer
+  let elapsed = 0;
+  progressInterval = setInterval(() => {
+    elapsed++;
+    state.sessionMs = elapsed * 1000;
+    const pct = (elapsed / SESSION_DURATION) * 100;
+    document.getElementById('progress-bar-fill').style.width = pct + '%';
+    const rem = SESSION_DURATION - elapsed;
+    const m = String(Math.floor(rem / 60)).padStart(2,'0');
+    const s = String(rem % 60).padStart(2,'0');
+    document.getElementById('concept-countdown').textContent = `${m}:${s}`;
+    if (elapsed >= SESSION_DURATION) endSession();
+  }, 1000);
+
+  // Frame capture every 3 seconds
+  frameCapInterval = setInterval(() => {
+    captureFrame();
+  }, 3000);
+
+  // Start render loop
+  conceptRAF = requestAnimationFrame(conceptLoop);
+}
+
+function uuidv4fallback() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0;
+    return (c==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+}
+
+// ─────────────────────────────────────────────
+// GAZE SPEED & SWITCH TRACKING
+// ─────────────────────────────────────────────
+let prevGX = 0.5, prevGY = 0.5;
+let gazeSpeed = 0;
+let sweepHistory = [];
+
+function updateGazeMetrics() {
+  const dx = state.sGX - prevGX;
+  const dy = state.sGY - prevGY;
+  gazeSpeed = Math.sqrt(dx*dx + dy*dy);
+  prevGX = state.sGX;
+  prevGY = state.sGY;
+
+  // Track horizontal sweeps
+  sweepHistory.push({ gx: state.sGX, gy: state.sGY });
+  if (sweepHistory.length > 10) sweepHistory.shift();
+}
+
+function detectHorizontalSweep() {
+  if (sweepHistory.length < 4) return false;
+  const last4 = sweepHistory.slice(-4);
+  const avgY = last4.reduce((s,p)=>s+p.gy,0)/4;
+  const allSameY = last4.every(p => Math.abs(p.gy - avgY) < 0.03);
+  const increasing = last4[0].gx < last4[1].gx && last4[1].gx < last4[2].gx && last4[2].gx < last4[3].gx;
+  return allSameY && increasing;
+}
+
+// ─────────────────────────────────────────────
+// LABEL ASSIGNMENT
+// ─────────────────────────────────────────────
+function assignLabel(dot, idx) {
+  if (dot.label) return dot.label; // already has one
+
+  const sessionMs = state.sessionMs;
+  const totalRevealed = state.totalRevealed;
+  const avgDwellMs = state.pool.filter(d=>d.visitCount>0)
+    .reduce((s,d,_,a)=>s+d.dwellMs/a.length, 0) || 0;
+  const switchRate = state.switchRate;
+
+  let label = null;
+
+  if (dot.dwellMs > 1200) {
+    label = 'ATTENTION LOCKED';
+  } else if (dot.visitCount === 0 && sessionMs > 20000) {
+    label = 'SKIPPED AREA';
+  } else if (totalRevealed < 5 && sessionMs > 15000) {
+    label = 'LOW ENGAGEMENT';
+  } else if (gazeSpeed < 0.002 && dot.dwellMs < 300) {
+    label = 'VISUAL DRIFT';
+  } else if (avgDwellMs < 200 && switchRate > 3) {
+    label = 'FOCUS UNSTABLE';
+  } else if (totalRevealed > 30 && avgDwellMs < 200) {
+    label = 'SCAN WITHOUT PROCESSING';
+  } else if (dot.visitCount >= 3) {
+    label = 'REPEATED GLANCE';
+  } else if (dot.visitCount >= 2 && dot.dwellMs < 150) {
+    label = 'IGNORED AGAIN';
+  } else if (detectHorizontalSweep()) {
+    label = 'SEARCH PATTERN DETECTED';
+  }
+
+  return label;
+}
+
+function revealLabel(dot, idx) {
+  if (dot.label) return;
+  const label = assignLabel(dot, idx);
+  if (!label) return;
+
+  dot.label = label;
+  state.labelsRevealed.push(label);
+  state.totalRevealed++;
+  state.analysisLog.push({ label, count: state.totalRevealed, ts: state.sessionMs });
+
+  // Create DOM element
+  const el = document.createElement('div');
+  el.className = 'dot-label';
+  el.textContent = label;
+  el.style.left = dot.px + 'px';
+  el.style.top = dot.py + 'px';
+  annLayer.appendChild(el);
+  dot.labelEl = el;
+}
+
+// ─────────────────────────────────────────────
+// CONCEPT RENDER LOOP
+// ─────────────────────────────────────────────
+let lastFrameTime = 0;
+
+function conceptLoop(now) {
+  const dt = now - (lastFrameTime || now);
+  lastFrameTime = now;
+
+  updateGazeMetrics();
+
+  const W = dotCanvas.width;
+  const H = dotCanvas.height;
+  const gx = state.sGX * W;
+  const gy = state.sGY * H;
+
+  // Gaze dot position
+  gazeDot.style.left = gx + 'px';
+  gazeDot.style.top = gy + 'px';
+
+  // Update gaze history
+  state.gazeHistory.push({ x: state.sGX, y: state.sGY, t: now });
+  if (state.gazeHistory.length > 60) state.gazeHistory.shift();
+
+  // Switch rate: dot changes per second
+  // Find nearest dot to gaze
+  const REVEAL_DIST = W * REVEAL_FRAC;
+  let nearestIdx = -1;
+  let nearestDist = Infinity;
+  for (let i=0;i<state.pool.length;i++) {
+    const d = state.pool[i];
+    const dx = d.px - gx;
+    const dy = d.py - gy;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if (dist < nearestDist) { nearestDist = dist; nearestIdx = i; }
+  }
+
+  if (nearestIdx !== state.lastDotIndex) {
+    state.switchTimestamps.push(now);
+    state.lastDotIndex = nearestIdx;
+    // Remove old timestamps beyond 1 second
+    state.switchTimestamps = state.switchTimestamps.filter(t => now - t < 1000);
+    state.switchRate = state.switchTimestamps.length;
+  }
+
+  // Update dwell and visit counts for nearby dot
+  if (nearestIdx >= 0 && nearestDist < REVEAL_DIST) {
+    const dot = state.pool[nearestIdx];
+    dot.dwellMs += dt;
+    if (!dot.isActive) {
+      dot.isActive = true;
+      dot.visitCount++;
+      dot.lastVisitTs = now;
+    }
+    if (!dot.revealed) {
+      dot.revealed = true;
+      revealLabel(dot, nearestIdx);
+    }
+  }
+
+  // Mark dots as no longer active if gaze moved away
+  for (let i=0;i<state.pool.length;i++) {
+    if (i !== nearestIdx) state.pool[i].isActive = false;
+  }
+
+  // Clear canvases
+  dotCtx.clearRect(0,0,W,H);
+  overlayCtx.clearRect(0,0,W,H);
+
+  const c = state.currentConcept;
+
+  if (c === 1) renderConcept1(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST);
+  else if (c === 2) renderConcept2(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now);
+  else if (c === 3) renderConcept3(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST);
+  else if (c === 4) renderConcept4(dt, W, H, gx, gy);
+  else if (c === 5) renderConcept5(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now);
+  else if (c === 6) renderConcept6(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now);
+  else if (c === 7) renderConcept7(dt, W, H, gx, gy);
+
+  conceptRAF = requestAnimationFrame(conceptLoop);
+}
+
+// ─── CONCEPT 1: FIXATION ───
+function renderConcept1(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST) {
+  for (let i=0;i<state.pool.length;i++) {
+    const dot = state.pool[i];
+    const isNear = (i === nearestIdx && nearestDist < REVEAL_DIST);
+    if (isNear && dot.dwellMs > 800) {
+      // Expanded, white, pulsing
+      if (!c1State[i]) c1State[i] = { expanding: true, r: 2, pulseStart: performance.now() };
+      const s = c1State[i];
+      s.r = Math.min(10, s.r + (10-s.r)*0.08);
+      const t = (performance.now() - s.pulseStart) / 1200;
+      const scale = 1 + 0.15 * Math.sin(t * Math.PI * 2);
+      dotCtx.save();
+      dotCtx.translate(dot.px, dot.py);
+      dotCtx.scale(scale, scale);
+      dotCtx.beginPath();
+      dotCtx.arc(0, 0, s.r, 0, Math.PI*2);
+      dotCtx.fillStyle = '#ffffff';
+      dotCtx.fill();
+      dotCtx.restore();
+    } else {
+      // Normal: 2px red square
+      if (c1State[i]) {
+        c1State[i].r = Math.max(2, c1State[i].r - (c1State[i].r-2)*0.04);
+        if (c1State[i].r <= 2.1) delete c1State[i];
+      }
+      const r = c1State[i] ? c1State[i].r : 2;
+      dotCtx.fillStyle = '#ff1500';
+      dotCtx.fillRect(dot.px - r/2, dot.py - r/2, r, r);
+    }
+  }
+}
+
+// ─── CONCEPT 2: SACCADE ───
+let c2PrevDot = -1;
+let c2PrevTime = 0;
+
+function renderConcept2(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now) {
+  // Draw all dots as 2px red squares
+  for (const dot of state.pool) {
+    dotCtx.fillStyle = 'rgba(255,21,0,0.4)';
+    dotCtx.fillRect(dot.px-1, dot.py-1, 2, 2);
+  }
+
+  // Detect saccade
+  if (nearestIdx >= 0 && nearestIdx !== c2PrevDot && c2PrevDot >= 0) {
+    const prev = state.pool[c2PrevDot];
+    const curr = state.pool[nearestIdx];
+    const dx = curr.px - prev.px;
+    const dy = curr.py - prev.py;
+    const dist = Math.sqrt(dx*dx+dy*dy) / W;
+    const timeDiff = now - c2PrevTime;
+    if (dist > 0.08 && timeDiff < 300) {
+      c2Lines.push({
+        x1: prev.px, y1: prev.py,
+        x2: curr.px, y2: curr.py,
+        alpha: 0.6,
+        born: now,
+      });
+    }
+    c2PrevTime = now;
+  }
+  if (nearestIdx >= 0) c2PrevDot = nearestIdx;
+
+  // Draw and decay lines
+  overlayCtx.lineWidth = 1;
+  const alive = [];
+  for (const line of c2Lines) {
+    line.alpha -= dt * 0.6 / 800;
+    if (line.alpha > 0) {
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(line.x1, line.y1);
+      overlayCtx.lineTo(line.x2, line.y2);
+      overlayCtx.strokeStyle = `rgba(255,21,0,${line.alpha})`;
+      overlayCtx.stroke();
+      alive.push(line);
+    }
+  }
+  c2Lines = alive;
+}
+
+// ─── CONCEPT 3: SCAN PATH ───
+function renderConcept3(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST) {
+  // Draw revealed dots as tiny squares
+  for (const dot of state.pool) {
+    if (dot.revealed) {
+      dotCtx.fillStyle = 'rgba(255,21,0,0.5)';
+      dotCtx.fillRect(dot.px-1.5, dot.py-1.5, 3, 3);
+    }
+  }
+
+  // Add current gaze to path
+  if (state.gazeOn) {
+    const last = c3Path[c3Path.length-1];
+    if (!last || Math.abs(last.x-gx)>2 || Math.abs(last.y-gy)>2) {
+      c3Path.push({ x: gx, y: gy });
+    }
+    if (c3Path.length > 40) c3Path.shift();
+  }
+
+  // Draw polyline
+  if (c3Path.length >= 2) {
+    for (let i=1;i<c3Path.length;i++) {
+      const frac = i / c3Path.length;
+      const alpha = 0.06 + 0.64 * frac;
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(c3Path[i-1].x, c3Path[i-1].y);
+      overlayCtx.lineTo(c3Path[i].x, c3Path[i].y);
+      overlayCtx.strokeStyle = `rgba(255,21,0,${alpha})`;
+      overlayCtx.lineWidth = 1;
+      overlayCtx.stroke();
+    }
+  }
+
+  // Update sublabel
+  document.getElementById('concept-sublabel').textContent = `PATH · ${c3Path.length} NODES`;
+}
+
+// ─── CONCEPT 4: GAZE POINT ───
+function renderConcept4(dt, W, H, gx, gy) {
+  // All dots hidden — no dot drawing
+  // Trail
+  c4Trail.push({ x: gx, y: gy, t: performance.now() });
+  if (c4Trail.length > 12) c4Trail.shift();
+
+  // Draw trail
+  for (let i=0;i<c4Trail.length-1;i++) {
+    const frac = i / (c4Trail.length-1);
+    const r = 1 + 7*frac;
+    const alpha = 0.05 + 0.45*frac;
+    overlayCtx.beginPath();
+    overlayCtx.arc(c4Trail[i].x, c4Trail[i].y, r, 0, Math.PI*2);
+    overlayCtx.fillStyle = `rgba(255,255,255,${alpha})`;
+    overlayCtx.fill();
+  }
+
+  // Main gaze point: 8px white circle
+  overlayCtx.beginPath();
+  overlayCtx.arc(gx, gy, 8, 0, Math.PI*2);
+  overlayCtx.fillStyle = '#ffffff';
+  overlayCtx.fill();
+
+  // Concentric rings
+  const ringDefs = [
+    { delay: 0, maxR: 20 },
+    { delay: 500, maxR: 30 },
+    { delay: 1000, maxR: 40 },
+  ];
+  const now = performance.now();
+  for (const ring of ringDefs) {
+    const t = ((now - ring.delay) % 1500) / 1500;
+    const r = 8 + (ring.maxR - 8) * t;
+    const alpha = 0.4 * (1 - t);
+    overlayCtx.beginPath();
+    overlayCtx.arc(gx, gy, r, 0, Math.PI*2);
+    overlayCtx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    overlayCtx.lineWidth = 1;
+    overlayCtx.stroke();
+  }
+}
+
+// ─── CONCEPT 5: FIRST FIXATION ───
+function renderConcept5(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now) {
+  // All dots invisible until fixation
+  for (let i=0;i<state.pool.length;i++) {
+    const dot = state.pool[i];
+    // Check if already in fixations list
+    const fix = c5Fixations.find(f=>f.idx===i);
+    if (!fix) continue;
+
+    if (fix.order === 0) {
+      // First fixation: 8px white
+      overlayCtx.beginPath();
+      overlayCtx.arc(dot.px, dot.py, 8, 0, Math.PI*2);
+      overlayCtx.fillStyle = '#ffffff';
+      overlayCtx.fill();
+    } else {
+      // Subsequent: 4px red
+      overlayCtx.beginPath();
+      overlayCtx.arc(dot.px, dot.py, 4, 0, Math.PI*2);
+      overlayCtx.fillStyle = '#ff1500';
+      overlayCtx.fill();
+    }
+  }
+
+  // Check for new fixations
+  if (nearestIdx >= 0 && nearestDist < REVEAL_DIST) {
+    const dot = state.pool[nearestIdx];
+    if (dot.dwellMs > 600 && !c5Fixations.find(f=>f.idx===nearestIdx)) {
+      const order = c5Fixations.length;
+      const ts = state.sessionMs;
+      c5Fixations.push({ idx: nearestIdx, order, ts });
+
+      // Create persistent label
+      const el = document.createElement('div');
+      el.className = 'dot-label';
+      if (order === 0) {
+        el.textContent = `FIRST FIXATION / T+${ts}ms`;
+      } else {
+        el.textContent = `FIXATION_${order+1} / T+${ts}ms`;
+      }
+      el.style.left = dot.px + 'px';
+      el.style.top = dot.py + 'px';
+      annLayer.appendChild(el);
+    }
+  }
+}
+
+// ─── CONCEPT 6: REVISIT ───
+let c6PrevVisit = {};
+
+function renderConcept6(dt, W, H, gx, gy, nearestIdx, nearestDist, REVEAL_DIST, now) {
+  // Draw dots
+  for (let i=0;i<state.pool.length;i++) {
+    const dot = state.pool[i];
+    if (!dot.revealed) continue;
+    if (dot.visitCount >= 3) {
+      // Pulse red
+      const scale = 1 + 0.15 * Math.sin(now / 600);
+      dotCtx.save();
+      dotCtx.translate(dot.px, dot.py);
+      dotCtx.scale(scale, scale);
+      dotCtx.beginPath();
+      dotCtx.arc(0, 0, 4, 0, Math.PI*2);
+      dotCtx.fillStyle = '#ff1500';
+      dotCtx.fill();
+      dotCtx.restore();
+    } else {
+      dotCtx.fillStyle = 'rgba(255,21,0,0.4)';
+      dotCtx.fillRect(dot.px-1.5, dot.py-1.5, 3, 3);
+    }
+  }
+
+  // Detect second visit
+  if (nearestIdx >= 0 && nearestDist < REVEAL_DIST) {
+    const dot = state.pool[nearestIdx];
+    if (dot.visitCount >= 2 && !c6PrevVisit[nearestIdx]) {
+      c6PrevVisit[nearestIdx] = true;
+      c6Revisits++;
+      document.getElementById('concept-sublabel').textContent = `REVISITS · ${c6Revisits}`;
+
+      // Find a "from" dot — last visited
+      const from = c6Arcs.length > 0 ? c6Arcs[c6Arcs.length-1] : null;
+      const fromX = from ? from.toX : gx - 80;
+      const fromY = from ? from.toY : gy;
+      c6Arcs.push({
+        fromX, fromY,
+        toX: dot.px, toY: dot.py,
+        progress: 0,
+        born: now,
+        totalLen: 1,
+      });
+    }
+  }
+
+  // Draw arcs
+  const alive = [];
+  for (const arc of c6Arcs) {
+    arc.progress = Math.min(1, arc.progress + dt/400);
+    const cpX = (arc.fromX + arc.toX)/2;
+    const cpY = Math.min(arc.fromY, arc.toY) - 60;
+
+    overlayCtx.save();
+    overlayCtx.strokeStyle = 'rgba(255,21,0,0.5)';
+    overlayCtx.lineWidth = 1;
+    overlayCtx.setLineDash([]);
+
+    // Partial bezier via manual stepping
+    const steps = Math.floor(arc.progress * 30);
+    if (steps > 1) {
+      overlayCtx.beginPath();
+      for (let s=0;s<=steps;s++) {
+        const t = s/30;
+        const x = (1-t)*(1-t)*arc.fromX + 2*(1-t)*t*cpX + t*t*arc.toX;
+        const y = (1-t)*(1-t)*arc.fromY + 2*(1-t)*t*cpY + t*t*arc.toY;
+        if (s===0) overlayCtx.moveTo(x,y);
+        else overlayCtx.lineTo(x,y);
+      }
+      overlayCtx.stroke();
+    }
+    overlayCtx.restore();
+
+    if (arc.progress < 1 || now - arc.born < 3000) alive.push(arc);
+  }
+  c6Arcs = alive;
+}
+
+// ─── CONCEPT 7: HEATMAP ───
+function renderConcept7(dt, W, H, gx, gy) {
+  // Decay
+  for (let i=0;i<c7Heat.length;i++) c7Heat[i] *= 0.992;
+
+  // Add gaussian at gaze
+  const hgx = Math.floor(state.sGX * HEAT_W);
+  const hgy = Math.floor(state.sGY * HEAT_H);
+  const radius = 4;
+  for (let dy=-radius;dy<=radius;dy++) {
+    for (let dx=-radius;dx<=radius;dx++) {
+      const hx = hgx+dx, hy = hgy+dy;
+      if (hx<0||hx>=HEAT_W||hy<0||hy>=HEAT_H) continue;
+      const dist2 = dx*dx+dy*dy;
+      const weight = Math.exp(-dist2/(radius*radius*0.5));
+      c7Heat[hy*HEAT_W+hx] = Math.min(1, c7Heat[hy*HEAT_W+hx]+weight*0.05);
+    }
+  }
+
+  // Render heatmap on overlayCanvas
+  const cellW = W / HEAT_W;
+  const cellH = H / HEAT_H;
+  for (let y=0;y<HEAT_H;y++) {
+    for (let x=0;x<HEAT_W;x++) {
+      const v = c7Heat[y*HEAT_W+x];
+      if (v < 0.01) continue;
+      let color;
+      if (v < 0.15) color = `rgba(255,21,0,${0.06 * (v/0.15)})`;
+      else if (v < 0.5) color = `rgba(255,60,0,${0.06 + 0.16*(v-0.15)/0.35})`;
+      else color = `rgba(255,21,0,${0.22 + 0.28*(v-0.5)/0.5})`;
+      overlayCtx.fillStyle = color;
+      overlayCtx.fillRect(x*cellW, y*cellH, cellW+1, cellH+1);
+    }
+  }
+
+  // Dots on top
+  for (const dot of state.pool) {
+    if (dot.revealed) {
+      dotCtx.fillStyle = 'rgba(255,21,0,0.25)';
+      dotCtx.fillRect(dot.px-1, dot.py-1, 2, 2);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// FRAME CAPTURE
+// ─────────────────────────────────────────────
+const offCanvas = document.createElement('canvas');
+offCanvas.width = 1280; offCanvas.height = 720;
+const offCtx = offCanvas.getContext('2d');
+
+function captureFrame() {
+  offCtx.clearRect(0,0,1280,720);
+  offCtx.drawImage(videoEl, 0, 0, 1280, 720);
+  offCtx.drawImage(overlayCanvas, 0, 0, 1280, 720);
+  offCtx.drawImage(dotCanvas, 0, 0, 1280, 720);
+
+  const dataUrl = offCanvas.toDataURL('image/png', 0.72);
+  state.frameBuffer.push(dataUrl);
+  wsSend({ type: 'frame', session: state.sessionId, data: dataUrl });
+}
+
+// ─────────────────────────────────────────────
+// END SESSION
+// ─────────────────────────────────────────────
+function endSession() {
+  clearInterval(progressInterval);
+  clearInterval(frameCapInterval);
+  clearInterval(sobelInterval);
+  cancelAnimationFrame(conceptRAF);
+  clearTimeout(sessionTimeout);
+
+  const duration = Math.floor(state.sessionMs / 1000);
+
+  // Build label counts
+  const labelCounts = {};
+  for (const l of state.labelsRevealed) labelCounts[l] = (labelCounts[l]||0)+1;
+  const labels = Object.keys(labelCounts).map(k=>`${k} ×${labelCounts[k]}`);
+
+  wsSend({
+    type: 'end',
+    session: state.sessionId,
+    user_name: state.userName,
+    concept: state.currentConcept,
+    duration,
+    labels: state.labelsRevealed,
+    analysis: state.analysisLog,
+  });
+
+  // Cleanup UI
+  document.body.style.cursor = '';
+  gazeDot.style.display = 'none';
+  annLayer.innerHTML = '';
+  dotCtx.clearRect(0,0,dotCanvas.width,dotCanvas.height);
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+
+  showPhase('phase-menu');
+  document.getElementById('menu-user').textContent = state.userName;
+}
+
+document.getElementById('concept-back').addEventListener('click', () => {
+  endSession();
+});
+document.getElementById('concept-end-btn').addEventListener('click', () => {
+  endSession();
+});
+
+// ─────────────────────────────────────────────
+// GALLERY
+// ─────────────────────────────────────────────
+let galleryCurrentConcept = null;
+
+async function openGallery(conceptNum) {
+  galleryCurrentConcept = conceptNum;
+
+  // Update title
+  if (conceptNum) {
+    document.getElementById('gallery-title').textContent =
+      `CONCEPT ${String(conceptNum).padStart(2,'0')} — ${CONCEPT_NAMES[conceptNum]}`;
+  } else {
+    document.getElementById('gallery-title').textContent = 'ALL SESSIONS';
+  }
+
+  await refreshGallery();
+  showPhase('phase-gallery');
+  document.getElementById('phase-gallery').style.transform = 'translateY(0)';
+}
+
+async function refreshGallery() {
+  const url = galleryCurrentConcept
+    ? `/api/sessions?concept=${galleryCurrentConcept}`
+    : '/api/sessions';
+
+  let sessions = [];
+  try {
+    const res = await fetch(url);
+    sessions = await res.json();
+  } catch(e) {}
+
+  document.getElementById('gallery-count').textContent =
+    `${sessions.length} SESSION${sessions.length !== 1 ? 'S' : ''}`;
+
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+
+  if (sessions.length === 0) {
+    const empty = document.createElement('div');
+    empty.id = 'gallery-empty';
+    empty.textContent = 'NO SESSIONS RECORDED YET';
+    grid.appendChild(empty);
+    return;
+  }
+
+  for (const s of sessions) {
+    const card = document.createElement('div');
+    card.className = 'gallery-card';
+
+    const video = document.createElement('video');
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    if (s.video_path) {
+      video.src = s.video_path;
+    }
+    video.addEventListener('mouseenter', () => { try { video.play(); } catch(e){} });
+    video.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+
+    const info = document.createElement('div');
+    info.className = 'gallery-card-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'gallery-card-name';
+    nameEl.textContent = s.user_name || '—';
+
+    const durEl = document.createElement('div');
+    durEl.className = 'gallery-card-duration';
+    const d = s.duration_seconds || 0;
+    durEl.textContent = `${String(Math.floor(d/60)).padStart(2,'0')}:${String(d%60).padStart(2,'0')}`;
+
+    const lblEl = document.createElement('div');
+    lblEl.className = 'gallery-card-labels';
+    const labelArr = Array.isArray(s.labels_revealed) ? s.labels_revealed : [];
+    const lc = {};
+    for (const l of labelArr) lc[l] = (lc[l]||0)+1;
+    lblEl.textContent = Object.entries(lc).map(([k,v])=>`${k} ×${v}`).join('\n');
+
+    info.appendChild(nameEl);
+    info.appendChild(durEl);
+    info.appendChild(lblEl);
+    card.appendChild(video);
+    card.appendChild(info);
+    grid.appendChild(card);
+  }
+}
+
+document.getElementById('gallery-back-btn').addEventListener('click', () => {
+  document.getElementById('phase-gallery').style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    showPhase('phase-menu');
+  }, 400);
+});
+
+document.getElementById('gallery-all-btn').addEventListener('click', () => {
+  openGallery(null);
+});
+
+// ─────────────────────────────────────────────
+// RESIZE HANDLER
+// ─────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  if (activePhase === 'phase-concept') {
+    dotCanvas.width = overlayCanvas.width = window.innerWidth;
+    dotCanvas.height = overlayCanvas.height = window.innerHeight;
+    for (const dot of state.pool) {
+      dot.px = dot.nx * window.innerWidth;
+      dot.py = dot.ny * window.innerHeight;
+      if (dot.labelEl) {
+        dot.labelEl.style.left = dot.px + 'px';
+        dot.labelEl.style.top = dot.py + 'px';
+      }
+    }
+  }
+});
+
+</script>
+</body>
+</html>
