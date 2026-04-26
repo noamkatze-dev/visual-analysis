@@ -610,11 +610,19 @@ const ANA_INTERVAL = 600, REVEAL_FRAC = 0.030;
 const GAZE_LERP = 0.08;
 const CAL_PTS = [
   [0.1,0.1],[0.5,0.1],[0.9,0.1],
-  [0.1,0.5],[0.5,0.5],[0.9,0.5],
+  [0.9,0.5],[0.5,0.5],[0.1,0.5],
   [0.1,0.9],[0.5,0.9],[0.9,0.9],
 ];
 const CAL_FILL_RATE = 0.65, CAL_DRAIN_RATE = 0.20, CAL_VAR_THRESH = 0.003;
 const HEAT_W = 60, HEAT_H = 34;
+const BUF_MAX = 30;
+
+// ── משתנים גלובליים לכיול ──
+let rawGX = 0.5, rawGY = 0.5;
+let sGX = 0.5, sGY = 0.5;
+let curOffX = 0.5, curOffY = 0.5;
+const offXBuf = [], offYBuf = [];
+let calMap = null;
 
 const state = {
   userName:'', calMap:null,
@@ -684,7 +692,21 @@ nameArrow.addEventListener('click',submitName);
 nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitName();});
 nameInput.addEventListener('animationend',()=>nameInput.classList.remove('shake'));
 
-function stability(samples){
+// ── חישוב יציבות מתוקן – משתמש ב־offXBuf/offYBuf הגלובליים ──
+function stability(){
+  const N = Math.min(offXBuf.length, 20);
+  if(N < 8) return 0;
+  const xs = offXBuf.slice(-N);
+  const ys = offYBuf.slice(-N);
+  const mx = xs.reduce((a,b)=>a+b,0)/N;
+  const my = ys.reduce((a,b)=>a+b,0)/N;
+  const vx = xs.reduce((a,b)=>a+(b-mx)**2,0)/N;
+  const vy = ys.reduce((a,b)=>a+(b-my)**2,0)/N;
+  return Math.max(0, Math.min(1, 1-(vx+vy)/0.003));
+}
+
+// ── stability הישנה לשימוש פנימי ב-awaitDot ──
+function stabilityLocal(samples){
   if(samples.length<4) return 0;
   const n=samples.length;
   const mx=samples.reduce((s,p)=>s+p[0],0)/n;
@@ -744,8 +766,7 @@ async function awaitDot(ctx,W,H,nx,ny,getLandmarks){
         const p=lm[1];
         recent.push([p.x,p.y]);
         if(recent.length>20) recent.shift();
-        const v=stability(recent);
-        // ── FIXED: was samples.length, now recent.length ──
+        const v=stabilityLocal(recent);
         if(v<CAL_VAR_THRESH||recent.length<8){
           fill=Math.min(1,fill+CAL_FILL_RATE);
           captured.push([p.x,p.y]);
@@ -781,20 +802,54 @@ async function runCalibration(getLandmarks){
     await new Promise(r=>setTimeout(r,180));
   }
   state.calMap=fitAffine(screenPts,headPts);
+  calMap=state.calMap; // סנכרון עם משתנה הגלובלי
   ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
 }
 
+// ── head tracking מתוקן עם curOffX/Y ו-offXBuf/offYBuf ──
 function startHeadTracking(getLandmarks){
   function loop(){
     const lm=getLandmarks();
-    if(lm&&state.calMap){
-      const p=lm[1], {cx,cy}=state.calMap;
-      state.rawGX=Math.max(0,Math.min(1,cx[0]*p.x+cx[1]*p.y+cx[2]));
-      state.rawGY=Math.max(0,Math.min(1,cy[0]*p.x+cy[1]*p.y+cy[2]));
+    if(lm){
+      // חישוב מיקום הראש מנקודות מפתח
+      const nose=lm[1], brow=lm[168], chin=lm[152];
+      const lChk=lm[234], rChk=lm[454];
+
+      const hxRaw=(nose.x*4+brow.x+chin.x+lChk.x+rChk.x)/8;
+      const hyRaw=(nose.y*4+brow.y+chin.y+lChk.y+rChk.y)/8;
+
+      const headX=1-hxRaw;
+      const headY=hyRaw;
+
+      // עדכון curOffX/Y וה-buffers
+      curOffX=headX;
+      curOffY=headY;
+
+      offXBuf.push(headX);
+      if(offXBuf.length>BUF_MAX) offXBuf.shift();
+
+      offYBuf.push(headY);
+      if(offYBuf.length>BUF_MAX) offYBuf.shift();
+
+      // החלת הכיול
+      if(state.calMap){
+        const{cx,cy}=state.calMap;
+        state.rawGX=Math.max(0,Math.min(1,cx[0]*headX+cx[1]*headY+cx[2]));
+        state.rawGY=Math.max(0,Math.min(1,cy[0]*headX+cy[1]*headY+cy[2]));
+      } else {
+        state.rawGX=headX;
+        state.rawGY=headY;
+      }
+      rawGX=state.rawGX;
+      rawGY=state.rawGY;
       state.gazeOn=true;
-    } else { state.gazeOn=false; }
+    } else {
+      state.gazeOn=false;
+    }
     state.sGX+=(state.rawGX-state.sGX)*GAZE_LERP;
     state.sGY+=(state.rawGY-state.sGY)*GAZE_LERP;
+    sGX=state.sGX;
+    sGY=state.sGY;
     requestAnimationFrame(loop);
   }
   loop();
@@ -804,11 +859,22 @@ function enablePointerFallback(){
   document.addEventListener('mousemove',e=>{
     state.rawGX=e.clientX/window.innerWidth;
     state.rawGY=e.clientY/window.innerHeight;
+    rawGX=state.rawGX;
+    rawGY=state.rawGY;
+    // עדכון buffers גם במצב fallback
+    curOffX=state.rawGX;
+    curOffY=state.rawGY;
+    offXBuf.push(curOffX);
+    if(offXBuf.length>BUF_MAX) offXBuf.shift();
+    offYBuf.push(curOffY);
+    if(offYBuf.length>BUF_MAX) offYBuf.shift();
     state.gazeOn=true;
   });
   function loop(){
     state.sGX+=(state.rawGX-state.sGX)*GAZE_LERP;
     state.sGY+=(state.rawGY-state.sGY)*GAZE_LERP;
+    sGX=state.sGX;
+    sGY=state.sGY;
     requestAnimationFrame(loop);
   }
   loop();
@@ -853,6 +919,7 @@ async function boot(){
     console.warn('fallback:',err);
     enablePointerFallback();
     state.calMap={cx:[1,0,0],cy:[0,1,0]};
+    calMap=state.calMap;
     const c=calCanvas.getContext('2d');
     for(const[nx,ny]of CAL_PTS){
       c.fillStyle='#ffffff'; c.fillRect(0,0,calCanvas.width,calCanvas.height);
