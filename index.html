@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visual Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #000;
+  background: #ffffff;
   overflow: hidden;
   width: 100vw;
   height: 100vh;
@@ -54,16 +55,13 @@ body {
 
 .ann {
   position: absolute;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Heebo', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #ff1500;
+  color: #e01a00;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  text-shadow:
-    0 0 6px rgba(0,0,0,0.95),
-    0 0 2px rgba(0,0,0,0.95),
-    0 0 10px rgba(255, 21, 0, 0.55);
+  text-shadow: 0 0 8px rgba(255,255,255,0.9);
   pointer-events: none;
   opacity: 0;
 }
@@ -73,8 +71,7 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 14px rgba(255,255,255,0.35), 0 0 4px rgba(255,255,255,0.6);
+  border: 2px solid rgba(224,26,0,0.7);
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 50;
@@ -86,9 +83,9 @@ body {
   right: 8px;
   width: 96px;
   height: 72px;
-  opacity: 0.07;
+  opacity: 0.04;
   transform: scaleX(-1);
-  border: 1px solid #0f0f0f;
+  border: 1px solid #e8e8e8;
   z-index: 50;
 }
 
@@ -97,10 +94,11 @@ body {
   bottom: 11px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Courier New', monospace;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: #252525;
+  font-family: 'Heebo', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  color: #bbbbbb;
   pointer-events: none;
   transition: opacity 2s ease;
   white-space: nowrap;
@@ -111,7 +109,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #000;
+  background: #ffffff;
 }
 
 #calCanvas {
@@ -127,9 +125,9 @@ body {
   left: 50%;
   transform: translateX(-50%);
   background: transparent;
-  border: 1px solid #555;
-  color: #aaaaaa;
-  font-family: 'Courier New', monospace;
+  border: 1px solid #dddddd;
+  color: #999999;
+  font-family: 'Heebo', sans-serif;
   font-size: 12px;
   letter-spacing: 0.25em;
   padding: 14px 36px;
@@ -140,8 +138,13 @@ body {
 }
 
 #calStartBtn:hover {
-  border-color: #aaa;
-  color: #eee;
+  border-color: #e01a00;
+  color: #e01a00;
+}
+
+#nameInput:focus {
+  border-bottom-color: #e01a00 !important;
+  outline: none;
 }
 </style>
 </head>
@@ -281,7 +284,7 @@ function drawDots(activePts) {
   if (!W || !H) return;
   dotCtx.clearRect(0, 0, W, H);
 
-  dotCtx.fillStyle = 'rgba(255, 21, 0, 0.82)';
+  dotCtx.fillStyle = 'rgba(224, 26, 0, 0.75)';
   dotCtx.beginPath();
   for (const p of activePts) {
     const sx = p.nx * W;
@@ -542,41 +545,41 @@ function resizeCal() {
 
 function drawIntro() {
   const W = calCanvas.width, H = calCanvas.height;
-  calCtx.fillStyle = '#000';
+  calCtx.fillStyle = '#ffffff';
   calCtx.fillRect(0, 0, W, H);
   calCtx.textAlign = 'center';
 
-  calCtx.fillStyle = '#cccccc';
-  calCtx.font = 'bold 22px Courier New';
+  calCtx.fillStyle = '#111111';
+  calCtx.font = 'bold 22px Heebo';
   calCtx.fillText('HEAD TRACKING CALIBRATION', W / 2, H / 2 - 52);
 
-  calCtx.strokeStyle = '#2a2a2a';
+  calCtx.strokeStyle = '#eeeeee';
   calCtx.lineWidth = 1;
   calCtx.beginPath();
   calCtx.moveTo(W / 2 - 220, H / 2 - 36);
   calCtx.lineTo(W / 2 + 220, H / 2 - 36);
   calCtx.stroke();
 
-  calCtx.fillStyle = '#888888';
-  calCtx.font = '14px Courier New';
+  calCtx.fillStyle = '#999999';
+  calCtx.font = '14px Heebo';
   calCtx.fillText('Point your head at each dot and hold still', W / 2, H / 2 - 14);
   calCtx.fillText('until the ring fills completely', W / 2, H / 2 + 8);
 
-  calCtx.fillStyle = '#484848';
-  calCtx.font = '12px Courier New';
+  calCtx.fillStyle = '#cccccc';
+  calCtx.font = '12px Heebo';
   calCtx.fillText('Move only your head — keep your body still', W / 2, H / 2 + 34);
 }
 
 function drawDone() {
   const W = calCanvas.width, H = calCanvas.height;
-  calCtx.fillStyle = '#000';
+  calCtx.fillStyle = '#ffffff';
   calCtx.fillRect(0, 0, W, H);
   calCtx.textAlign = 'center';
-  calCtx.fillStyle = '#bbbbbb';
-  calCtx.font = 'bold 24px Courier New';
+  calCtx.fillStyle = '#111111';
+  calCtx.font = 'bold 24px Heebo';
   calCtx.fillText('SYNCHRONIZED', W / 2, H / 2 - 8);
-  calCtx.fillStyle = '#444444';
-  calCtx.font = '13px Courier New';
+  calCtx.fillStyle = '#999999';
+  calCtx.font = '13px Heebo';
   calCtx.fillText('Calibration complete', W / 2, H / 2 + 18);
 }
 
@@ -597,29 +600,29 @@ function awaitDot(px, py, index) {
       if (stab > 0.45) samples.push({ ox: curOffX, oy: curOffY });
 
       const W = calCanvas.width, H = calCanvas.height;
-      calCtx.fillStyle = '#000';
+      calCtx.fillStyle = '#ffffff';
       calCtx.fillRect(0, 0, W, H);
 
       calCtx.textAlign = 'right';
-      calCtx.fillStyle = '#777777';
-      calCtx.font = '14px Courier New';
+      calCtx.fillStyle = '#cccccc';
+      calCtx.font = '14px Heebo';
       calCtx.fillText(`${index + 1}  /  ${CAL_PTS.length}`, W - 28, 36);
 
       calCtx.textAlign = 'center';
-      calCtx.fillStyle = '#666666';
-      calCtx.font = '13px Courier New';
+      calCtx.fillStyle = '#cccccc';
+      calCtx.font = '13px Heebo';
       calCtx.fillText('POINT HEAD AT DOT · HOLD STILL', W / 2, H - 26);
 
       calCtx.beginPath();
       calCtx.arc(px, py, 22, 0, Math.PI * 2);
-      calCtx.strokeStyle = '#1a1a1a';
+      calCtx.strokeStyle = '#eeeeee';
       calCtx.lineWidth = 1.5;
       calCtx.stroke();
 
       if (progress > 0) {
         calCtx.beginPath();
         calCtx.arc(px, py, 22, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
-        calCtx.strokeStyle = `rgba(255,255,255,${0.35 + stab * 0.65})`;
+        calCtx.strokeStyle = 'rgba(224,26,0,0.85)';
         calCtx.lineWidth = 2;
         calCtx.stroke();
       }
@@ -627,13 +630,13 @@ function awaitDot(px, py, index) {
       const r = 3.5 + stab * 2.5;
       calCtx.beginPath();
       calCtx.arc(px, py, r, 0, Math.PI * 2);
-      calCtx.fillStyle = `rgba(255,255,255,${0.2 + stab * 0.8})`;
+      calCtx.fillStyle = `rgba(224,26,0,${0.2 + stab * 0.8})`;
       calCtx.fill();
 
       if (progress >= 1) {
         calCtx.beginPath();
         calCtx.arc(px, py, 22, 0, Math.PI * 2);
-        calCtx.strokeStyle = 'rgba(255,255,255,0.9)';
+        calCtx.strokeStyle = 'rgba(224,26,0,0.85)';
         calCtx.lineWidth = 2;
         calCtx.stroke();
         const n  = samples.length || 1;
@@ -786,17 +789,17 @@ async function boot() {
    MULTI-USER GAZE GALLERY
    ══════════════════════════════════════════════════════════════════════ */
 
-let currentUser      = '';
-let ws               = null;
-let latestData       = {};
-let galleryOpen      = false;
+let currentUser  = '';
+let ws           = null;
+let latestData   = {};
+let galleryOpen  = false;
 
 /* ── name screen ── */
 async function showNameScreen() {
   return new Promise(resolve => {
-    const screen   = document.getElementById('nameScreen');
-    const input    = document.getElementById('nameInput');
-    const btn      = document.getElementById('nameContinue');
+    const screen = document.getElementById('nameScreen');
+    const input  = document.getElementById('nameInput');
+    const btn    = document.getElementById('nameContinue');
     screen.style.display = 'flex';
     input.focus();
 
@@ -862,12 +865,12 @@ function updateGhostsFromData(data) {
     const circle = document.createElement('div');
     circle.style.cssText =
       'width:14px;height:14px;border-radius:50%;' +
-      'border:1.5px solid rgba(255,255,255,0.25);flex-shrink:0;';
+      'border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
 
     const lbl = document.createElement('div');
     lbl.style.cssText =
-      'font-family:"Courier New",monospace;font-size:8px;' +
-      'color:rgba(255,255,255,0.4);margin-top:3px;white-space:nowrap;';
+      'font-family:"Heebo",sans-serif;font-size:8px;font-weight:400;' +
+      'color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
     lbl.textContent = name;
 
     ghost.appendChild(circle);
@@ -892,7 +895,8 @@ function renderGallery(data) {
   const entries = Object.entries(data);
   if (entries.length === 0) {
     galleryList.innerHTML =
-      '<div style="color:#2a2a2a;font-size:12px;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
+      '<div style="color:#cccccc;font-family:\'Heebo\',sans-serif;font-size:12px;' +
+      'font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
     return;
   }
   const now = Date.now();
@@ -901,15 +905,27 @@ function renderGallery(data) {
     const isMe  = name === currentUser;
 
     const row = document.createElement('div');
-    row.style.cssText = `margin-bottom:20px;opacity:${isOld ? 0.3 : 1};`;
+    row.style.cssText =
+      `padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld ? 0.25 : 1};`;
 
     const nameDiv = document.createElement('div');
-    nameDiv.style.cssText = 'color:#aaa;font-size:13px;letter-spacing:0.12em;';
-    nameDiv.textContent   = name + (isMe ? '  (YOU)' : '');
+    nameDiv.style.cssText =
+      'color:#111111;font-family:\'Heebo\',sans-serif;font-size:13px;' +
+      'font-weight:500;letter-spacing:0.05em;';
+    const nameText = document.createTextNode(name);
+    nameDiv.appendChild(nameText);
+    if (isMe) {
+      const youSpan = document.createElement('span');
+      youSpan.style.cssText = 'color:#e01a00;font-weight:400;';
+      youSpan.textContent = '  (YOU)';
+      nameDiv.appendChild(youSpan);
+    }
 
     const detDiv = document.createElement('div');
-    detDiv.style.cssText = 'color:#444;font-size:10px;letter-spacing:0.1em;margin-top:6px;';
-    detDiv.textContent   =
+    detDiv.style.cssText =
+      'color:#bbbbbb;font-family:\'Heebo\',sans-serif;font-size:10px;' +
+      'font-weight:300;letter-spacing:0.08em;margin-top:6px;';
+    detDiv.textContent =
       `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}  ·  ${timeAgo(entry.ts)}`;
 
     row.appendChild(nameDiv);
@@ -931,8 +947,8 @@ galleryClose.addEventListener('click', () => {
   ghostContainer.style.display = 'block';
 });
 
-galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.opacity = '1'; });
-galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.opacity = '0.6'; });
+galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.color = '#e01a00'; });
+galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.color = '#cccccc'; });
 
 /* ── app entry point ── */
 async function startApp() {
@@ -947,60 +963,67 @@ startApp();
 
 <!-- ── name registration screen ── -->
 <div id="nameScreen" style="
-  display:none;position:fixed;inset:0;z-index:2000;background:#000;
+  display:none;position:fixed;inset:0;z-index:2000;background:#ffffff;
   flex-direction:column;align-items:center;justify-content:center;
 ">
-  <div style="color:#1e1e1e;font-family:'Courier New',monospace;font-size:9px;
-              letter-spacing:0.4em;margin-bottom:52px;">
-    VISUAL ANALYSIS SYSTEM
-  </div>
-  <label for="nameInput" style="display:block;color:#555;font-family:'Courier New',monospace;
-                                font-size:11px;letter-spacing:0.28em;margin-bottom:16px;">
-    ENTER YOUR NAME
-  </label>
+  <div style="
+    color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;
+    letter-spacing:0.5em;margin-bottom:64px;
+  ">VISUAL ANALYSIS SYSTEM</div>
+
+  <label for="nameInput" style="
+    display:block;color:#999999;font-family:'Heebo',sans-serif;
+    font-size:11px;font-weight:400;letter-spacing:0.28em;margin-bottom:16px;
+  ">ENTER YOUR NAME</label>
+
   <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="
-    background:#000;border:none;border-bottom:1px solid #2a2a2a;
-    color:#ccc;font-family:'Courier New',monospace;font-size:16px;
-    letter-spacing:0.15em;padding:8px 6px;outline:none;
-    text-align:center;width:270px;caret-color:#ff1500;
+    background:#ffffff;border:none;border-bottom:1px solid #e8e8e8;
+    color:#111111;font-family:'Heebo',sans-serif;font-size:16px;
+    letter-spacing:0.1em;padding:8px 6px;outline:none;
+    text-align:center;width:270px;caret-color:#e01a00;
+    transition:border-bottom-color 0.2s;
   "/>
+
   <button id="nameContinue" style="
-    margin-top:38px;background:transparent;border:1px solid #2a2a2a;
-    color:#777;font-family:'Courier New',monospace;font-size:11px;
+    margin-top:38px;background:transparent;border:1px solid #e8e8e8;
+    color:#999999;font-family:'Heebo',sans-serif;font-size:11px;
     letter-spacing:0.28em;padding:13px 40px;cursor:pointer;
+    transition:border-color 0.2s,color 0.2s;
   "
-  onmouseover="this.style.borderColor='#666';this.style.color='#bbb';"
-  onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#777';"
+  onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+  onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#999999';"
   >CONTINUE</button>
 </div>
 
 <!-- ── gallery overlay ── -->
 <div id="galleryOverlay" style="
-  display:none;position:fixed;inset:0;z-index:1500;background:#000;
+  display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;
   flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;
 ">
-  <div style="width:100%;max-width:500px;font-family:'Courier New',monospace;">
-    <div style="color:#1a1a1a;font-size:9px;letter-spacing:0.45em;margin-bottom:8px;">
-      GAZE SESSIONS
-    </div>
-    <div style="border-bottom:1px solid #0f0f0f;margin-bottom:38px;"></div>
+  <div style="width:100%;max-width:560px;font-family:'Heebo',sans-serif;">
+    <div style="
+      color:#dddddd;font-size:9px;font-weight:300;
+      letter-spacing:0.5em;margin-bottom:8px;
+    ">GAZE SESSIONS</div>
+    <div style="border-bottom:1px solid #f0f0f0;margin-bottom:38px;"></div>
     <div id="galleryList"></div>
     <button id="galleryClose" style="
-      margin-top:52px;background:transparent;border:1px solid #1e1e1e;
-      color:#444;font-family:'Courier New',monospace;font-size:11px;
+      margin-top:52px;background:transparent;border:1px solid #e8e8e8;
+      color:#bbbbbb;font-family:'Heebo',sans-serif;font-size:11px;
       letter-spacing:0.25em;padding:12px 34px;cursor:pointer;
+      transition:border-color 0.2s,color 0.2s;
     "
-    onmouseover="this.style.borderColor='#555';this.style.color='#aaa';"
-    onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#444';"
+    onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+    onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#bbbbbb';"
     >[ CLOSE ]</button>
   </div>
 </div>
 
 <!-- ── gallery trigger ── -->
 <div id="galleryBtn" style="
-  position:fixed;bottom:14px;left:14px;font-family:'Courier New',monospace;
-  font-size:10px;letter-spacing:0.2em;color:#2a2a2a;cursor:pointer;
-  z-index:60;opacity:0.6;transition:opacity 0.2s;user-select:none;
+  position:fixed;bottom:14px;left:14px;font-family:'Heebo',sans-serif;
+  font-size:10px;font-weight:300;letter-spacing:0.15em;color:#cccccc;
+  cursor:pointer;z-index:60;transition:color 0.2s;user-select:none;
 ">[ GALLERY ]</div>
 
 <!-- ── ghost cursor layer ── -->
