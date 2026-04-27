@@ -229,14 +229,26 @@ function buildPool() {
       el.className = 'ann';
       el.style.opacity = '0';
       annLayer.appendChild(el);
-      pool.push({
-        el, x: nx, y: ny,
-        visible: false,
-        state: 'UNCLASSIFIED',
-        dwellTime: 0, totalDwellTime: 0, revisitCount: 0, lastVisitTs: 0,
-        timeBetweenVisits: 0, isNear: false, visitDwells: [], _visitStart: 0,
-        _lastClassifyTs: 0
-      });
+pool.push({
+  el, x: nx, y: ny,
+  visible: false,
+  state: 'UNCLASSIFIED',
+
+  dwellTime: 0,
+  totalDwellTime: 0,
+  revisitCount: 0,
+  lastVisitTs: 0,
+  timeBetweenVisits: 0,
+  isNear: false,
+  visitDwells: [],
+  _visitStart: 0,
+  _lastClassifyTs: 0,
+
+  // NEW
+  classificationBuffer: [],
+  classificationStableTime: 0,
+  stableFor: 0
+});
     }
   }
 }
