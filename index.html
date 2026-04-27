@@ -64,6 +64,7 @@ body {
   text-shadow: 0 0 8px rgba(255,255,255,0.9);
   pointer-events: none;
   opacity: 0;
+  transition: opacity 0.4s ease, filter 0.4s ease;
 }
 
 #gazeDot {
@@ -105,7 +106,6 @@ body {
   z-index: 50;
 }
 
-/* ── calibration overlay ── */
 #calOverlay {
   position: fixed;
   inset: 0;
@@ -229,26 +229,26 @@ function buildPool() {
       el.className = 'ann';
       el.style.opacity = '0';
       annLayer.appendChild(el);
-pool.push({
-  el, x: nx, y: ny,
-  visible: false,
-  state: 'UNCLASSIFIED',
+      pool.push({
+        el, x: nx, y: ny,
+        visible: false,
+        state: 'UNCLASSIFIED',
 
-  dwellTime: 0,
-  totalDwellTime: 0,
-  revisitCount: 0,
-  lastVisitTs: 0,
-  timeBetweenVisits: 0,
-  isNear: false,
-  visitDwells: [],
-  _visitStart: 0,
-  _lastClassifyTs: 0,
+        dwellTime: 0,
+        totalDwellTime: 0,
+        revisitCount: 0,
+        lastVisitTs: 0,
+        timeBetweenVisits: 0,
+        isNear: false,
+        visitDwells: [],
+        _visitStart: 0,
+        _lastClassifyTs: 0,
 
-  // NEW
-  classificationBuffer: [],
-  classificationStableTime: 0,
-  stableFor: 0
-});
+        // NEW
+        classificationBuffer: [],
+        classificationStableTime: 0,
+        stableFor: 0
+      });
     }
   }
 }
@@ -307,16 +307,15 @@ function classifyDot(a, ts, scanSpeed, microMovement) {
   const avgDwell = a.visitDwells.length
     ? a.visitDwells.reduce((s, v) => s + v, 0) / a.visitDwells.length : a.dwellTime;
 
-  if (detectSearchPattern() && scanSpeed >= 2)                               return 'SEARCH PATTERN';
-  if (a.dwellTime > 1200 && stab > 0.7)                                     return 'ATTENTION LOCKED';
-  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime > 800)          return 'REPEATED GLANCE';
-  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime < 400)          return 'IGNORED AGAIN';
-  if (a.revisitCount >= 2 && avgDwell < 400 && scanSpeed > 3)               return 'FOCUS UNSTABLE';
+  if (detectSearchPattern() && scanSpeed >= 2)                                         return 'SEARCH PATTERN';
+  if (a.dwellTime > 1200 && stab > 0.7 && a.stableFor > 600)                         return 'ATTENTION LOCKED';
+  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime > 800)                    return 'REPEATED GLANCE';
+  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime < 400)                    return 'IGNORED AGAIN';
+  if (a.revisitCount >= 2 && avgDwell < 400 && scanSpeed > 3)                         return 'FOCUS UNSTABLE';
   if ((a.dwellTime > 400 || a.totalDwellTime > 400) && stab < 0.4 && microMovement > 0.01)
-                                                                             return 'VISUAL DRIFT';
-  if (scanSpeed > 5 && a.dwellTime < 200)                                   return 'SCAN WITHOUT PROCESSING';
-  if (a.dwellTime >= 150 && a.dwellTime <= 600 && a.revisitCount <= 1 && stab < 0.6)
-                                                                             return 'LOW ENGAGEMENT';
+                                                                                       return 'VISUAL DRIFT';
+  if (scanSpeed > 5 && a.dwellTime < 200)                                             return 'SCAN WITHOUT PROCESSING';
+  if (a.dwellTime >= 150 && a.dwellTime <= 600 && a.revisitCount <= 1 && stab < 0.6) return 'LOW ENGAGEMENT';
   return 'UNCLASSIFIED';
 }
 
@@ -329,7 +328,16 @@ function revealDot(a, label) {
   a.el.style.transform = a.x > 0.62
     ? 'translate(calc(-100% - 12px), -50%)'
     : 'translate(12px, -50%)';
-  a.el.style.opacity = '1';
+
+  // אפקט היווצרות
+  a.el.style.opacity = '0';
+  a.el.style.filter = 'blur(6px)';
+
+  requestAnimationFrame(() => {
+    a.el.style.transition = 'opacity 0.4s ease, filter 0.4s ease';
+    a.el.style.opacity = '1';
+    a.el.style.filter = 'blur(0px)';
+  });
 }
 
 /* ── cursor reveal ───────────────────────────────────────────────────── */
@@ -349,12 +357,10 @@ function applyGaze(ts) {
   gazeDot.style.left = (rect.left + gpx) + 'px';
   gazeDot.style.top  = (rect.top  + gpy) + 'px';
 
-  // Gaze history
   if (!window._gazeHistory) window._gazeHistory = [];
   window._gazeHistory.push({ x: sGX, y: sGY, ts });
   if (window._gazeHistory.length > 90) window._gazeHistory.shift();
 
-  // Global metrics
   const scanSpeed = pool.filter(a => a.lastVisitTs > ts - 2000).length;
 
   const _gh = window._gazeHistory.slice(-8);
@@ -377,11 +383,42 @@ function applyGaze(ts) {
 
     if (near && a.isNear) {
       a.dwellTime = ts - a._visitStart;
+
+      // עדכון stableFor
+      const stab = currentStability();
+      if (stab > 0.6) {
+        a.stableFor += dt * 1000;
+      } else {
+        a.stableFor = 0;
+      }
+
       if (ts - a._lastClassifyTs > 200) {
         a._lastClassifyTs = ts;
         const live = classifyDot(a, ts, scanSpeed, microMovement);
-        if (live !== 'UNCLASSIFIED' && !a.visible) {
-          revealDot(a, live);
+
+        if (live !== 'UNCLASSIFIED') {
+          a.classificationBuffer.push(live);
+          if (a.classificationBuffer.length > 10) {
+            a.classificationBuffer.shift();
+          }
+
+          const consistent = a.classificationBuffer.every(v => v === live);
+
+          if (consistent) {
+            a.classificationStableTime += dt * 1000;
+          } else {
+            a.classificationStableTime = 0;
+          }
+
+          if (!a.visible && a.classificationStableTime > 400) {
+            revealDot(a, live);
+          }
+
+          // אם כבר גלוי – עדכון דינמי
+          if (a.visible && live !== a.state && a.classificationStableTime > 300) {
+            a.state = live;
+            a.el.textContent = live;
+          }
         }
       }
     }
@@ -392,6 +429,7 @@ function applyGaze(ts) {
       a.totalDwellTime += a.dwellTime;
       a.lastVisitTs = ts;
       a.dwellTime = 0;
+      a.stableFor = 0;
       if (!a.visible) {
         const exitState = classifyDot(a, ts, scanSpeed, microMovement);
         if (exitState !== 'UNCLASSIFIED') {
@@ -400,12 +438,13 @@ function applyGaze(ts) {
       }
     }
 
-    // SKIPPED AREA — passive detection for never-visited dots
-    if (!a.isNear && a.revisitCount === 0 && !a.visible && ts > 4000) {
-      const recentNear = window._gazeHistory
-        .filter(p => p.ts > ts - 3000)
-        .some(p => Math.hypot(p.x - a.x, p.y - a.y) < 0.12);
-      if (!recentNear) {
+    // SKIPPED AREA — גילוי פסיבי (מחוץ ל-loop, אחרי כל עדכוני near)
+    if (!a.visible && a.revisitCount === 0 && ts > 8000) {
+      const wasNearby = window._gazeHistory.some(p =>
+        Math.hypot(p.x - a.x, p.y - a.y) < 0.2
+      );
+
+      if (wasNearby) {
         revealDot(a, 'SKIPPED AREA');
       }
     }
