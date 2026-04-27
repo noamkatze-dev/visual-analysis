@@ -244,7 +244,8 @@ function buildPool() {
     pool.push({
       el, x: 0.5, y: 0.5, revealed: false, blurLevel: 0, active: false,
       dwellTime: 0, totalDwellTime: 0, revisitCount: 0, lastVisitTs: 0,
-      timeBetweenVisits: 0, isNear: false, visitDwells: [], state: 'UNCLASSIFIED'
+      timeBetweenVisits: 0, isNear: false, visitDwells: [], _visitStart: 0,
+      state: 'UNCLASSIFIED'
     });
   }
 }
@@ -280,17 +281,17 @@ function sobel(px, w, h) {
 }
 
 /* ── draw dots ───────────────────────────────────────────────────────── */
-function drawDots(activePts) {
+// Only renders dots that have a real classification (not UNCLASSIFIED)
+function drawDots() {
   const W = dotCanvas.width, H = dotCanvas.height;
   if (!W || !H) return;
   dotCtx.clearRect(0, 0, W, H);
 
   dotCtx.fillStyle = 'rgba(224, 26, 0, 0.75)';
   dotCtx.beginPath();
-  for (const p of activePts) {
-    const sx = p.nx * W;
-    const sy = p.ny * H;
-    dotCtx.rect(sx - 1, sy - 1, 2, 2);
+  for (const a of pool) {
+    if (!a.active || !a.state || a.state === 'UNCLASSIFIED') continue;
+    dotCtx.rect(a.x * W - 1, a.y * H - 1, 2, 2);
   }
   dotCtx.fill();
 }
@@ -324,7 +325,8 @@ function analyze() {
     });
   }
 
-  drawDots(pts);
+  // Draw only classified dots from pool (not raw pts)
+  drawDots();
 
   const n = Math.min(pts.length, N_ANN);
   for (let i = 0; i < N_ANN; i++) {
@@ -336,8 +338,8 @@ function analyze() {
       if (!a.revealed || moved) {
         if (moved) {
           a.dwellTime = 0; a.totalDwellTime = 0; a.revisitCount = 0;
-          a.lastVisitTs = 0; a.timeBetweenVisits = 0; a.isNear = false;
-          a.visitDwells = []; a.state = 'UNCLASSIFIED';
+          a.lastVisitTs = 0; a.visitDwells = []; a.state = 'UNCLASSIFIED';
+          a._visitStart = 0;
           a.revealed = false; a.blurLevel = 0;
           a.el.textContent = '';
           a.el.style.opacity = '0';
@@ -431,6 +433,7 @@ function applyGaze(ts) {
   if (!window._gazeHistory) window._gazeHistory = [];
   window._gazeHistory.push({ x: sGX, y: sGY, ts });
   if (window._gazeHistory.length > 60) window._gazeHistory.shift();
+  const scanSpeed = pool.filter(a => a.lastVisitTs > ts - 2000).length; // eslint-disable-line no-unused-vars
 
   const revR = Math.min(W, H) * REVEAL_FRAC;
 
@@ -440,6 +443,7 @@ function applyGaze(ts) {
     const d    = Math.hypot(a.x * W - gpx, a.y * H - gpy);
     const near = d < revR;
 
+    // Behavior tracking
     if (near && !a.isNear) {
       a.isNear = true;
       a.revisitCount++;
@@ -457,6 +461,7 @@ function applyGaze(ts) {
       a.el.textContent = a.state;
     }
 
+    // Reveal/blur — skip if not yet classified
     if (!a.el.textContent) continue;
 
     if (near) {
