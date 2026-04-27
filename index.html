@@ -786,17 +786,17 @@ async function boot() {
    MULTI-USER GAZE GALLERY
    ══════════════════════════════════════════════════════════════════════ */
 
-let currentUser      = '';
-let ws               = null;
-let latestData       = {};
-let galleryOpen      = false;
+let currentUser  = '';
+let ws           = null;
+let latestData   = {};
+let galleryOpen  = false;
 
 /* ── name screen ── */
 async function showNameScreen() {
   return new Promise(resolve => {
-    const screen   = document.getElementById('nameScreen');
-    const input    = document.getElementById('nameInput');
-    const btn      = document.getElementById('nameContinue');
+    const screen = document.getElementById('nameScreen');
+    const input  = document.getElementById('nameInput');
+    const btn    = document.getElementById('nameContinue');
     screen.style.display = 'flex';
     input.focus();
 
@@ -901,19 +901,41 @@ function renderGallery(data) {
     const isMe  = name === currentUser;
 
     const row = document.createElement('div');
-    row.style.cssText = `margin-bottom:20px;opacity:${isOld ? 0.3 : 1};`;
+    row.style.cssText = `margin-bottom:28px;opacity:${isOld ? 0.3 : 1};`;
 
     const nameDiv = document.createElement('div');
-    nameDiv.style.cssText = 'color:#aaa;font-size:13px;letter-spacing:0.12em;';
-    nameDiv.textContent   = name + (isMe ? '  (YOU)' : '');
+    nameDiv.style.cssText =
+      'color:#aaa;font-size:13px;letter-spacing:0.12em;font-weight:bold;margin-bottom:10px;';
+    nameDiv.textContent = name + (isMe ? '  (YOU)' : '');
+    row.appendChild(nameDiv);
+
+    if (availableRecordings.has(name)) {
+      const vid = document.createElement('video');
+      vid.src   = `/recording/${encodeURIComponent(name)}`;
+      vid.style.cssText =
+        'width:180px;display:block;border:1px solid #1a1a1a;cursor:pointer;';
+      vid.muted    = true;
+      vid.loop     = true;
+      vid.autoplay = true;
+      vid.addEventListener('click', () => openLightbox(`/recording/${encodeURIComponent(name)}`));
+      row.appendChild(vid);
+    } else {
+      const ph = document.createElement('div');
+      ph.style.cssText =
+        'width:180px;height:101px;background:#0a0a0a;color:#333;font-size:9px;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'font-family:"Courier New",monospace;letter-spacing:0.1em;';
+      ph.textContent = 'RECORDING PENDING';
+      row.appendChild(ph);
+    }
 
     const detDiv = document.createElement('div');
-    detDiv.style.cssText = 'color:#444;font-size:10px;letter-spacing:0.1em;margin-top:6px;';
-    detDiv.textContent   =
+    detDiv.style.cssText =
+      'color:#444;font-size:10px;letter-spacing:0.1em;margin-top:8px;';
+    detDiv.textContent =
       `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}  ·  ${timeAgo(entry.ts)}`;
-
-    row.appendChild(nameDiv);
     row.appendChild(detDiv);
+
     galleryList.appendChild(row);
   }
 }
@@ -934,12 +956,95 @@ galleryClose.addEventListener('click', () => {
 galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.opacity = '1'; });
 galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.opacity = '0.6'; });
 
-/* ── app entry point ── */
+/* ══════════════════════════════════════════════════════════════════════
+   SCREEN RECORDING & LIGHTBOX ADDITIONS
+   ══════════════════════════════════════════════════════════════════════ */
+
+const availableRecordings = new Set();
+
+/* ── lightbox ── */
+const lightbox      = document.getElementById('lightbox');
+const lightboxVideo = document.getElementById('lightboxVideo');
+const lightboxClose = document.getElementById('lightboxClose');
+
+function openLightbox(src) {
+  try {
+    lightboxVideo.src = src;
+    lightbox.style.display = 'flex';
+    lightboxVideo.play().catch(() => {});
+  } catch (_) {}
+}
+
+lightboxClose.addEventListener('click', () => {
+  lightbox.style.display = 'none';
+  lightboxVideo.pause();
+  lightboxVideo.src = '';
+});
+
+lightbox.addEventListener('click', e => {
+  if (e.target === lightbox) {
+    lightbox.style.display = 'none';
+    lightboxVideo.pause();
+    lightboxVideo.src = '';
+  }
+});
+
+/* ── screen recording ── */
+async function startScreenRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 10 },
+      audio: false
+    });
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const chunks   = [];
+
+    recorder.ondataavailable = e => {
+      try { if (e.data.size > 0) chunks.push(e.data); } catch (_) {}
+    };
+
+    recorder.onstop = async () => {
+      try {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const form = new FormData();
+        form.append('video', blob, `${currentUser}.webm`);
+        form.append('name', currentUser);
+        await fetch('/upload', { method: 'POST', body: form });
+      } catch (_) {}
+    };
+
+    recorder.start();
+
+    setTimeout(() => {
+      try { if (recorder.state === 'recording') recorder.stop(); } catch (_) {}
+    }, 180000);
+
+    window.addEventListener('beforeunload', () => {
+      try { if (recorder.state === 'recording') recorder.stop(); } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+/* ── updated startApp (overrides earlier definition via hoisting) ── */
 async function startApp() {
   await showNameScreen();
   connectWS();
+
+  if (ws) {
+    ws.addEventListener('message', e => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'recording_ready') {
+          availableRecordings.add(msg.name);
+          if (galleryOpen) renderGallery(latestData);
+        }
+      } catch (_) {}
+    });
+  }
+
   await boot();
   startGazeSend();
+  startScreenRecording();
 }
 
 startApp();
@@ -951,23 +1056,20 @@ startApp();
   flex-direction:column;align-items:center;justify-content:center;
 ">
   <div style="color:#1e1e1e;font-family:'Courier New',monospace;font-size:9px;
-              letter-spacing:0.4em;margin-bottom:52px;">
-    VISUAL ANALYSIS SYSTEM
-  </div>
+              letter-spacing:0.4em;margin-bottom:52px;">VISUAL ANALYSIS SYSTEM</div>
   <label for="nameInput" style="display:block;color:#555;font-family:'Courier New',monospace;
                                 font-size:11px;letter-spacing:0.28em;margin-bottom:16px;">
     ENTER YOUR NAME
   </label>
   <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="
-    background:#000;border:none;border-bottom:1px solid #2a2a2a;
-    color:#ccc;font-family:'Courier New',monospace;font-size:16px;
-    letter-spacing:0.15em;padding:8px 6px;outline:none;
-    text-align:center;width:270px;caret-color:#ff1500;
+    background:#000;border:none;border-bottom:1px solid #2a2a2a;color:#ccc;
+    font-family:'Courier New',monospace;font-size:16px;letter-spacing:0.15em;
+    padding:8px 6px;outline:none;text-align:center;width:270px;caret-color:#ff1500;
   "/>
   <button id="nameContinue" style="
-    margin-top:38px;background:transparent;border:1px solid #2a2a2a;
-    color:#777;font-family:'Courier New',monospace;font-size:11px;
-    letter-spacing:0.28em;padding:13px 40px;cursor:pointer;
+    margin-top:38px;background:transparent;border:1px solid #2a2a2a;color:#777;
+    font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.28em;
+    padding:13px 40px;cursor:pointer;
   "
   onmouseover="this.style.borderColor='#666';this.style.color='#bbb';"
   onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#777';"
@@ -986,9 +1088,9 @@ startApp();
     <div style="border-bottom:1px solid #0f0f0f;margin-bottom:38px;"></div>
     <div id="galleryList"></div>
     <button id="galleryClose" style="
-      margin-top:52px;background:transparent;border:1px solid #1e1e1e;
-      color:#444;font-family:'Courier New',monospace;font-size:11px;
-      letter-spacing:0.25em;padding:12px 34px;cursor:pointer;
+      margin-top:52px;background:transparent;border:1px solid #1e1e1e;color:#444;
+      font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.25em;
+      padding:12px 34px;cursor:pointer;
     "
     onmouseover="this.style.borderColor='#555';this.style.color='#aaa';"
     onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#444';"
@@ -1007,6 +1109,18 @@ startApp();
 <div id="ghostContainer" style="
   position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;
 "></div>
+
+<!-- ── video lightbox ── -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;z-index:3000;
+  background:rgba(0,0,0,0.95);flex-direction:column;align-items:center;justify-content:center;">
+  <video id="lightboxVideo" controls style="max-width:85vw;max-height:85vh;"></video>
+  <button id="lightboxClose" style="margin-top:20px;background:transparent;
+    border:1px solid #333;color:#666;font-family:'Courier New',monospace;
+    font-size:11px;letter-spacing:0.25em;padding:10px 30px;cursor:pointer;"
+  onmouseover="this.style.borderColor='#666';this.style.color='#aaa';"
+  onmouseout="this.style.borderColor='#333';this.style.color='#666';"
+  >[ CLOSE ]</button>
+</div>
 
 </body>
 </html>
