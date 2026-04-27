@@ -1,644 +1,1989 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Visual Analysis</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+
 <style>
+
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+
+
 body {
+
   background: #ffffff;
+
   overflow: hidden;
+
   width: 100vw;
+
   height: 100vh;
+
   cursor: none;
+
 }
+
+
 
 #scene {
+
   width: 100vw;
+
   height: 100vh;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
 }
+
+
 
 #videoWrapper {
+
   position: relative;
+
   width: 100vw;
+
   height: 100vh;
+
   overflow: hidden;
+
 }
+
+
 
 #mainVideo {
+
   display: block;
+
   width: 100%;
+
   height: 100%;
+
   object-fit: cover;
+
 }
+
+
 
 #dotCanvas {
+
   position: absolute;
+
   inset: 0;
+
   pointer-events: none;
+
   z-index: 1;
+
 }
+
+
 
 #annLayer {
+
   position: absolute;
+
   inset: 0;
+
   pointer-events: none;
+
   overflow: hidden;
+
   z-index: 2;
+
 }
+
+
 
 .ann {
+
   position: absolute;
+
   font-family: 'Heebo', sans-serif;
+
   font-size: 11px;
+
   font-weight: 700;
+
   color: #e01a00;
+
   letter-spacing: 0.06em;
+
   white-space: nowrap;
+
   text-shadow: 0 0 8px rgba(255,255,255,0.9);
+
   pointer-events: none;
+
   opacity: 0;
+
   transition: opacity 0.4s ease, filter 0.4s ease;
+
 }
+
+
 
 #gazeDot {
+
   position: fixed;
+
   width: 22px;
+
   height: 22px;
+
   border-radius: 50%;
+
   border: 2px solid rgba(224,26,0,0.7);
+
   transform: translate(-50%, -50%);
+
   pointer-events: none;
+
   z-index: 50;
+
 }
+
+
 
 #webcamEl {
+
   position: fixed;
+
   bottom: 8px;
+
   right: 8px;
+
   width: 96px;
+
   height: 72px;
+
   opacity: 0.04;
+
   transform: scaleX(-1);
+
   border: 1px solid #e8e8e8;
+
   z-index: 50;
+
 }
+
+
 
 #info {
+
   position: fixed;
+
   bottom: 11px;
+
   left: 50%;
+
   transform: translateX(-50%);
+
   font-family: 'Heebo', sans-serif;
+
   font-size: 10px;
+
   font-weight: 300;
+
   letter-spacing: 0.2em;
+
   color: #bbbbbb;
+
   pointer-events: none;
+
   transition: opacity 2s ease;
+
   white-space: nowrap;
+
   z-index: 50;
+
 }
+
+
 
 #calOverlay {
+
   position: fixed;
+
   inset: 0;
+
   z-index: 1000;
+
   background: #ffffff;
+
 }
+
+
 
 #calCanvas {
+
   position: absolute;
+
   inset: 0;
+
   width: 100%;
+
   height: 100%;
+
 }
+
+
 
 #calStartBtn {
+
   position: absolute;
+
   top: 58%;
+
   left: 50%;
+
   transform: translateX(-50%);
+
   background: transparent;
+
   border: 1px solid #dddddd;
+
   color: #999999;
+
   font-family: 'Heebo', sans-serif;
+
   font-size: 12px;
+
   letter-spacing: 0.25em;
+
   padding: 14px 36px;
+
   cursor: pointer;
+
   z-index: 1001;
+
   transition: border-color 0.2s, color 0.2s;
+
   display: none;
+
 }
+
+
 
 #calStartBtn:hover {
+
   border-color: #e01a00;
+
   color: #e01a00;
+
 }
+
+
 
 #nameInput:focus {
+
   border-bottom-color: #e01a00 !important;
+
   outline: none;
+
 }
+
 </style>
+
 </head>
+
 <body>
 
+
+
 <div id="scene">
+
   <div id="videoWrapper">
+
     <video id="mainVideo"
+
            src="statue.mp4"
+
            autoplay loop muted playsinline></video>
+
     <canvas id="dotCanvas"></canvas>
+
     <div id="annLayer"></div>
+
   </div>
+
 </div>
+
+
 
 <div id="gazeDot"></div>
+
 <video id="webcamEl" autoplay muted playsinline></video>
+
 <div id="info">ALLOW CAMERA ACCESS — MOVE YOUR HEAD TO REVEAL ANALYSIS</div>
 
+
+
 <div id="calOverlay">
+
   <canvas id="calCanvas"></canvas>
+
   <button id="calStartBtn">BEGIN CALIBRATION</button>
+
 </div>
 
+
+
 <script type="module">
+
 'use strict';
 
+
+
 import { FaceLandmarker, FilesetResolver }
+
   from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
+
+
 /* ── constants ─────────────────────────────────────────────────────── */
+
 const GAZE_LERP      = 0.08;
-const MAX_REVEALED   = 40; // הגבלה כדי שהמסך לא יתמלא מדי
+
+
 
 const CAL_PTS = [
+
   [0.1, 0.1], [0.5, 0.1], [0.9, 0.1],
+
   [0.9, 0.5], [0.5, 0.5], [0.1, 0.5],
+
   [0.1, 0.9], [0.5, 0.9], [0.9, 0.9]
+
 ];
+
 const CAL_VAR_THRESH  = 0.0012;
+
 const CAL_FILL_RATE   = 0.6;
+
 const CAL_DRAIN_RATE  = 0.8;
 
+
+
 /* ── DOM refs ──────────────────────────────────────────────────────── */
+
 const mainVideo    = document.getElementById('mainVideo');
+
 const videoWrapper = document.getElementById('videoWrapper');
+
 const dotCanvas    = document.getElementById('dotCanvas');
+
 const dotCtx       = dotCanvas.getContext('2d');
+
 const annLayer     = document.getElementById('annLayer');
+
 const gazeDot      = document.getElementById('gazeDot');
+
 const webcamEl     = document.getElementById('webcamEl');
+
 const infoEl       = document.getElementById('info');
+
 const calOverlay   = document.getElementById('calOverlay');
+
 const calCanvas    = document.getElementById('calCanvas');
+
 const calCtx       = calCanvas.getContext('2d');
+
 const calStartBtn  = document.getElementById('calStartBtn');
 
+
+
 /* ── runtime state ─────────────────────────────────────────────────── */
-let pool        = [];
-let revealedCount = 0;
+
+let pool       = [];
+
 let rawGX      = 0.5, rawGY = 0.5;
+
 let sGX        = 0.5, sGY  = 0.5;
+
 let gazeOn     = false;
+
 let lastGazeTs = 0;
 
+
+
 let curOffX = 0.5, curOffY = 0.5;
+
 const offXBuf = [], offYBuf = [];
+
 const BUF_MAX = 30;
+
+
 
 let calMap = null;
 
-/* ── annotation pool ────────────────────────────────────────────────── */
-function buildPool() {
-  annLayer.innerHTML = '';
-  pool = [];
-  const COUNT = 280; // כמות נקודות לפיזור רנדומלי
 
-  for (let i = 0; i < COUNT; i++) {
-      const nx = Math.random();
-      const ny = Math.random();
+
+/* ── annotation pool ────────────────────────────────────────────────── */
+
+function buildPool() {
+
+  annLayer.innerHTML = '';
+
+  pool = [];
+
+  const COLS = 24;
+
+  const ROWS = 14;
+
+  for (let row = 0; row < ROWS; row++) {
+
+    for (let col = 0; col < COLS; col++) {
+
+      const nx = (col + 0.5) / COLS;
+
+      const ny = (row + 0.5) / ROWS;
+
       const el = document.createElement('span');
+
       el.className = 'ann';
+
       el.style.opacity = '0';
+
       annLayer.appendChild(el);
+
       pool.push({
+
         el, x: nx, y: ny,
+
         visible: false,
+
         state: 'UNCLASSIFIED',
+
+
+
         dwellTime: 0,
+
         totalDwellTime: 0,
+
         revisitCount: 0,
+
         lastVisitTs: 0,
+
         timeBetweenVisits: 0,
+
         isNear: false,
+
         visitDwells: [],
+
         _visitStart: 0,
+
         _lastClassifyTs: 0,
+
+
+
+        // NEW
+
         classificationBuffer: [],
+
         classificationStableTime: 0,
+
         stableFor: 0
+
       });
+
+    }
+
   }
+
 }
+
+
 
 /* ── sizing ──────────────────────────────────────────────────────────── */
+
 function sizeWrapper() {
+
   dotCanvas.width  = window.innerWidth;
+
   dotCanvas.height = window.innerHeight;
+
 }
+
+
 
 /* ── draw dots ───────────────────────────────────────────────────────── */
+
 function drawDots() {
+
   const W = dotCanvas.width, H = dotCanvas.height;
+
   if (!W || !H) return;
+
   dotCtx.clearRect(0, 0, W, H);
+
   dotCtx.fillStyle = 'rgba(224, 26, 0, 0.82)';
+
   dotCtx.beginPath();
+
   for (const a of pool) {
+
     if (!a.visible) continue;
+
     dotCtx.rect(a.x * W - 1, a.y * H - 1, 2, 2);
+
   }
+
   dotCtx.fill();
+
 }
+
+
 
 /* ── gaze behavior classification ───────────────────────────────────── */
+
 function currentStability() {
+
   const N = Math.min(offXBuf.length, 20);
+
   if (N < 8) return 0;
+
   const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
+
   const mx = xs.reduce((a, b) => a + b, 0) / N;
+
   const my = ys.reduce((a, b) => a + b, 0) / N;
+
   const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0) / N;
+
   const vy = ys.reduce((a, b) => a + (b - my) ** 2, 0) / N;
+
   return Math.max(0, Math.min(1, 1 - (vx + vy) / CAL_VAR_THRESH));
+
 }
+
+
+
+function detectSearchPattern() {
+
+  const h = window._gazeHistory || [];
+
+  if (h.length < 6) return false;
+
+  const recent = h.slice(-6);
+
+  const dxs = [], dys = [];
+
+  for (let i = 1; i < recent.length; i++) {
+
+    dxs.push(recent[i].x - recent[i-1].x);
+
+    dys.push(recent[i].y - recent[i-1].y);
+
+  }
+
+  const avgDx = dxs.reduce((a, b) => a + b, 0) / dxs.length;
+
+  const avgDy = dys.reduce((a, b) => a + b, 0) / dys.length;
+
+  const consistentX = dxs.every(d => Math.sign(d) === Math.sign(avgDx));
+
+  const consistentY = dys.every(d => Math.sign(d) === Math.sign(avgDy));
+
+  const moving = Math.abs(avgDx) > 0.02 || Math.abs(avgDy) > 0.02;
+
+  return moving && (consistentX || consistentY);
+
+}
+
+
 
 function classifyDot(a, ts, scanSpeed, microMovement) {
+
   const stab = currentStability();
 
-  // ATTENTION LOCKED
-  if (a.dwellTime > 800 && stab > 0.6) {
-    return 'ATTENTION LOCKED';
-  }
+  const avgDwell = a.visitDwells.length
 
-  // LOW ENGAGEMENT
-  if (a.dwellTime > 200 && a.dwellTime < 700 && stab < 0.5) {
-    return 'LOW ENGAGEMENT';
-  }
+    ? a.visitDwells.reduce((s, v) => s + v, 0) / a.visitDwells.length : a.dwellTime;
 
-  // VISUAL DRIFT
-  if (a.dwellTime > 300 && microMovement > 0.01 && stab < 0.4) {
-    return 'VISUAL DRIFT';
-  }
 
-  // FOCUS UNSTABLE
-  if (a.revisitCount >= 2 && stab < 0.5) {
-    return 'FOCUS UNSTABLE';
-  }
 
-  // SCAN WITHOUT PROCESSING
-  if (a.dwellTime < 180 && scanSpeed > 3) {
-    return 'SCAN WITHOUT PROCESSING';
-  }
+  if (detectSearchPattern() && scanSpeed >= 2)                                         return 'SEARCH PATTERN';
 
-  // REPEATED GLANCE
-  if (a.revisitCount >= 2 && a.totalDwellTime > 400) {
-    return 'REPEATED GLANCE';
-  }
+  if (a.dwellTime > 1200 && stab > 0.7 && a.stableFor > 600)                         return 'ATTENTION LOCKED';
+
+  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime > 800)                    return 'REPEATED GLANCE';
+
+  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime < 400)                    return 'IGNORED AGAIN';
+
+  if (a.revisitCount >= 2 && avgDwell < 400 && scanSpeed > 3)                         return 'FOCUS UNSTABLE';
+
+  if ((a.dwellTime > 400 || a.totalDwellTime > 400) && stab < 0.4 && microMovement > 0.01)
+
+                                                                                       return 'VISUAL DRIFT';
+
+  if (scanSpeed > 5 && a.dwellTime < 200)                                             return 'SCAN WITHOUT PROCESSING';
+
+  if (a.dwellTime >= 150 && a.dwellTime <= 600 && a.revisitCount <= 1 && stab < 0.6) return 'LOW ENGAGEMENT';
 
   return 'UNCLASSIFIED';
+
 }
+
+
 
 function revealDot(a, label) {
-  if (revealedCount >= MAX_REVEALED) return;
-  
+
   a.state = label;
+
   a.visible = true;
-  revealedCount++;
 
   a.el.textContent = label;
-  
-  // מניעת חפיפת טקסטים על ידי Offset רנדומלי
-  const offsetX = (Math.random() - 0.5) * 40;
-  const offsetY = (Math.random() - 0.5) * 20;
 
-  a.el.style.left = `calc(${(a.x * 100).toFixed(2)}% + ${offsetX}px)`;
-  a.el.style.top  = `calc(${(a.y * 100).toFixed(2)}% + ${offsetY}px)`;
-  
+  a.el.style.left = (a.x * 100).toFixed(2) + '%';
+
+  a.el.style.top  = (a.y * 100).toFixed(2) + '%';
+
   a.el.style.transform = a.x > 0.62
+
     ? 'translate(calc(-100% - 12px), -50%)'
+
     : 'translate(12px, -50%)';
 
+
+
+  // אפקט היווצרות
+
   a.el.style.opacity = '0';
+
   a.el.style.filter = 'blur(6px)';
 
+
+
   requestAnimationFrame(() => {
+
     a.el.style.transition = 'opacity 0.4s ease, filter 0.4s ease';
+
     a.el.style.opacity = '1';
+
     a.el.style.filter = 'blur(0px)';
+
   });
+
 }
 
+
+
 /* ── cursor reveal ───────────────────────────────────────────────────── */
+
 function applyGaze(ts) {
+
   const dt = lastGazeTs ? Math.min((ts - lastGazeTs) / 1000, 0.05) : 0;
+
   lastGazeTs = ts;
 
+
+
   sGX += (rawGX - sGX) * GAZE_LERP;
+
   sGY += (rawGY - sGY) * GAZE_LERP;
 
+
+
   const W = videoWrapper.offsetWidth;
+
   const H = videoWrapper.offsetHeight;
+
   if (!W || !H) return;
 
+
+
   const gpx = sGX * W, gpy = sGY * H;
+
   const rect = videoWrapper.getBoundingClientRect();
+
   gazeDot.style.left = (rect.left + gpx) + 'px';
+
   gazeDot.style.top  = (rect.top  + gpy) + 'px';
 
+
+
   if (!window._gazeHistory) window._gazeHistory = [];
+
   window._gazeHistory.push({ x: sGX, y: sGY, ts });
+
   if (window._gazeHistory.length > 90) window._gazeHistory.shift();
+
+
 
   const scanSpeed = pool.filter(a => a.lastVisitTs > ts - 2000).length;
 
+
+
   const _gh = window._gazeHistory.slice(-8);
+
   const _mx = _gh.reduce((s, p) => s + p.x, 0) / _gh.length;
+
   const _my = _gh.reduce((s, p) => s + p.y, 0) / _gh.length;
+
   const microMovement = _gh.reduce((s, p) => s + Math.hypot(p.x - _mx, p.y - _my), 0) / _gh.length;
+
+
 
   const revR = Math.min(W, H) * 0.07;
 
+
+
   for (const a of pool) {
+
     const d    = Math.hypot(a.x * W - gpx, a.y * H - gpy);
+
     const near = d < revR;
 
+
+
     if (near && !a.isNear) {
+
       a.isNear = true;
+
       a.revisitCount++;
+
       if (a.lastVisitTs > 0) a.timeBetweenVisits = ts - a.lastVisitTs;
+
       a._visitStart = ts;
+
     }
+
+
 
     if (near && a.isNear) {
+
       a.dwellTime = ts - a._visitStart;
+
+
+
+      // עדכון stableFor
+
       const stab = currentStability();
+
       if (stab > 0.6) {
+
         a.stableFor += dt * 1000;
+
       } else {
+
         a.stableFor = 0;
+
       }
+
+
 
       if (ts - a._lastClassifyTs > 200) {
+
         a._lastClassifyTs = ts;
+
         const live = classifyDot(a, ts, scanSpeed, microMovement);
 
+
+
         if (live !== 'UNCLASSIFIED') {
+
           a.classificationBuffer.push(live);
-          if (a.classificationBuffer.length > 10) a.classificationBuffer.shift();
+
+          if (a.classificationBuffer.length > 10) {
+
+            a.classificationBuffer.shift();
+
+          }
+
+
+
           const consistent = a.classificationBuffer.every(v => v === live);
 
+
+
           if (consistent) {
+
             a.classificationStableTime += dt * 1000;
+
           } else {
+
             a.classificationStableTime = 0;
+
           }
+
+
 
           if (!a.visible && a.classificationStableTime > 400) {
+
             revealDot(a, live);
+
           }
+
+
+
+          // אם כבר גלוי – עדכון דינמי
 
           if (a.visible && live !== a.state && a.classificationStableTime > 300) {
+
             a.state = live;
+
             a.el.textContent = live;
+
           }
+
         }
+
       }
+
     }
+
+
 
     if (!near && a.isNear) {
+
       a.isNear = false;
+
       a.visitDwells.push(a.dwellTime);
+
       a.totalDwellTime += a.dwellTime;
+
       a.lastVisitTs = ts;
+
       a.dwellTime = 0;
+
       a.stableFor = 0;
+
       if (!a.visible) {
+
         const exitState = classifyDot(a, ts, scanSpeed, microMovement);
+
         if (exitState !== 'UNCLASSIFIED') {
+
           revealDot(a, exitState);
+
         }
+
       }
+
     }
+
+
+
+    // SKIPPED AREA — גילוי פסיבי (מחוץ ל-loop, אחרי כל עדכוני near)
+
+    if (!a.visible && a.revisitCount === 0 && ts > 8000) {
+
+      const wasNearby = window._gazeHistory.some(p =>
+
+        Math.hypot(p.x - a.x, p.y - a.y) < 0.2
+
+      );
+
+
+
+      if (wasNearby) {
+
+        revealDot(a, 'SKIPPED AREA');
+
+      }
+
+    }
+
   }
+
 }
 
-/* ── rest of the engine logic ────────────────────────────────────────── */
+
+
+/* ── main loop ───────────────────────────────────────────────────────── */
 
 function mainLoop(ts) {
+
   applyGaze(ts);
+
   drawDots();
+
   requestAnimationFrame(mainLoop);
+
 }
+
+
+
+/* ── head stability ──────────────────────────────────────────────────── */
 
 function stability() {
+
   const N = Math.min(offXBuf.length, 20);
+
   if (N < 8) return 0;
+
   const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
+
   const mx = xs.reduce((a, b) => a + b, 0) / N;
+
   const my = ys.reduce((a, b) => a + b, 0) / N;
+
   const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0) / N;
+
   const vy = ys.reduce((a, b) => a + (b - my) ** 2, 0) / N;
+
   return Math.max(0, Math.min(1, 1 - (vx + vy) / CAL_VAR_THRESH));
+
 }
 
+
+
+/* ── affine fit ──────────────────────────────────────────────────────── */
+
 function fitAffine(data) {
+
   let A00=0, A01=0, A02=0, A11=0, A12=0;
+
   let Bx0=0, Bx1=0, Bx2=0, By0=0, By1=0, By2=0;
+
   const n = data.length;
+
   for (const d of data) {
+
     A00 += d.ox*d.ox; A01 += d.ox*d.oy; A02 += d.ox;
+
     A11 += d.oy*d.oy; A12 += d.oy;
+
     Bx0 += d.ox*d.sx; Bx1 += d.oy*d.sx; Bx2 += d.sx;
+
     By0 += d.ox*d.sy; By1 += d.oy*d.sy; By2 += d.sy;
+
   }
+
   const M = [[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
+
   const inv = inv3(M);
+
   if (!inv) return null;
+
   const [ax,bx,cx] = mv3(inv, [Bx0,Bx1,Bx2]);
+
   const [ay,by,cy] = mv3(inv, [By0,By1,By2]);
+
   return { ax, bx, cx, ay, by, cy };
+
 }
 
 function inv3(m) {
+
   const [[a,b,c],[d,e,f],[g,h,k]] = m;
+
   const det = a*(e*k-f*h) - b*(d*k-f*g) + c*(d*h-e*g);
+
   if (Math.abs(det) < 1e-12) return null;
+
   const s = 1 / det;
+
   return [
+
     [(e*k-f*h)*s, (c*h-b*k)*s, (b*f-c*e)*s],
+
     [(f*g-d*k)*s, (a*k-c*g)*s, (c*d-a*f)*s],
+
     [(d*h-e*g)*s, (b*g-a*h)*s, (a*e-b*d)*s]
+
   ];
+
 }
 
 function mv3(m, v) {
+
   return [
+
     m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+
     m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+
     m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]
+
   ];
+
 }
+
+
+
+/* ── calibration helpers ─────────────────────────────────────────────── */
 
 function resizeCal() {
+
   calCanvas.width  = window.innerWidth;
+
   calCanvas.height = window.innerHeight;
+
 }
+
+
 
 function drawIntro() {
+
   const W = calCanvas.width, H = calCanvas.height;
+
   calCtx.fillStyle = '#ffffff';
+
   calCtx.fillRect(0, 0, W, H);
+
   calCtx.textAlign = 'center';
+
+
+
   calCtx.fillStyle = '#111111';
+
   calCtx.font = 'bold 22px Heebo';
+
   calCtx.fillText('HEAD TRACKING CALIBRATION', W / 2, H / 2 - 52);
+
+
+
   calCtx.strokeStyle = '#eeeeee';
+
   calCtx.lineWidth = 1;
+
   calCtx.beginPath();
+
   calCtx.moveTo(W / 2 - 220, H / 2 - 36);
+
   calCtx.lineTo(W / 2 + 220, H / 2 - 36);
+
   calCtx.stroke();
+
+
+
   calCtx.fillStyle = '#999999';
+
   calCtx.font = '14px Heebo';
+
   calCtx.fillText('Point your head at each dot and hold still', W / 2, H / 2 - 14);
+
   calCtx.fillText('until the ring fills completely', W / 2, H / 2 + 8);
+
+
+
+  calCtx.fillStyle = '#cccccc';
+
+  calCtx.font = '12px Heebo';
+
+  calCtx.fillText('Move only your head — keep your body still', W / 2, H / 2 + 34);
+
 }
+
+
 
 function drawDone() {
+
   const W = calCanvas.width, H = calCanvas.height;
+
   calCtx.fillStyle = '#ffffff';
+
   calCtx.fillRect(0, 0, W, H);
+
   calCtx.textAlign = 'center';
+
   calCtx.fillStyle = '#111111';
+
   calCtx.font = 'bold 24px Heebo';
+
   calCtx.fillText('SYNCHRONIZED', W / 2, H / 2 - 8);
+
+  calCtx.fillStyle = '#999999';
+
+  calCtx.font = '13px Heebo';
+
+  calCtx.fillText('Calibration complete', W / 2, H / 2 + 18);
+
 }
 
-async function awaitDot(px, py, index) {
+
+
+function awaitDot(px, py, index) {
+
   return new Promise(resolve => {
+
     let progress = 0, prevTs = null;
+
     const samples = [];
+
+
+
     function frame(ts) {
+
       const dt   = prevTs ? Math.min((ts - prevTs) / 1000, 0.05) : 0;
+
       prevTs     = ts;
+
       const stab = stability();
+
+
+
       progress += stab * CAL_FILL_RATE * dt;
+
       progress -= (1 - stab) * CAL_DRAIN_RATE * dt;
+
       progress  = Math.max(0, Math.min(1, progress));
+
+
+
       if (stab > 0.45) samples.push({ ox: curOffX, oy: curOffY });
+
+
+
       const W = calCanvas.width, H = calCanvas.height;
+
       calCtx.fillStyle = '#ffffff';
+
       calCtx.fillRect(0, 0, W, H);
+
+
+
+      calCtx.textAlign = 'right';
+
+      calCtx.fillStyle = '#cccccc';
+
+      calCtx.font = '14px Heebo';
+
+      calCtx.fillText(`${index + 1}  /  ${CAL_PTS.length}`, W - 28, 36);
+
+
+
+      calCtx.textAlign = 'center';
+
+      calCtx.fillStyle = '#cccccc';
+
+      calCtx.font = '13px Heebo';
+
+      calCtx.fillText('POINT HEAD AT DOT · HOLD STILL', W / 2, H - 26);
+
+
+
       calCtx.beginPath();
+
       calCtx.arc(px, py, 22, 0, Math.PI * 2);
+
       calCtx.strokeStyle = '#e8e8e8';
+
+      calCtx.lineWidth = 1.5;
+
       calCtx.stroke();
+
+
+
       if (progress > 0) {
+
         calCtx.beginPath();
+
         calCtx.arc(px, py, 22, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+
         calCtx.strokeStyle = `rgba(224,26,0,${0.35 + stab * 0.65})`;
+
         calCtx.lineWidth = 2;
+
         calCtx.stroke();
+
       }
+
+
+
+      const r = 3.5 + stab * 2.5;
+
+      calCtx.beginPath();
+
+      calCtx.arc(px, py, r, 0, Math.PI * 2);
+
+      calCtx.fillStyle = `rgba(224,26,0,${0.2 + stab * 0.8})`;
+
+      calCtx.fill();
+
+
+
       if (progress >= 1) {
+
+        calCtx.beginPath();
+
+        calCtx.arc(px, py, 22, 0, Math.PI * 2);
+
+        calCtx.strokeStyle = 'rgba(224,26,0,0.9)';
+
+        calCtx.lineWidth = 2;
+
+        calCtx.stroke();
+
         const n  = samples.length || 1;
+
         const ox = samples.reduce((s, v) => s + v.ox, 0) / n;
+
         const oy = samples.reduce((s, v) => s + v.oy, 0) / n;
+
         setTimeout(() => resolve({ ox, oy }), 280);
-      } else { requestAnimationFrame(frame); }
+
+      } else {
+
+        requestAnimationFrame(frame);
+
+      }
+
     }
+
     requestAnimationFrame(frame);
+
   });
+
 }
+
+
+
+/* ── calibration sequence ────────────────────────────────────────────── */
 
 async function runCalibration() {
+
   resizeCal();
+
+  window.addEventListener('resize', resizeCal);
+
+
+
   drawIntro();
+
   calStartBtn.style.display = 'block';
+
   await new Promise(r => calStartBtn.addEventListener('click', r, { once: true }));
+
   calStartBtn.style.display = 'none';
+
+
+
   const calData = [];
+
   for (let i = 0; i < CAL_PTS.length; i++) {
+
     const [nx, ny] = CAL_PTS[i];
-    const { ox, oy } = await awaitDot(nx * window.innerWidth, ny * window.innerHeight, i);
+
+    const px = nx * window.innerWidth;
+
+    const py = ny * window.innerHeight;
+
+    if (i > 0) await new Promise(r => setTimeout(r, 320));
+
+    const { ox, oy } = await awaitDot(px, py, i);
+
     calData.push({ sx: nx, sy: ny, ox, oy });
+
   }
+
+
+
   if (calData.length >= 4) calMap = fitAffine(calData);
+
+
+
   drawDone();
+
   await new Promise(r => setTimeout(r, 900));
+
   calOverlay.style.display = 'none';
+
 }
+
+
+
+/* ── head tracking ───────────────────────────────────────────────────── */
 
 async function startHeadTracking() {
+
   let fl;
+
   try {
-    const fs = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+
+    const fs = await FilesetResolver.forVisionTasks(
+
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+
+    );
+
     fl = await FaceLandmarker.createFromOptions(fs, {
-      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: 'GPU' },
-      runningMode: 'VIDEO', numFaces: 1
+
+      baseOptions: {
+
+        modelAssetPath:
+
+          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+
+        delegate: 'GPU'
+
+      },
+
+      outputFaceBlendshapes: false,
+
+      runningMode: 'VIDEO',
+
+      numFaces: 1
+
     });
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 } });
+
+  } catch (e) { console.warn('[head] FaceLandmarker init failed:', e); return false; }
+
+
+
+  try {
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
+
+    });
+
     webcamEl.srcObject = stream;
+
     await new Promise(r => { webcamEl.onloadeddata = r; });
-  } catch (e) { return false; }
+
+  } catch (e) { console.warn('[head] Webcam unavailable:', e); return false; }
+
+
+
+  let lastCamT = -1;
 
   function trackHead() {
-    if (webcamEl.readyState >= 2) {
-      const res = fl.detectForVideo(webcamEl, performance.now());
-      if (res.faceLandmarks?.length > 0) {
-        const lm = res.faceLandmarks[0];
-        const hxRaw = (lm[1].x*4 + lm[168].x + lm[152].x) / 6;
-        const hyRaw = (lm[1].y*4 + lm[168].y + lm[152].y) / 6;
-        curOffX = 1 - hxRaw; curOffY = hyRaw;
-        offXBuf.push(curOffX); if (offXBuf.length > BUF_MAX) offXBuf.shift();
-        offYBuf.push(curOffY); if (offYBuf.length > BUF_MAX) offYBuf.shift();
-        if (calMap) {
-          rawGX = calMap.ax*curOffX + calMap.bx*curOffY + calMap.cx;
-          rawGY = calMap.ay*curOffX + calMap.by*curOffY + calMap.cy;
-        } else {
-          rawGX = curOffX; rawGY = curOffY;
+
+    if (webcamEl.readyState >= 2 && webcamEl.currentTime !== lastCamT) {
+
+      lastCamT = webcamEl.currentTime;
+
+      try {
+
+        const res = fl.detectForVideo(webcamEl, performance.now());
+
+        if (res.faceLandmarks?.length > 0) {
+
+          const lm = res.faceLandmarks[0];
+
+          const nose = lm[1], brow = lm[168], chin = lm[152];
+
+          const lChk = lm[234], rChk = lm[454];
+
+          const hxRaw = (nose.x*4 + brow.x + chin.x + lChk.x + rChk.x) / 8;
+
+          const hyRaw = (nose.y*4 + brow.y + chin.y + lChk.y + rChk.y) / 8;
+
+          const headX = 1 - hxRaw;
+
+          const headY = hyRaw;
+
+
+
+          curOffX = headX; curOffY = headY;
+
+          offXBuf.push(headX); if (offXBuf.length > BUF_MAX) offXBuf.shift();
+
+          offYBuf.push(headY); if (offYBuf.length > BUF_MAX) offYBuf.shift();
+
+
+
+          if (calMap) {
+
+            rawGX = calMap.ax*headX + calMap.bx*headY + calMap.cx;
+
+            rawGY = calMap.ay*headX + calMap.by*headY + calMap.cy;
+
+          } else {
+
+            rawGX = headX;
+
+            rawGY = headY;
+
+          }
+
+          rawGX = Math.max(0, Math.min(1, rawGX));
+
+          rawGY = Math.max(0, Math.min(1, rawGY));
+
+          if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
+
         }
-        gazeOn = true; infoEl.style.opacity = '0';
-      }
+
+      } catch (_) {}
+
     }
+
     requestAnimationFrame(trackHead);
+
   }
-  trackHead();
+
+  requestAnimationFrame(trackHead);
+
   return true;
+
 }
+
+
+
+/* ── mouse / touch fallback ──────────────────────────────────────────── */
+
+function enablePointerFallback() {
+
+  infoEl.textContent = 'MOVE MOUSE TO EXPLORE · HOVER DOTS TO REVEAL';
+
+  const onMove = (cx, cy) => {
+
+    const rect = videoWrapper.getBoundingClientRect();
+
+    const nx = (cx - rect.left) / rect.width;
+
+    const ny = (cy - rect.top)  / rect.height;
+
+    if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) {
+
+      rawGX = nx; rawGY = ny;
+
+      if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
+
+    }
+
+  };
+
+  document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+
+  document.addEventListener('touchmove', e => {
+
+    e.preventDefault();
+
+    onMove(e.touches[0].clientX, e.touches[0].clientY);
+
+  }, { passive: false });
+
+}
+
+
+
+/* ── boot ────────────────────────────────────────────────────────────── */
 
 async function boot() {
+
   buildPool();
+
   sizeWrapper();
+
+  mainVideo.addEventListener('loadedmetadata', sizeWrapper);
+
   window.addEventListener('resize', sizeWrapper);
+
+
+
+  if (mainVideo.readyState < 2)
+
+    await new Promise(r => mainVideo.addEventListener('canplay', r, { once: true }));
+
+
+
   const ok = await startHeadTracking();
-  if (ok) await runCalibration();
-  else calOverlay.style.display = 'none';
+
+  if (ok) {
+
+    await runCalibration();
+
+  } else {
+
+    calOverlay.style.display = 'none';
+
+    enablePointerFallback();
+
+  }
+
+
+
   requestAnimationFrame(mainLoop);
+
 }
 
-boot();
+
+
+/* ══════════════════════════════════════════════════════════════════════
+
+   MULTI-USER GAZE GALLERY
+
+   ══════════════════════════════════════════════════════════════════════ */
+
+
+
+let currentUser = '';
+
+let ws          = null;
+
+let latestData  = {};
+
+let galleryOpen = false;
+
+
+
+/* ── name screen ── */
+
+async function showNameScreen() {
+
+  return new Promise(resolve => {
+
+    const screen = document.getElementById('nameScreen');
+
+    const input  = document.getElementById('nameInput');
+
+    const btn    = document.getElementById('nameContinue');
+
+    screen.style.display = 'flex';
+
+    input.focus();
+
+
+
+    function proceed() {
+
+      const v = input.value.trim();
+
+      if (!v) { input.focus(); return; }
+
+      currentUser = v;
+
+      screen.style.display = 'none';
+
+      resolve();
+
+    }
+
+    btn.addEventListener('click', proceed);
+
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') proceed(); });
+
+  });
+
+}
+
+
+
+/* ── WebSocket ── */
+
+function connectWS() {
+
+  try {
+
+    ws = new WebSocket(location.origin.replace('https', 'wss').replace('http', 'ws'));
+
+
+
+    ws.addEventListener('message', e => {
+
+      try {
+
+        const msg = JSON.parse(e.data);
+
+        if (msg.type === 'sessions') {
+
+          latestData = msg.data;
+
+          updateGhostsFromData(msg.data);
+
+          if (galleryOpen) renderGallery(msg.data);
+
+        }
+
+      } catch (_) {}
+
+    });
+
+
+
+    ws.addEventListener('error', () => {});
+
+  } catch (_) {}
+
+}
+
+
+
+function startGazeSend() {
+
+  setInterval(() => {
+
+    if (document.visibilityState === 'hidden') return;
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    try {
+
+      ws.send(JSON.stringify({ type: 'gaze', name: currentUser, x: sGX, y: sGY }));
+
+    } catch (_) {}
+
+  }, 2000);
+
+}
+
+
+
+/* ── ghost cursors ── */
+
+const ghostContainer = document.getElementById('ghostContainer');
+
+
+
+function updateGhostsFromData(data) {
+
+  ghostContainer.innerHTML = '';
+
+  const now = Date.now();
+
+  for (const [name, entry] of Object.entries(data)) {
+
+    if (name === currentUser) continue;
+
+    if (now - entry.ts > 30000) continue;
+
+
+
+    const ghost = document.createElement('div');
+
+    ghost.style.cssText =
+
+      'position:absolute;pointer-events:none;' +
+
+      'transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;';
+
+    ghost.style.left = (entry.x * window.innerWidth)  + 'px';
+
+    ghost.style.top  = (entry.y * window.innerHeight) + 'px';
+
+
+
+    const circle = document.createElement('div');
+
+    circle.style.cssText =
+
+      'width:14px;height:14px;border-radius:50%;' +
+
+      'border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
+
+
+
+    const lbl = document.createElement('div');
+
+    lbl.style.cssText =
+
+      'font-family:"Heebo",sans-serif;font-size:8px;' +
+
+      'color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
+
+    lbl.textContent = name;
+
+
+
+    ghost.appendChild(circle);
+
+    ghost.appendChild(lbl);
+
+    ghostContainer.appendChild(ghost);
+
+  }
+
+}
+
+
+
+/* ── gallery ── */
+
+const galleryOverlay = document.getElementById('galleryOverlay');
+
+const galleryList    = document.getElementById('galleryList');
+
+const galleryClose   = document.getElementById('galleryClose');
+
+const galleryBtn     = document.getElementById('galleryBtn');
+
+
+
+function timeAgo(ts) {
+
+  const s = Math.floor((Date.now() - ts) / 1000);
+
+  return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`;
+
+}
+
+
+
+function renderGallery(data) {
+
+  galleryList.innerHTML = '';
+
+  const entries = Object.entries(data);
+
+  if (entries.length === 0) {
+
+    galleryList.innerHTML =
+
+      '<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;' +
+
+      'font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
+
+    return;
+
+  }
+
+  const now = Date.now();
+
+  for (const [name, entry] of entries) {
+
+    const isOld = (now - entry.ts) > 600000;
+
+    const isMe  = name === currentUser;
+
+
+
+    const row = document.createElement('div');
+
+    row.style.cssText =
+
+      `padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld ? 0.25 : 1};`;
+
+
+
+    const nameDiv = document.createElement('div');
+
+    nameDiv.style.cssText =
+
+      'font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;' +
+
+      'color:#111111;letter-spacing:0.05em;';
+
+    if (isMe) {
+
+      nameDiv.innerHTML = name + ' <span style="color:#e01a00;">(YOU)</span>';
+
+    } else {
+
+      nameDiv.textContent = name;
+
+    }
+
+
+
+    const detDiv = document.createElement('div');
+
+    detDiv.style.cssText =
+
+      'font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;' +
+
+      'font-weight:300;letter-spacing:0.1em;margin-top:6px;';
+
+    detDiv.textContent =
+
+      `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}  ·  ${timeAgo(entry.ts)}`;
+
+
+
+    row.appendChild(nameDiv);
+
+    row.appendChild(detDiv);
+
+    galleryList.appendChild(row);
+
+  }
+
+}
+
+
+
+galleryBtn.addEventListener('click', () => {
+
+  galleryOpen = true;
+
+  galleryOverlay.style.display = 'flex';
+
+  ghostContainer.style.display = 'none';
+
+  renderGallery(latestData);
+
+});
+
+
+
+galleryClose.addEventListener('click', () => {
+
+  galleryOpen = false;
+
+  galleryOverlay.style.display = 'none';
+
+  ghostContainer.style.display = 'block';
+
+});
+
+
+
+galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.color = '#e01a00'; });
+
+galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.color = '#cccccc'; });
+
+
+
+/* ── app entry point ── */
+
+async function startApp() {
+
+  await showNameScreen();
+
+  connectWS();
+
+  await boot();
+
+  startGazeSend();
+
+}
+
+
+
+startApp();
+
 </script>
 
+
+
+<!-- ── name registration screen ── -->
+
+<div id="nameScreen" style="
+
+  display:none;position:fixed;inset:0;z-index:2000;background:#ffffff;
+
+  flex-direction:column;align-items:center;justify-content:center;
+
+">
+
+  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;
+
+              letter-spacing:0.5em;margin-bottom:64px;">
+
+    VISUAL ANALYSIS SYSTEM
+
+  </div>
+
+  <label for="nameInput" style="display:block;color:#999999;font-family:'Heebo',sans-serif;
+
+                                font-size:11px;font-weight:400;letter-spacing:0.28em;margin-bottom:16px;">
+
+    ENTER YOUR NAME
+
+  </label>
+
+  <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="
+
+    background:#ffffff;border:none;border-bottom:1px solid #e8e8e8;
+
+    color:#111111;font-family:'Heebo',sans-serif;font-size:16px;
+
+    letter-spacing:0.15em;padding:8px 6px;
+
+    text-align:center;width:270px;caret-color:#e01a00;
+
+  "/>
+
+  <button id="nameContinue" style="
+
+    margin-top:38px;background:transparent;border:1px solid #e8e8e8;
+
+    color:#999999;font-family:'Heebo',sans-serif;font-size:11px;
+
+    letter-spacing:0.28em;padding:13px 40px;cursor:pointer;
+
+    transition:border-color 0.2s,color 0.2s;
+
+  "
+
+  onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+
+  onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#999999';"
+
+  >CONTINUE</button>
+
+</div>
+
+
+
+<!-- ── gallery overlay ── -->
+
+<div id="galleryOverlay" style="
+
+  display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;
+
+  flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;
+
+">
+
+  <div style="width:100%;max-width:560px;font-family:'Heebo',sans-serif;">
+
+    <div style="color:#dddddd;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:8px;">
+
+      GAZE SESSIONS
+
+    </div>
+
+    <div style="border-bottom:1px solid #f0f0f0;margin-bottom:38px;"></div>
+
+    <div id="galleryList"></div>
+
+    <button id="galleryClose" style="
+
+      margin-top:52px;background:transparent;border:1px solid #e8e8e8;
+
+      color:#bbbbbb;font-family:'Heebo',sans-serif;font-size:11px;
+
+      letter-spacing:0.25em;padding:12px 34px;cursor:pointer;
+
+      transition:border-color 0.2s,color 0.2s;
+
+    "
+
+    onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+
+    onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#bbbbbb';"
+
+    >[ CLOSE ]</button>
+
+  </div>
+
+</div>
+
+
+
+<!-- ── gallery trigger ── -->
+
+<div id="galleryBtn" style="
+
+  position:fixed;bottom:14px;left:14px;font-family:'Heebo',sans-serif;
+
+  font-size:10px;font-weight:300;letter-spacing:0.15em;color:#cccccc;cursor:pointer;
+
+  z-index:60;transition:color 0.2s;user-select:none;
+
+">[ GALLERY ]</div>
+
+
+
+<!-- ── ghost cursor layer ── -->
+
+<div id="ghostContainer" style="
+
+  position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;
+
+"></div>
+
+
+
 </body>
+
 </html>
