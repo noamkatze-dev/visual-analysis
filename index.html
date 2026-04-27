@@ -1,1 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Analysis</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+body {
+  background: #000;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  cursor: none;
+}
+
+#scene {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#videoWrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#mainVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#dotCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#annLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.ann {
+  position: absolute;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff1500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.95),
+    0 0 2px rgba(0,0,0,0.95),
+    0 0 10px rgba(255, 21, 0, 0.55);
+  pointer-events: none;
+  opacity: 0;
+}
+
+#gazeDot {
+  position: fixed;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 14px rgba(255,255,255,0.35), 0 0 4px rgba(255,255,255,0.6);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+#webcamEl {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  width: 96px;
+  height: 72px;
+  opacity: 0.07;
+  transform: scaleX(-1);
+  border: 1px solid #0f0f0f;
+  z-index: 50;
+}
+
+#info {
+  position: fixed;
+  bottom: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #252525;
+  pointer-events: none;
+  transition: opacity 2s ease;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+#calOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+}
+
+#calCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#calStartBtn {
+  position: absolute;
+  top: 58%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaaaaa;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  padding: 14px 36px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: border-color 0.2s, color 0.2s;
+  display: none;
+}
+
+#calStartBtn:hover {
+  border-color: #aaa;
+  color: #eee;
+}
+</style>
+</head>
+<body>
+
+<div id="scene">
+  <div id="videoWrapper">
+    <video id="mainVideo"
+           src="statue.mp4"
+           autoplay loop muted playsinline></video>
+    <canvas id="dotCanvas"></canvas>
+    <div id="annLayer"></div>
+  </div>
+</div>
+
+<div id="gazeDot"></div>
+<video id="webcamEl" autoplay muted playsinline></video>
+<div id="info">ALLOW CAMERA ACCESS — MOVE YOUR HEAD TO REVEAL ANALYSIS</div>
+
+<div id="calOverlay">
+  <canvas id="calCanvas"></canvas>
+  <button id="calStartBtn">BEGIN CALIBRATION</button>
+</div>
+
+<canvas id="anaC" style="display:none" width="160" height="90"></canvas>
+<canvas id="preC" style="display:none" width="160" height="90"></canvas>
+
+<script type="module">
+'use strict';
+
+import { FaceLandmarker, FilesetResolver }
+  from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+
+/* ── constants ─────────────────────────────────────────────────────── */
+const W_ANA = 160;
+const H_ANA = 90;
+
+const N_ANN      = 250;
+const DOT_STEP   = 2;
+const DOT_THRESH = 10;
+
+const ANA_INTERVAL   = 600;
+const REVEAL_FRAC    = 0.030;
+const MAX_BLUR       = 7;
+const GAZE_LERP      = 0.08;
+
+const BLUR_GROW_RATE  = 2.8;
+const BLUR_CLEAR_RATE = 20.0;
+
+const CAL_PTS = [
+  [0.1, 0.1], [0.5, 0.1], [0.9, 0.1],
+  [0.9, 0.5], [0.5, 0.5], [0.1, 0.5],
+  [0.1, 0.9], [0.5, 0.9], [0.9, 0.9]
+];
+const CAL_FILL_RATE  = 0.65;
+const CAL_DRAIN_RATE = 0.20;
+const CAL_VAR_THRESH = 0.003;
+
+/* ── DOM ───────────────────────────────────────────────────────────── */
+const mainVideo    = document.getElementById('mainVideo');
+const videoWrapper = document.getElementById('videoWrapper');
+const annLayer     = document.getElementById('annLayer');
+const dotCanvas    = document.getElementById('dotCanvas');
+const dotCtx       = dotCanvas.getContext('2d');
+const gazeDot      = document.getElementById('gazeDot');
+const webcamEl     = document.getElementById('webcamEl');
+const infoEl       = document.getElementById('info');
+const anaC         = document.getElementById('anaC');
+const preC         = document.getElementById('preC');
+const anaCtx = anaC.getContext('2d', { willReadFrequently: true });
+const preCtx = preC.getContext('2d', { willReadFrequently: true });
+const calOverlay   = document.getElementById('calOverlay');
+const calCanvas    = document.getElementById('calCanvas');
+const calCtx       = calCanvas.getContext('2d');
+const calStartBtn  = document.getElementById('calStartBtn');
+
+/* ── runtime state ─────────────────────────────────────────────────── */
+let pool       = [];
+let prevPx     = null;
+let rawGX      = 0.5, rawGY = 0.5;
+let sGX        = 0.5, sGY  = 0.5;
+let gazeOn     = false;
+let lastAnaTs  = -9999;
+let lastGazeTs = 0;
+
+let curOffX = 0.5, curOffY = 0.5;
+const offXBuf = [], offYBuf = [];
+const BUF_MAX = 30;
+
+let calMap = null;
+
+/* ── annotation pool ────────────────────────────────────────────────── */
+function buildPool() {
+  annLayer.innerHTML = '';
+  pool = [];
+  for (let i = 0; i < N_ANN; i++) {
+    const el = document.createElement('span');
+    el.className = 'ann';
+    annLayer.appendChild(el);
+    pool.push({ el, x: 0.5, y: 0.5, revealed: false, blurLevel: 0, active: false });
+  }
+}
+
+/* ── sizing ──────────────────────────────────────────────────────────── */
+function sizeWrapper() {
+  dotCanvas.width  = window.innerWidth;
+  dotCanvas.height = window.innerHeight;
+}
+
+/* ── Sobel ───────────────────────────────────────────────────────────── */
+function sobel(px, w, h) {
+  const g  = new Float32Array(w * h);
+  const gx = new Float32Array(w * h);
+  const gy = new Float32Array(w * h);
+  const mg = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    g[i] = 0.299 * px[o] + 0.587 * px[o + 1] + 0.114 * px[o + 2];
+  }
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i  = y * w + x;
+      const tl = g[i-w-1], tc = g[i-w], tr = g[i-w+1];
+      const ml = g[i-1],                mr = g[i+1];
+      const bl = g[i+w-1], bc = g[i+w], br = g[i+w+1];
+      gx[i] = (tr + 2*mr + br) - (tl + 2*ml + bl);
+      gy[i] = (bl + 2*bc + br) - (tl + 2*tc + tr);
+      mg[i] = Math.hypot(gx[i], gy[i]);
+    }
+  }
+  return { gx, gy, mg };
+}
+
+/* ── draw dots ───────────────────────────────────────────────────────── */
+function drawDots(activePts) {
+  const W = dotCanvas.width, H = dotCanvas.height;
+  if (!W || !H) return;
+  dotCtx.clearRect(0, 0, W, H);
+
+  dotCtx.fillStyle = 'rgba(255, 21, 0, 0.82)';
+  dotCtx.beginPath();
+  for (const p of activePts) {
+    const sx = p.nx * W;
+    const sy = p.ny * H;
+    dotCtx.rect(sx - 1, sy - 1, 2, 2);
+  }
+  dotCtx.fill();
+}
+
+/* ── region stats ────────────────────────────────────────────────────── */
+function rStats(px, w, h, nx0, ny0, nx1, ny1) {
+  const x0 = Math.max(0, Math.floor(nx0 * w));
+  const y0 = Math.max(0, Math.floor(ny0 * h));
+  const x1 = Math.min(w - 1, Math.floor(nx1 * w));
+  const y1 = Math.min(h - 1, Math.floor(ny1 * h));
+  let sL = 0, sL2 = 0, sS = 0, n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const o  = (y * w + x) * 4;
+      const r  = px[o]     / 255;
+      const gr = px[o + 1] / 255;
+      const b  = px[o + 2] / 255;
+      const mx = Math.max(r, gr, b), mn = Math.min(r, gr, b);
+      const l  = (mx + mn) * 0.5;
+      const s  = (mx === mn) ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+      sL += l; sL2 += l * l; sS += s; n++;
+    }
+  }
+  if (!n) return { bright: 128, contrast: 0, sat: 0 };
+  const al = sL / n;
+  return {
+    bright:   Math.round(al * 255),
+    contrast: Math.round(Math.sqrt(Math.max(0, sL2 / n - al * al)) * 255),
+    sat:      Math.round(sS / n * 100)
+  };
+}
+
+/* ── motion score ────────────────────────────────────────────────────── */
+function rMotion(px, prev, w, h, nx0, ny0, nx1, ny1) {
+  if (!prev) return 0;
+  const x0 = Math.max(0, Math.floor(nx0 * w));
+  const y0 = Math.max(0, Math.floor(ny0 * h));
+  const x1 = Math.min(w - 1, Math.floor(nx1 * w));
+  const y1 = Math.min(h - 1, Math.floor(ny1 * h));
+  let d = 0, n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const o = (y * w + x) * 4;
+      d += Math.abs(px[o]     - prev[o])
+         + Math.abs(px[o + 1] - prev[o + 1])
+         + Math.abs(px[o + 2] - prev[o + 2]);
+      n += 3;
+    }
+  }
+  return n ? d / n : 0;
+}
+
+/* ── label composer ──────────────────────────────────────────────────── */
+function makeLabel(dir, mag, st, mv) {
+  if (mv > 38)           return `CRITICAL / MOTION_FAST`;
+  if (mv > 16) {
+    const s = Math.min(99, Math.max(10, Math.round(99 - mv * 2.4)));
+    return `${dir} / STAB_${s}%`;
+  }
+  if (st.contrast > 52)  return `${dir} / CONTRAST_HIGH`;
+  if (st.bright   > 178) return `DETAIL / BRIGHT_${st.bright}`;
+  if (st.bright   < 42)  return `DETAIL / DARK_${st.bright}`;
+  if (mag         > 210) return `${dir} / SHARP_${Math.round(mag / 3)}`;
+  if (st.sat      > 42)  return `${dir} / SAT_${st.sat}%`;
+  if (st.contrast > 22)  return `${dir} / CONTRAST_${st.contrast}`;
+  return `STABLE / EDGE_${Math.round(mag)}`;
+}
+
+/* ── frame analysis ──────────────────────────────────────────────────── */
+function analyze() {
+  if (mainVideo.readyState < 2) return;
+
+  anaCtx.drawImage(mainVideo, 0, 0, W_ANA, H_ANA);
+  const id   = anaCtx.getImageData(0, 0, W_ANA, H_ANA);
+  const px   = id.data;
+  const { gx, gy, mg } = sobel(px, W_ANA, H_ANA);
+
+  const all = [];
+  for (let y = 1; y < H_ANA - 1; y += DOT_STEP) {
+    for (let x = 1; x < W_ANA - 1; x += DOT_STEP) {
+      const i = y * W_ANA + x;
+      if (mg[i] >= DOT_THRESH) all.push({ i, mag: mg[i] });
+    }
+  }
+  all.sort((a, b) => b.mag - a.mag);
+  if (all.length > N_ANN) all.length = N_ANN;
+
+  const pts = [];
+  const m = 0.06;
+
+  for (const { i, mag } of all) {
+    const bx = i % W_ANA, by = Math.floor(i / W_ANA);
+    const nx = bx / W_ANA, ny = by / H_ANA;
+
+    const st = rStats( px,     W_ANA, H_ANA, nx-m, ny-m, nx+m, ny+m);
+    const mv = rMotion(px, prevPx, W_ANA, H_ANA, nx-m, ny-m, nx+m, ny+m);
+
+    const agx = Math.abs(gx[i]), agy = Math.abs(gy[i]);
+    const a   = ((Math.atan2(gy[i], gx[i]) * 180 / Math.PI) % 180 + 180) % 180;
+
+    let dir;
+    if      (agx > 90 && agy > 90)  dir = 'CORNER';
+    else if (a < 25 || a >= 155)     dir = 'HORIZONTAL';
+    else if (a >= 65 && a < 115)     dir = 'VERTICAL';
+    else                             dir = 'DIAGONAL';
+
+    pts.push({
+      nx:    Math.max(0.01, Math.min(0.99, nx)),
+      ny:    Math.max(0.01, Math.min(0.99, ny)),
+      label: makeLabel(dir, mag, st, mv)
+    });
+  }
+
+  drawDots(pts);
+
+  const n = Math.min(pts.length, N_ANN);
+  for (let i = 0; i < N_ANN; i++) {
+    const a = pool[i];
+    if (i < n) {
+      const p = pts[i];
+      a.active = true;
+      if (!a.revealed) {
+        a.x = p.nx;
+        a.y = p.ny;
+        a.blurLevel = 0;
+        a.el.style.left = (p.nx * 100).toFixed(2) + '%';
+        a.el.style.top  = (p.ny * 100).toFixed(2) + '%';
+        a.el.style.transform = p.nx > 0.62
+          ? 'translate(calc(-100% - 12px), -50%)'
+          : 'translate(12px, -50%)';
+      }
+      a.el.textContent = p.label;
+    } else {
+      a.active   = false;
+      a.revealed = false;
+      a.blurLevel = 0;
+      a.el.textContent = '';
+      a.el.style.opacity = '0';
+      a.el.style.filter  = 'none';
+    }
+  }
+
+  preCtx.drawImage(mainVideo, 0, 0, W_ANA, H_ANA);
+  prevPx = preCtx.getImageData(0, 0, W_ANA, H_ANA).data.slice();
+}
+
+/* ── cursor reveal ───────────────────────────────────────────────────── */
+function applyGaze(ts) {
+  const dt = lastGazeTs ? Math.min((ts - lastGazeTs) / 1000, 0.05) : 0;
+  lastGazeTs = ts;
+
+  sGX += (rawGX - sGX) * GAZE_LERP;
+  sGY += (rawGY - sGY) * GAZE_LERP;
+
+  const W = videoWrapper.offsetWidth;
+  const H = videoWrapper.offsetHeight;
+  if (!W || !H) return;
+
+  const gpx = sGX * W, gpy = sGY * H;
+  const rect = videoWrapper.getBoundingClientRect();
+  gazeDot.style.left = (rect.left + gpx) + 'px';
+  gazeDot.style.top  = (rect.top  + gpy) + 'px';
+
+  const revR = Math.min(W, H) * REVEAL_FRAC;
+
+  for (const a of pool) {
+    if (!a.active || !a.el.textContent) continue;
+
+    const d    = Math.hypot(a.x * W - gpx, a.y * H - gpy);
+    const near = d < revR;
+
+    if (near) {
+      if (!a.revealed) { a.revealed = true; a.blurLevel = 0; }
+      a.blurLevel = Math.max(0, a.blurLevel - BLUR_CLEAR_RATE * dt);
+      a.el.style.opacity = '1';
+      a.el.style.filter  = 'none';
+
+    } else if (a.revealed) {
+      a.blurLevel = Math.min(MAX_BLUR, a.blurLevel + BLUR_GROW_RATE * dt);
+      a.el.style.filter = `blur(${a.blurLevel.toFixed(2)}px)`;
+
+      if (a.blurLevel >= MAX_BLUR * 0.98) {
+        a.revealed  = false;
+        a.blurLevel = 0;
+        a.el.style.opacity = '0';
+        a.el.style.filter  = 'none';
+      }
+    }
+  }
+}
+
+/* ── main loop ───────────────────────────────────────────────────────── */
+function mainLoop(ts) {
+  applyGaze(ts);
+  if (ts - lastAnaTs > ANA_INTERVAL) { analyze(); lastAnaTs = ts; }
+  requestAnimationFrame(mainLoop);
+}
+
+/* ── head stability ──────────────────────────────────────────────────── */
+function stability() {
+  const N = Math.min(offXBuf.length, 20);
+  if (N < 8) return 0;
+  const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
+  const mx = xs.reduce((a, b) => a + b, 0) / N;
+  const my = ys.reduce((a, b) => a + b, 0) / N;
+  const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0) / N;
+  const vy = ys.reduce((a, b) => a + (b - my) ** 2, 0) / N;
+  return Math.max(0, Math.min(1, 1 - (vx + vy) / CAL_VAR_THRESH));
+}
+
+/* ── affine fit ──────────────────────────────────────────────────────── */
+function fitAffine(data) {
+  let A00=0, A01=0, A02=0, A11=0, A12=0;
+  let Bx0=0, Bx1=0, Bx2=0, By0=0, By1=0, By2=0;
+  const n = data.length;
+  for (const d of data) {
+    A00 += d.ox*d.ox; A01 += d.ox*d.oy; A02 += d.ox;
+    A11 += d.oy*d.oy; A12 += d.oy;
+    Bx0 += d.ox*d.sx; Bx1 += d.oy*d.sx; Bx2 += d.sx;
+    By0 += d.ox*d.sy; By1 += d.oy*d.sy; By2 += d.sy;
+  }
+  const M = [[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
+  const inv = inv3(M);
+  if (!inv) return null;
+  const [ax,bx,cx] = mv3(inv, [Bx0,Bx1,Bx2]);
+  const [ay,by,cy] = mv3(inv, [By0,By1,By2]);
+  return { ax, bx, cx, ay, by, cy };
+}
+function inv3(m) {
+  const [[a,b,c],[d,e,f],[g,h,k]] = m;
+  const det = a*(e*k-f*h) - b*(d*k-f*g) + c*(d*h-e*g);
+  if (Math.abs(det) < 1e-12) return null;
+  const s = 1 / det;
+  return [
+    [(e*k-f*h)*s, (c*h-b*k)*s, (b*f-c*e)*s],
+    [(f*g-d*k)*s, (a*k-c*g)*s, (c*d-a*f)*s],
+    [(d*h-e*g)*s, (b*g-a*h)*s, (a*e-b*d)*s]
+  ];
+}
+function mv3(m, v) {
+  return [
+    m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+    m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+    m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]
+  ];
+}
+
+/* ── calibration helpers ─────────────────────────────────────────────── */
+function resizeCal() {
+  calCanvas.width  = window.innerWidth;
+  calCanvas.height = window.innerHeight;
+}
+
+function drawIntro() {
+  const W = calCanvas.width, H = calCanvas.height;
+  calCtx.fillStyle = '#000';
+  calCtx.fillRect(0, 0, W, H);
+  calCtx.textAlign = 'center';
+
+  calCtx.fillStyle = '#cccccc';
+  calCtx.font = 'bold 22px Courier New';
+  calCtx.fillText('HEAD TRACKING CALIBRATION', W / 2, H / 2 - 52);
+
+  calCtx.strokeStyle = '#2a2a2a';
+  calCtx.lineWidth = 1;
+  calCtx.beginPath();
+  calCtx.moveTo(W / 2 - 220, H / 2 - 36);
+  calCtx.lineTo(W / 2 + 220, H / 2 - 36);
+  calCtx.stroke();
+
+  calCtx.fillStyle = '#888888';
+  calCtx.font = '14px Courier New';
+  calCtx.fillText('Point your head at each dot and hold still', W / 2, H / 2 - 14);
+  calCtx.fillText('until the ring fills completely', W / 2, H / 2 + 8);
+
+  calCtx.fillStyle = '#484848';
+  calCtx.font = '12px Courier New';
+  calCtx.fillText('Move only your head — keep your body still', W / 2, H / 2 + 34);
+}
+
+function drawDone() {
+  const W = calCanvas.width, H = calCanvas.height;
+  calCtx.fillStyle = '#000';
+  calCtx.fillRect(0, 0, W, H);
+  calCtx.textAlign = 'center';
+  calCtx.fillStyle = '#bbbbbb';
+  calCtx.font = 'bold 24px Courier New';
+  calCtx.fillText('SYNCHRONIZED', W / 2, H / 2 - 8);
+  calCtx.fillStyle = '#444444';
+  calCtx.font = '13px Courier New';
+  calCtx.fillText('Calibration complete', W / 2, H / 2 + 18);
+}
+
+function awaitDot(px, py, index) {
+  return new Promise(resolve => {
+    let progress = 0, prevTs = null;
+    const samples = [];
+
+    function frame(ts) {
+      const dt   = prevTs ? Math.min((ts - prevTs) / 1000, 0.05) : 0;
+      prevTs     = ts;
+      const stab = stability();
+
+      progress += stab * CAL_FILL_RATE * dt;
+      progress -= (1 - stab) * CAL_DRAIN_RATE * dt;
+      progress  = Math.max(0, Math.min(1, progress));
+
+      if (stab > 0.45) samples.push({ ox: curOffX, oy: curOffY });
+
+      const W = calCanvas.width, H = calCanvas.height;
+      calCtx.fillStyle = '#000';
+      calCtx.fillRect(0, 0, W, H);
+
+      calCtx.textAlign = 'right';
+      calCtx.fillStyle = '#777777';
+      calCtx.font = '14px Courier New';
+      calCtx.fillText(`${index + 1}  /  ${CAL_PTS.length}`, W - 28, 36);
+
+      calCtx.textAlign = 'center';
+      calCtx.fillStyle = '#666666';
+      calCtx.font = '13px Courier New';
+      calCtx.fillText('POINT HEAD AT DOT · HOLD STILL', W / 2, H - 26);
+
+      calCtx.beginPath();
+      calCtx.arc(px, py, 22, 0, Math.PI * 2);
+      calCtx.strokeStyle = '#1a1a1a';
+      calCtx.lineWidth = 1.5;
+      calCtx.stroke();
+
+      if (progress > 0) {
+        calCtx.beginPath();
+        calCtx.arc(px, py, 22, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        calCtx.strokeStyle = `rgba(255,255,255,${0.35 + stab * 0.65})`;
+        calCtx.lineWidth = 2;
+        calCtx.stroke();
+      }
+
+      const r = 3.5 + stab * 2.5;
+      calCtx.beginPath();
+      calCtx.arc(px, py, r, 0, Math.PI * 2);
+      calCtx.fillStyle = `rgba(255,255,255,${0.2 + stab * 0.8})`;
+      calCtx.fill();
+
+      if (progress >= 1) {
+        calCtx.beginPath();
+        calCtx.arc(px, py, 22, 0, Math.PI * 2);
+        calCtx.strokeStyle = 'rgba(255,255,255,0.9)';
+        calCtx.lineWidth = 2;
+        calCtx.stroke();
+        const n  = samples.length || 1;
+        const ox = samples.reduce((s, v) => s + v.ox, 0) / n;
+        const oy = samples.reduce((s, v) => s + v.oy, 0) / n;
+        setTimeout(() => resolve({ ox, oy }), 280);
+      } else {
+        requestAnimationFrame(frame);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+/* ── calibration sequence ────────────────────────────────────────────── */
+async function runCalibration() {
+  resizeCal();
+  window.addEventListener('resize', resizeCal);
+
+  drawIntro();
+  calStartBtn.style.display = 'block';
+  await new Promise(r => calStartBtn.addEventListener('click', r, { once: true }));
+  calStartBtn.style.display = 'none';
+
+  const calData = [];
+  for (let i = 0; i < CAL_PTS.length; i++) {
+    const [nx, ny] = CAL_PTS[i];
+    const px = nx * window.innerWidth;
+    const py = ny * window.innerHeight;
+    if (i > 0) await new Promise(r => setTimeout(r, 320));
+    const { ox, oy } = await awaitDot(px, py, i);
+    calData.push({ sx: nx, sy: ny, ox, oy });
+  }
+
+  if (calData.length >= 4) calMap = fitAffine(calData);
+
+  drawDone();
+  await new Promise(r => setTimeout(r, 900));
+  calOverlay.style.display = 'none';
+}
+
+/* ── head tracking ───────────────────────────────────────────────────── */
+async function startHeadTracking() {
+  let fl;
+  try {
+    const fs = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    fl = await FaceLandmarker.createFromOptions(fs, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        delegate: 'GPU'
+      },
+      outputFaceBlendshapes: false,
+      runningMode: 'VIDEO',
+      numFaces: 1
+    });
+  } catch (e) { console.warn('[head] FaceLandmarker init failed:', e); return false; }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
+    });
+    webcamEl.srcObject = stream;
+    await new Promise(r => { webcamEl.onloadeddata = r; });
+  } catch (e) { console.warn('[head] Webcam unavailable:', e); return false; }
+
+  let lastCamT = -1;
+  function trackHead() {
+    if (webcamEl.readyState >= 2 && webcamEl.currentTime !== lastCamT) {
+      lastCamT = webcamEl.currentTime;
+      try {
+        const res = fl.detectForVideo(webcamEl, performance.now());
+        if (res.faceLandmarks?.length > 0) {
+          const lm = res.faceLandmarks[0];
+          const nose = lm[1], brow = lm[168], chin = lm[152];
+          const lChk = lm[234], rChk = lm[454];
+          const hxRaw = (nose.x*4 + brow.x + chin.x + lChk.x + rChk.x) / 8;
+          const hyRaw = (nose.y*4 + brow.y + chin.y + lChk.y + rChk.y) / 8;
+          const headX = 1 - hxRaw;
+          const headY = hyRaw;
+
+          curOffX = headX; curOffY = headY;
+          offXBuf.push(headX); if (offXBuf.length > BUF_MAX) offXBuf.shift();
+          offYBuf.push(headY); if (offYBuf.length > BUF_MAX) offYBuf.shift();
+
+          if (calMap) {
+            rawGX = calMap.ax*headX + calMap.bx*headY + calMap.cx;
+            rawGY = calMap.ay*headX + calMap.by*headY + calMap.cy;
+          } else {
+            rawGX = headX;
+            rawGY = headY;
+          }
+          rawGX = Math.max(0, Math.min(1, rawGX));
+          rawGY = Math.max(0, Math.min(1, rawGY));
+          if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
+        }
+      } catch (_) {}
+    }
+    requestAnimationFrame(trackHead);
+  }
+  requestAnimationFrame(trackHead);
+  return true;
+}
+
+/* ── mouse / touch fallback ──────────────────────────────────────────── */
+function enablePointerFallback() {
+  infoEl.textContent = 'MOVE MOUSE TO EXPLORE · HOVER DOTS TO REVEAL';
+  const onMove = (cx, cy) => {
+    const rect = videoWrapper.getBoundingClientRect();
+    const nx = (cx - rect.left) / rect.width;
+    const ny = (cy - rect.top)  / rect.height;
+    if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) {
+      rawGX = nx; rawGY = ny;
+      if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
+    }
+  };
+  document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  document.addEventListener('touchmove', e => {
+    e.preventDefault();
+    onMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+}
+
+/* ── boot ────────────────────────────────────────────────────────────── */
+async function boot() {
+  buildPool();
+  sizeWrapper();
+  mainVideo.addEventListener('loadedmetadata', sizeWrapper);
+  window.addEventListener('resize', sizeWrapper);
+
+  if (mainVideo.readyState < 2)
+    await new Promise(r => mainVideo.addEventListener('canplay', r, { once: true }));
+
+  const ok = await startHeadTracking();
+  if (ok) {
+    await runCalibration();
+  } else {
+    calOverlay.style.display = 'none';
+    enablePointerFallback();
+  }
+
+  analyze();
+  lastAnaTs = performance.now();
+  requestAnimationFrame(mainLoop);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MULTI-USER GAZE GALLERY
+   ══════════════════════════════════════════════════════════════════════ */
+
+let currentUser      = '';
+let ws               = null;
+let latestData       = {};
+let galleryOpen      = false;
+
+/* ── name screen ── */
+async function showNameScreen() {
+  return new Promise(resolve => {
+    const screen   = document.getElementById('nameScreen');
+    const input    = document.getElementById('nameInput');
+    const btn      = document.getElementById('nameContinue');
+    screen.style.display = 'flex';
+    input.focus();
+
+    function proceed() {
+      const v = input.value.trim();
+      if (!v) { input.focus(); return; }
+      currentUser = v;
+      screen.style.display = 'none';
+      resolve();
+    }
+    btn.addEventListener('click', proceed);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') proceed(); });
+  });
+}
+
+/* ── WebSocket ── */
+function connectWS() {
+  try {
+    ws = new WebSocket(location.origin.replace('https', 'wss').replace('http', 'ws'));
+
+    ws.addEventListener('message', e => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'sessions') {
+          latestData = msg.data;
+          updateGhostsFromData(msg.data);
+          if (galleryOpen) renderGallery(msg.data);
+        }
+      } catch (_) {}
+    });
+
+    ws.addEventListener('error', () => {});
+  } catch (_) {}
+}
+
+function startGazeSend() {
+  setInterval(() => {
+    if (document.visibilityState === 'hidden') return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try {
+      ws.send(JSON.stringify({ type: 'gaze', name: currentUser, x: sGX, y: sGY }));
+    } catch (_) {}
+  }, 2000);
+}
+
+/* ── ghost cursors ── */
+const ghostContainer = document.getElementById('ghostContainer');
+
+function updateGhostsFromData(data) {
+  ghostContainer.innerHTML = '';
+  const now = Date.now();
+  for (const [name, entry] of Object.entries(data)) {
+    if (name === currentUser) continue;
+    if (now - entry.ts > 30000) continue;
+
+    const ghost = document.createElement('div');
+    ghost.style.cssText =
+      'position:absolute;pointer-events:none;' +
+      'transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;';
+    ghost.style.left = (entry.x * window.innerWidth)  + 'px';
+    ghost.style.top  = (entry.y * window.innerHeight) + 'px';
+
+    const circle = document.createElement('div');
+    circle.style.cssText =
+      'width:14px;height:14px;border-radius:50%;' +
+      'border:1.5px solid rgba(255,255,255,0.25);flex-shrink:0;';
+
+    const lbl = document.createElement('div');
+    lbl.style.cssText =
+      'font-family:"Courier New",monospace;font-size:8px;' +
+      'color:rgba(255,255,255,0.4);margin-top:3px;white-space:nowrap;';
+    lbl.textContent = name;
+
+    ghost.appendChild(circle);
+    ghost.appendChild(lbl);
+    ghostContainer.appendChild(ghost);
+  }
+}
+
+/* ── gallery ── */
+const galleryOverlay = document.getElementById('galleryOverlay');
+const galleryList    = document.getElementById('galleryList');
+const galleryClose   = document.getElementById('galleryClose');
+const galleryBtn     = document.getElementById('galleryBtn');
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`;
+}
+
+function renderGallery(data) {
+  galleryList.innerHTML = '';
+  const entries = Object.entries(data);
+  if (entries.length === 0) {
+    galleryList.innerHTML =
+      '<div style="color:#2a2a2a;font-size:12px;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
+    return;
+  }
+  const now = Date.now();
+  for (const [name, entry] of entries) {
+    const isOld = (now - entry.ts) > 600000;
+    const isMe  = name === currentUser;
+
+    const row = document.createElement('div');
+    row.style.cssText = `margin-bottom:20px;opacity:${isOld ? 0.3 : 1};`;
+
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = 'color:#aaa;font-size:13px;letter-spacing:0.12em;';
+    nameDiv.textContent   = name + (isMe ? '  (YOU)' : '');
+
+    const detDiv = document.createElement('div');
+    detDiv.style.cssText = 'color:#444;font-size:10px;letter-spacing:0.1em;margin-top:6px;';
+    detDiv.textContent   =
+      `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}  ·  ${timeAgo(entry.ts)}`;
+
+    row.appendChild(nameDiv);
+    row.appendChild(detDiv);
+    galleryList.appendChild(row);
+  }
+}
+
+galleryBtn.addEventListener('click', () => {
+  galleryOpen = true;
+  galleryOverlay.style.display = 'flex';
+  ghostContainer.style.display = 'none';
+  renderGallery(latestData);
+});
+
+galleryClose.addEventListener('click', () => {
+  galleryOpen = false;
+  galleryOverlay.style.display = 'none';
+  ghostContainer.style.display = 'block';
+});
+
+galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.opacity = '1'; });
+galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.opacity = '0.6'; });
+
+/* ── app entry point ── */
+async function startApp() {
+  await showNameScreen();
+  connectWS();
+  await boot();
+  startGazeSend();
+}
+
+startApp();
+</script>
+
+<!-- ── name registration screen ── -->
+<div id="nameScreen" style="
+  display:none;position:fixed;inset:0;z-index:2000;background:#000;
+  flex-direction:column;align-items:center;justify-content:center;
+">
+  <div style="color:#1e1e1e;font-family:'Courier New',monospace;font-size:9px;
+              letter-spacing:0.4em;margin-bottom:52px;">
+    VISUAL ANALYSIS SYSTEM
+  </div>
+  <label for="nameInput" style="display:block;color:#555;font-family:'Courier New',monospace;
+                                font-size:11px;letter-spacing:0.28em;margin-bottom:16px;">
+    ENTER YOUR NAME
+  </label>
+  <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="
+    background:#000;border:none;border-bottom:1px solid #2a2a2a;
+    color:#ccc;font-family:'Courier New',monospace;font-size:16px;
+    letter-spacing:0.15em;padding:8px 6px;outline:none;
+    text-align:center;width:270px;caret-color:#ff1500;
+  "/>
+  <button id="nameContinue" style="
+    margin-top:38px;background:transparent;border:1px solid #2a2a2a;
+    color:#777;font-family:'Courier New',monospace;font-size:11px;
+    letter-spacing:0.28em;padding:13px 40px;cursor:pointer;
+  "
+  onmouseover="this.style.borderColor='#666';this.style.color='#bbb';"
+  onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#777';"
+  >CONTINUE</button>
+</div>
+
+<!-- ── gallery overlay ── -->
+<div id="galleryOverlay" style="
+  display:none;position:fixed;inset:0;z-index:1500;background:#000;
+  flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;
+">
+  <div style="width:100%;max-width:500px;font-family:'Courier New',monospace;">
+    <div style="color:#1a1a1a;font-size:9px;letter-spacing:0.45em;margin-bottom:8px;">
+      GAZE SESSIONS
+    </div>
+    <div style="border-bottom:1px solid #0f0f0f;margin-bottom:38px;"></div>
+    <div id="galleryList"></div>
+    <button id="galleryClose" style="
+      margin-top:52px;background:transparent;border:1px solid #1e1e1e;
+      color:#444;font-family:'Courier New',monospace;font-size:11px;
+      letter-spacing:0.25em;padding:12px 34px;cursor:pointer;
+    "
+    onmouseover="this.style.borderColor='#555';this.style.color='#aaa';"
+    onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#444';"
+    >[ CLOSE ]</button>
+  </div>
+</div>
+
+<!-- ── gallery trigger ── -->
+<div id="galleryBtn" style="
+  position:fixed;bottom:14px;left:14px;font-family:'Courier New',monospace;
+  font-size:10px;letter-spacing:0.2em;color:#2a2a2a;cursor:pointer;
+  z-index:60;opacity:0.6;transition:opacity 0.2s;user-select:none;
+">[ GALLERY ]</div>
+
+<!-- ── ghost cursor layer ── -->
+<div id="ghostContainer" style="
+  position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;
+"></div>
+
+</body>
+</html>
