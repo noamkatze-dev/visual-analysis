@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:none; }
+body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:none; font-family:'Heebo',sans-serif; }
 #scene { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
 #videoWrapper { position:relative; width:100vw; height:100vh; overflow:hidden; }
 #mainVideo { display:block; width:100%; height:100%; object-fit:cover; }
@@ -21,7 +21,7 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
   color:#e01a00;
   letter-spacing:0.06em;
   white-space:nowrap;
-  text-shadow:0 0 8px rgba(255,255,255,0.95),0 0 2px rgba(255,255,255,0.95);
+  text-shadow:0 0 8px rgba(0,0,0,0.9),0 0 2px rgba(0,0,0,0.9);
   pointer-events:none;
   opacity:0;
   transition:opacity 0.5s ease, filter 0.5s ease;
@@ -29,89 +29,189 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 
 #gazeDot {
   position:fixed; width:22px; height:22px; border-radius:50%;
-  border:2px solid rgba(224,26,0,0.7);
+  border:2px solid rgba(224,26,0,0.85);
+  background:rgba(224,26,0,0.15);
   transform:translate(-50%,-50%); pointer-events:none; z-index:50;
 }
 #webcamEl {
   position:fixed; bottom:8px; right:8px; width:96px; height:72px;
-  opacity:0.04; transform:scaleX(-1); border:1px solid #e8e8e8; z-index:50;
+  opacity:0.06; transform:scaleX(-1); border:1px solid #333; z-index:50;
 }
 #info {
-  position:fixed; bottom:11px; left:50%; transform:translateX(-50%);
+  position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
   font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
-  letter-spacing:0.2em; color:#bbbbbb; pointer-events:none;
+  letter-spacing:0.22em; color:rgba(255,255,255,0.4); pointer-events:none;
   transition:opacity 2s ease; white-space:nowrap; z-index:50;
 }
 
+/* ── shared btn style ── */
+.va-btn {
+  font-family:'Heebo',sans-serif; letter-spacing:0.22em; cursor:pointer;
+  transition:background 0.18s, color 0.18s, border-color 0.18s;
+}
+.va-btn-primary {
+  background:#e01a00; color:#ffffff; border:2px solid #e01a00;
+  font-size:13px; font-weight:700; padding:16px 52px;
+}
+.va-btn-primary:hover { background:#ff2200; border-color:#ff2200; }
+
+.va-btn-secondary {
+  background:#000000; color:#ffffff; border:2px solid #ffffff;
+  font-size:12px; font-weight:500; padding:14px 40px;
+}
+.va-btn-secondary:hover { background:#ffffff; color:#000000; }
+
 /* ── calibration overlay ── */
-#calOverlay { position:fixed; inset:0; z-index:1000; background:#ffffff; }
+#calOverlay { position:fixed; inset:0; z-index:1000; background:#000000; }
 #calCanvas  { position:absolute; inset:0; width:100%; height:100%; }
 #calStartBtn {
   position:absolute; top:58%; left:50%; transform:translateX(-50%);
-  background:transparent; border:1px solid #dddddd; color:#999999;
-  font-family:'Heebo',sans-serif; font-size:12px; letter-spacing:0.25em;
-  padding:14px 36px; cursor:pointer; z-index:1001;
-  transition:border-color 0.2s,color 0.2s; display:none;
+  display:none; z-index:1001;
 }
-#calStartBtn:hover { border-color:#e01a00; color:#e01a00; }
-#nameInput:focus   { border-bottom-color:#e01a00 !important; outline:none; }
+#nameInput:focus { border-bottom-color:#e01a00 !important; outline:none; }
 
 /* ── mode selection screen ── */
 #modeScreen {
-  display:none; position:fixed; inset:0; z-index:1100; background:#ffffff;
+  display:none; position:fixed; inset:0; z-index:1100;
+  background:rgba(0,0,0,0.92);
+  backdrop-filter:blur(2px);
   flex-direction:column; align-items:center; justify-content:center;
+}
+.mode-screen-title {
+  font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
+  letter-spacing:0.55em; color:rgba(255,255,255,0.35);
+  margin-bottom:36px; text-transform:uppercase;
 }
 .mode-grid {
   display:grid; grid-template-columns:repeat(3,1fr);
-  gap:14px; max-width:700px; width:92vw; margin-bottom:40px;
+  gap:2px; max-width:720px; width:92vw; margin-bottom:36px;
+  border:2px solid #222; outline:2px solid #222;
 }
 .mode-card {
-  border:1px solid #eeeeee; padding:22px 18px 18px;
-  cursor:pointer; transition:border-color 0.18s;
+  background:#111111;
+  border:2px solid transparent;
+  padding:24px 20px 20px;
+  cursor:pointer;
+  transition:background 0.15s, border-color 0.15s;
+  position:relative;
 }
-.mode-card:hover   { border-color:#dddddd; }
-.mode-card.selected { border-color:#e01a00; }
-.mode-num { font-family:'Heebo',sans-serif; font-size:20px; font-weight:300; color:#dddddd; letter-spacing:0.04em; margin-bottom:9px; }
-.mode-name-en { font-family:'Heebo',sans-serif; font-size:12px; font-weight:700; color:#111111; letter-spacing:0.1em; line-height:1.3; }
-.mode-name-he { font-family:'Heebo',sans-serif; font-size:12px; font-weight:700; color:#111111; margin-bottom:10px; }
-.mode-desc { font-family:'Heebo',sans-serif; font-size:9.5px; font-weight:300; color:#aaaaaa; letter-spacing:0.06em; line-height:1.55; }
-#modeBeginBtn {
-  background:transparent; border:1px solid #dddddd; color:#999999;
-  font-family:'Heebo',sans-serif; font-size:12px; letter-spacing:0.25em;
-  padding:14px 44px; cursor:pointer; transition:border-color 0.2s,color 0.2s;
+.mode-card:hover {
+  background:#1a1a1a;
+  border-color:#555;
 }
-#modeBeginBtn:hover { border-color:#e01a00; color:#e01a00; }
+.mode-card.selected {
+  background:#1a0000;
+  border-color:#e01a00;
+}
+.mode-card.selected .mode-num { color:#e01a00; }
+.mode-card.selected .mode-name { color:#ffffff; }
+
+.mode-num {
+  font-family:'Heebo',sans-serif; font-size:11px; font-weight:300;
+  color:#444; letter-spacing:0.12em; margin-bottom:10px;
+  transition:color 0.15s;
+}
+.mode-name {
+  font-family:'Heebo',sans-serif; font-size:13px; font-weight:700;
+  color:#888; letter-spacing:0.1em; line-height:1.2;
+  margin-bottom:10px; transition:color 0.15s;
+}
+.mode-desc {
+  font-family:'Heebo',sans-serif; font-size:9px; font-weight:300;
+  color:#444; letter-spacing:0.05em; line-height:1.6;
+}
+.mode-card.selected .mode-desc { color:#666; }
+
+/* selected indicator bar */
+.mode-card.selected::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:2px; background:#e01a00;
+}
 
 /* ── floating mode pill ── */
 #modePill {
-  display:none; position:fixed; bottom:48px; right:14px; z-index:60;
+  display:none; position:fixed; bottom:52px; right:16px; z-index:60;
   font-family:'Heebo',sans-serif;
 }
 #modePillCollapsed {
-  display:flex; align-items:center; gap:5px; border:1px solid #e8e8e8;
-  padding:7px 11px; cursor:pointer; font-size:10px; font-weight:300;
-  color:#cccccc; letter-spacing:0.12em; transition:border-color 0.2s,color 0.2s;
+  display:flex; align-items:center; gap:6px;
+  background:#000000; border:1.5px solid #333;
+  padding:9px 14px; cursor:pointer; font-size:10px; font-weight:500;
+  color:#ffffff; letter-spacing:0.14em;
+  transition:border-color 0.15s, background 0.15s;
   white-space:nowrap; user-select:none;
 }
-#modePillCollapsed:hover { border-color:#e01a00; color:#e01a00; }
+#modePillCollapsed:hover { border-color:#e01a00; background:#0d0000; }
+#modePillCollapsed .pill-dot { color:#e01a00; font-size:8px; }
+
 #modePillExpanded {
-  display:none; flex-direction:column; border:1px solid #e8e8e8;
-  background:#ffffff; min-width:154px;
+  display:none; flex-direction:column;
+  background:#000000; border:1.5px solid #333;
+  min-width:168px;
 }
 .pill-mode-row {
-  padding:9px 14px; font-size:10px; font-weight:400; color:#aaaaaa;
-  letter-spacing:0.1em; cursor:pointer; border-left:2px solid transparent;
-  transition:color 0.15s; user-select:none;
+  padding:10px 14px; font-size:10px; font-weight:400; color:#666;
+  letter-spacing:0.1em; cursor:pointer; border-left:3px solid transparent;
+  transition:color 0.12s, background 0.12s; user-select:none;
 }
-.pill-mode-row:hover { color:#333333; }
-.pill-mode-row.active { border-left-color:#e01a00; font-weight:700; color:#111111; }
+.pill-mode-row:hover { color:#ffffff; background:#111; }
+.pill-mode-row.active {
+  border-left-color:#e01a00; font-weight:700;
+  color:#ffffff; background:#0d0000;
+}
 #pillSaveBtn {
-  margin:6px 10px 10px; background:transparent; border:1px solid #e8e8e8;
-  color:#aaaaaa; font-family:'Heebo',sans-serif; font-size:10px;
-  letter-spacing:0.15em; padding:7px 10px; cursor:pointer;
-  transition:border-color 0.2s,color 0.2s;
+  margin:6px 10px 10px; cursor:pointer;
+  font-family:'Heebo',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:0.18em; padding:9px 12px;
+  background:#e01a00; color:#ffffff; border:none;
+  transition:background 0.15s;
 }
-#pillSaveBtn:hover { border-color:#e01a00; color:#e01a00; }
+#pillSaveBtn:hover { background:#ff2200; }
+
+/* ── name screen ── */
+#nameScreen {
+  display:none; position:fixed; inset:0; z-index:2000;
+  background:#000000;
+  flex-direction:column; align-items:center; justify-content:center;
+}
+#nameScreen .ns-title {
+  font-size:9px; font-weight:300; letter-spacing:0.55em;
+  color:rgba(255,255,255,0.25); margin-bottom:72px;
+}
+#nameScreen label {
+  display:block; font-size:10px; font-weight:400;
+  letter-spacing:0.3em; color:#666; margin-bottom:18px;
+}
+#nameInput {
+  background:transparent; border:none; border-bottom:1px solid #333;
+  color:#ffffff; font-family:'Heebo',sans-serif; font-size:18px;
+  letter-spacing:0.15em; padding:10px 6px; text-align:center;
+  width:280px; caret-color:#e01a00;
+}
+
+/* ── gallery overlay ── */
+#galleryOverlay {
+  display:none; position:fixed; inset:0; z-index:1500;
+  background:#000000;
+  flex-direction:column; align-items:center;
+  padding:72px 40px 48px; overflow-y:auto;
+}
+.gallery-inner { width:100%; max-width:560px; }
+.gallery-heading {
+  font-size:9px; font-weight:300; letter-spacing:0.55em;
+  color:rgba(255,255,255,0.25); margin-bottom:8px;
+}
+.gallery-divider { border-bottom:1px solid #1a1a1a; margin-bottom:38px; }
+
+/* ── gallery trigger ── */
+#galleryBtn {
+  position:fixed; bottom:16px; left:16px;
+  font-size:10px; font-weight:500; letter-spacing:0.18em;
+  color:#444; cursor:pointer; z-index:60;
+  transition:color 0.15s; user-select:none;
+  background:#000; border:1.5px solid #222; padding:7px 12px;
+}
+#galleryBtn:hover { color:#ffffff; border-color:#555; }
 </style>
 </head>
 <body>
@@ -130,7 +230,7 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 
 <div id="calOverlay">
   <canvas id="calCanvas"></canvas>
-  <button id="calStartBtn">BEGIN CALIBRATION</button>
+  <button id="calStartBtn" class="va-btn va-btn-primary">BEGIN CALIBRATION</button>
 </div>
 
 <!-- hidden canvases for GAZE mode analysis -->
@@ -141,51 +241,45 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 
 <!-- ── mode selection screen ── -->
 <div id="modeScreen">
-  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:44px;">SELECT ANALYSIS MODE</div>
+  <div class="mode-screen-title">SELECT ANALYSIS MODE</div>
   <div class="mode-grid">
     <div class="mode-card selected" data-mode="GAZE">
       <div class="mode-num">01</div>
-      <div class="mode-name-en">GAZE POINT</div>
-      <div class="mode-name-he">נקודת מבט</div>
+      <div class="mode-name">GAZE POINT</div>
       <div class="mode-desc">Edge-detected annotation dots with behavioral classification overlay</div>
     </div>
     <div class="mode-card" data-mode="FIXATION">
       <div class="mode-num">02</div>
-      <div class="mode-name-en">FIXATION</div>
-      <div class="mode-name-he">קיבוע</div>
+      <div class="mode-name">FIXATION</div>
       <div class="mode-desc">Detect and visualize fixation clusters using I-DT algorithm</div>
     </div>
     <div class="mode-card" data-mode="SACCADE">
       <div class="mode-num">03</div>
-      <div class="mode-name-en">SACCADE</div>
-      <div class="mode-name-he">סאקדה</div>
+      <div class="mode-name">SACCADE</div>
       <div class="mode-desc">Rapid eye movements detected via velocity threshold (I-VT)</div>
     </div>
     <div class="mode-card" data-mode="SCANPATH">
       <div class="mode-num">04</div>
-      <div class="mode-name-en">SCAN PATH</div>
-      <div class="mode-name-he">מסלול סריקה</div>
+      <div class="mode-name">SCAN PATH</div>
       <div class="mode-desc">Chronological fixation sequence with numbered waypoints</div>
     </div>
     <div class="mode-card" data-mode="HEATMAP">
       <div class="mode-num">05</div>
-      <div class="mode-name-en">HEATMAP</div>
-      <div class="mode-name-he">מפת חום</div>
+      <div class="mode-name">HEATMAP</div>
       <div class="mode-desc">Accumulated gaze density with color-coded intensity map</div>
     </div>
     <div class="mode-card" data-mode="FIRSTFIX">
       <div class="mode-num">06</div>
-      <div class="mode-name-en">FIRST FIXATION</div>
-      <div class="mode-name-he">קיבוע ראשון</div>
+      <div class="mode-name">FIRST FIXATION</div>
       <div class="mode-desc">Marks the first stable fixation point detected in the session</div>
     </div>
   </div>
-  <button id="modeBeginBtn">BEGIN</button>
+  <button id="modeBeginBtn" class="va-btn va-btn-primary">BEGIN</button>
 </div>
 
 <!-- ── floating mode pill ── -->
 <div id="modePill">
-  <div id="modePillCollapsed">● <span id="modePillName">GAZE POINT</span> ▾</div>
+  <div id="modePillCollapsed"><span class="pill-dot">●</span> <span id="modePillName">GAZE POINT</span> ▾</div>
   <div id="modePillExpanded">
     <div id="pillModeRows"></div>
     <button id="pillSaveBtn">SAVE SESSION</button>
@@ -1095,19 +1189,19 @@ function resizeCal(){calCanvas.width=window.innerWidth;calCanvas.height=window.i
 
 function drawIntro(){
   const W=calCanvas.width,H=calCanvas.height;
-  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
-  calCtx.fillStyle='#111111';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
-  calCtx.strokeStyle='#eeeeee';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
-  calCtx.fillStyle='#999999';calCtx.font='14px Heebo';calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);
+  calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#ffffff';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
+  calCtx.strokeStyle='#222222';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
+  calCtx.fillStyle='#666666';calCtx.font='14px Heebo';calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);
   calCtx.fillText('until the ring fills completely',W/2,H/2+8);
-  calCtx.fillStyle='#cccccc';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
+  calCtx.fillStyle='#444444';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
 }
 
 function drawDone(){
   const W=calCanvas.width,H=calCanvas.height;
-  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
-  calCtx.fillStyle='#111111';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
-  calCtx.fillStyle='#999999';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
+  calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#ffffff';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
+  calCtx.fillStyle='#555555';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
 }
 
 function awaitDot(px,py,index){
@@ -1120,13 +1214,13 @@ function awaitDot(px,py,index){
       progress=Math.max(0,Math.min(1,progress));
       if(stab>0.45)samples.push({ox:curOffX,oy:curOffY});
       const W=calCanvas.width,H=calCanvas.height;
-      calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);
-      calCtx.textAlign='right';calCtx.fillStyle='#cccccc';calCtx.font='14px Heebo';
+      calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);
+      calCtx.textAlign='right';calCtx.fillStyle='#333333';calCtx.font='14px Heebo';
       calCtx.fillText(`${index+1}  /  ${CAL_PTS.length}`,W-28,36);
-      calCtx.textAlign='center';calCtx.fillStyle='#cccccc';calCtx.font='13px Heebo';
+      calCtx.textAlign='center';calCtx.fillStyle='#444444';calCtx.font='13px Heebo';
       calCtx.fillText('POINT HEAD AT DOT · HOLD STILL',W/2,H-26);
       calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);
-      calCtx.strokeStyle='#e8e8e8';calCtx.lineWidth=1.5;calCtx.stroke();
+      calCtx.strokeStyle='#333333';calCtx.lineWidth=1.5;calCtx.stroke();
       if(progress>0){
         calCtx.beginPath();calCtx.arc(px,py,22,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
         calCtx.strokeStyle=`rgba(224,26,0,${0.35+stab*0.65})`;calCtx.lineWidth=2;calCtx.stroke();
@@ -1452,12 +1546,17 @@ function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);return s<60?`${s}s
 
 function renderGallery(data){
   galleryList.innerHTML='';const entries=Object.entries(data);
-  if(!entries.length){galleryList.innerHTML='<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';return;}
+  if(!entries.length){
+    galleryList.innerHTML='<div style="color:#333;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
+    return;
+  }
   const now=Date.now();
   for(const[name,entry]of entries){
     const isOld=(now-entry.ts)>600000,isMe=name===currentUser;
-    const row=document.createElement('div');row.style.cssText=`padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld?0.25:1};`;
-    const nameDiv=document.createElement('div');nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;color:#111111;letter-spacing:0.05em;';
+    const row=document.createElement('div');
+    row.style.cssText=`padding:20px 0;border-bottom:1px solid #111;opacity:${isOld?0.25:1};`;
+    const nameDiv=document.createElement('div');
+    nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:700;color:#ffffff;letter-spacing:0.08em;';
     nameDiv.innerHTML=isMe?name+' <span style="color:#e01a00;">(YOU)</span>':name;
     const parts=[
       `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}`,
@@ -1466,7 +1565,8 @@ function renderGallery(data){
       entry.sessionDuration?`${Math.round(entry.sessionDuration/1000)}s`:'',
       timeAgo(entry.ts)
     ].filter(Boolean);
-    const detDiv=document.createElement('div');detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
+    const detDiv=document.createElement('div');
+    detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#444;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
     detDiv.textContent=parts.join('  ·  ');
     row.appendChild(nameDiv);row.appendChild(detDiv);galleryList.appendChild(row);
   }
@@ -1474,8 +1574,8 @@ function renderGallery(data){
 
 galleryBtn.addEventListener('click',()=>{galleryOpen=true;galleryOverlay.style.display='flex';ghostContainer.style.display='none';renderGallery(latestData);});
 galleryClose.addEventListener('click',()=>{galleryOpen=false;galleryOverlay.style.display='none';ghostContainer.style.display='block';});
-galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#e01a00';});
-galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#cccccc';});
+galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#ffffff';galleryBtn.style.borderColor='#555';});
+galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#444';galleryBtn.style.borderColor='#222';});
 
 async function startApp(){
   await showNameScreen();
@@ -1487,29 +1587,29 @@ startApp();
 </script>
 
 <!-- ── name screen ── -->
-<div id="nameScreen" style="display:none;position:fixed;inset:0;z-index:2000;background:#ffffff;flex-direction:column;align-items:center;justify-content:center;">
-  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:64px;">VISUAL ANALYSIS SYSTEM</div>
-  <label for="nameInput" style="display:block;color:#999999;font-family:'Heebo',sans-serif;font-size:11px;font-weight:400;letter-spacing:0.28em;margin-bottom:16px;">ENTER YOUR NAME</label>
-  <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="background:#ffffff;border:none;border-bottom:1px solid #e8e8e8;color:#111111;font-family:'Heebo',sans-serif;font-size:16px;letter-spacing:0.15em;padding:8px 6px;text-align:center;width:270px;caret-color:#e01a00;"/>
-  <button id="nameContinue" style="margin-top:38px;background:transparent;border:1px solid #e8e8e8;color:#999999;font-family:'Heebo',sans-serif;font-size:11px;letter-spacing:0.28em;padding:13px 40px;cursor:pointer;transition:border-color 0.2s,color 0.2s;"
-    onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
-    onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#999999';">CONTINUE</button>
+<div id="nameScreen">
+  <div class="ns-title">VISUAL ANALYSIS SYSTEM</div>
+  <label for="nameInput">ENTER YOUR NAME</label>
+  <input id="nameInput" type="text" autocomplete="off" spellcheck="false"/>
+  <button id="nameContinue" class="va-btn va-btn-primary" style="margin-top:44px;"
+    onmouseover="this.style.background='#ff2200';this.style.borderColor='#ff2200';"
+    onmouseout="this.style.background='#e01a00';this.style.borderColor='#e01a00';">CONTINUE</button>
 </div>
 
 <!-- ── gallery overlay ── -->
-<div id="galleryOverlay" style="display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;">
-  <div style="width:100%;max-width:560px;font-family:'Heebo',sans-serif;">
-    <div style="color:#dddddd;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:8px;">GAZE SESSIONS</div>
-    <div style="border-bottom:1px solid #f0f0f0;margin-bottom:38px;"></div>
+<div id="galleryOverlay" style="display:none;position:fixed;inset:0;z-index:1500;background:#000000;flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;">
+  <div class="gallery-inner">
+    <div class="gallery-heading">GAZE SESSIONS</div>
+    <div class="gallery-divider"></div>
     <div id="galleryList"></div>
-    <button id="galleryClose" style="margin-top:52px;background:transparent;border:1px solid #e8e8e8;color:#bbbbbb;font-family:'Heebo',sans-serif;font-size:11px;letter-spacing:0.25em;padding:12px 34px;cursor:pointer;transition:border-color 0.2s,color 0.2s;"
-      onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
-      onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#bbbbbb';">[ CLOSE ]</button>
+    <button id="galleryClose" class="va-btn va-btn-secondary" style="margin-top:52px;"
+      onmouseover="this.style.background='#ffffff';this.style.color='#000000';"
+      onmouseout="this.style.background='#000000';this.style.color='#ffffff';">CLOSE</button>
   </div>
 </div>
 
-<!-- ── gallery button ── -->
-<div id="galleryBtn" style="position:fixed;bottom:14px;left:14px;font-family:'Heebo',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.15em;color:#cccccc;cursor:pointer;z-index:60;transition:color 0.2s;user-select:none;">[ GALLERY ]</div>
+<!-- ── gallery trigger ── -->
+<div id="galleryBtn">[ GALLERY ]</div>
 
 <!-- ── ghost cursors ── -->
 <div id="ghostContainer" style="position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;"></div>
