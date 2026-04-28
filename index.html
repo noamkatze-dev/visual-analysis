@@ -21,7 +21,7 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
   color:#e01a00;
   letter-spacing:0.06em;
   white-space:nowrap;
-  text-shadow:0 0 8px rgba(255,255,255,0.95),0 0 2px rgba(255,255,255,0.95);
+  text-shadow:none;
   pointer-events:none;
   opacity:0;
   transition:opacity 0.5s ease, filter 0.5s ease;
@@ -79,21 +79,21 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
   flex-direction:column; align-items:center; justify-content:center;
 }
 .mode-screen-title {
-  font-family:'Heebo',sans-serif; font-size:10px; font-weight:700;
-  letter-spacing:0.5em; color:#111111;
-  margin-bottom:32px; text-transform:uppercase;
+  font-family:'Heebo',sans-serif; font-size:9px; font-weight:300;
+  letter-spacing:0.6em; color:#bbbbbb;
+  margin-bottom:36px; text-transform:uppercase;
 }
 .mode-grid {
   display:grid; grid-template-columns:repeat(3,1fr);
-  gap:0; max-width:720px; width:92vw; margin-bottom:40px;
-  border:2px solid #111111;
+  gap:0; max-width:660px; width:90vw; margin-bottom:44px;
+  border:1px solid #e0e0e0;
 }
 .mode-card {
   background:#ffffff;
   border:none;
-  border-right:1px solid #111111;
-  border-bottom:1px solid #111111;
-  padding:24px 20px 20px;
+  border-right:1px solid #e0e0e0;
+  border-bottom:1px solid #e0e0e0;
+  padding:22px 18px 18px;
   cursor:pointer;
   transition:background 0.15s;
   position:relative;
@@ -104,29 +104,32 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 .mode-card:nth-child(5),
 .mode-card:nth-child(6){ border-bottom:none; }
 
-.mode-card:hover { background:#f5f5f5; }
+.mode-card:hover { background:#fafafa; }
 
-.mode-card.selected {
-  background:#e01a00;
+.mode-card.selected { background:#fafafa; }
+.mode-card.selected::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:2px; background:#e01a00;
 }
-.mode-card.selected .mode-num  { color:rgba(255,255,255,0.5); }
-.mode-card.selected .mode-name { color:#ffffff; }
-.mode-card.selected .mode-desc { color:rgba(255,255,255,0.7); }
+.mode-card.selected .mode-num  { color:#e01a00; }
+.mode-card.selected .mode-name { color:#111111; }
 
 .mode-num {
-  font-family:'Heebo',sans-serif; font-size:11px; font-weight:300;
-  color:#bbbbbb; letter-spacing:0.12em; margin-bottom:10px;
+  font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
+  color:#cccccc; letter-spacing:0.15em; margin-bottom:8px;
   transition:color 0.15s;
 }
 .mode-name {
-  font-family:'Heebo',sans-serif; font-size:13px; font-weight:700;
-  color:#111111; letter-spacing:0.1em; line-height:1.2;
-  margin-bottom:8px; transition:color 0.15s;
+  font-family:'Heebo',sans-serif; font-size:12px; font-weight:700;
+  color:#999999; letter-spacing:0.08em; line-height:1.2;
+  margin-bottom:6px; transition:color 0.15s;
 }
 .mode-desc {
-  font-family:'Heebo',sans-serif; font-size:9px; font-weight:300;
-  color:#999999; letter-spacing:0.04em; line-height:1.6;
+  font-family:'Heebo',sans-serif; font-size:8.5px; font-weight:300;
+  color:#cccccc; letter-spacing:0.04em; line-height:1.6;
 }
+.mode-card.selected .mode-name { color:#111111; }
+.mode-card.selected .mode-desc { color:#999999; }
 
 /* ── floating mode pill ── */
 #modePill {
@@ -135,19 +138,18 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 }
 #modePillCollapsed {
   display:flex; align-items:center; gap:6px;
-  background:#111111; border:2px solid #111111;
+  background:#ffffff; border:1.5px solid #dddddd;
   padding:10px 16px; cursor:pointer; font-size:10px; font-weight:700;
-  color:#ffffff; letter-spacing:0.14em;
-  transition:background 0.15s;
+  color:#111111; letter-spacing:0.14em;
+  transition:color 0.15s, border-color 0.15s;
   white-space:nowrap; user-select:none;
 }
-#modePillCollapsed:hover { background:#e01a00; border-color:#e01a00; }
+#modePillCollapsed:hover { border-color:#e01a00; color:#e01a00; }
 #modePillCollapsed .pill-dot { color:#e01a00; font-size:8px; }
-#modePillCollapsed:hover .pill-dot { color:#ffffff; }
 
 #modePillExpanded {
   display:none; flex-direction:column;
-  background:#ffffff; border:2px solid #111111;
+  background:#ffffff; border:1.5px solid #dddddd;
   min-width:178px;
 }
 .pill-mode-row {
@@ -155,19 +157,19 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
   letter-spacing:0.1em; cursor:pointer; border-left:3px solid transparent;
   transition:color 0.12s, background 0.12s; user-select:none;
 }
-.pill-mode-row:hover { color:#111111; background:#f5f5f5; }
+.pill-mode-row:hover { color:#111111; background:#fafafa; }
 .pill-mode-row.active {
   border-left-color:#e01a00; font-weight:700;
-  color:#e01a00; background:#fff5f5;
+  color:#e01a00; background:#fff8f8;
 }
 #pillSaveBtn {
   margin:6px 10px 10px; cursor:pointer;
   font-family:'Heebo',sans-serif; font-size:10px; font-weight:700;
   letter-spacing:0.18em; padding:10px 12px;
-  background:#111111; color:#ffffff; border:none;
+  background:#e01a00; color:#ffffff; border:none;
   transition:background 0.15s;
 }
-#pillSaveBtn:hover { background:#e01a00; }
+#pillSaveBtn:hover { background:#c01500; }
 
 /* ── name screen ── */
 #nameScreen {
@@ -199,20 +201,20 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 }
 .gallery-inner { width:100%; max-width:560px; }
 .gallery-heading {
-  font-size:9px; font-weight:700; letter-spacing:0.5em;
-  color:#111111; margin-bottom:8px;
+  font-size:9px; font-weight:300; letter-spacing:0.5em;
+  color:#bbbbbb; margin-bottom:8px;
 }
-.gallery-divider { border-bottom:2px solid #111111; margin-bottom:38px; }
+.gallery-divider { border-bottom:1px solid #eeeeee; margin-bottom:38px; }
 
 /* ── gallery trigger ── */
 #galleryBtn {
   position:fixed; bottom:16px; left:16px;
   font-size:10px; font-weight:700; letter-spacing:0.18em;
-  color:#ffffff; cursor:pointer; z-index:60;
-  transition:background 0.15s; user-select:none;
-  background:#111111; border:2px solid #111111; padding:8px 14px;
+  color:#111111; cursor:pointer; z-index:60;
+  transition:color 0.15s, border-color 0.15s; user-select:none;
+  background:#ffffff; border:1.5px solid #dddddd; padding:8px 14px;
 }
-#galleryBtn:hover { background:#e01a00; border-color:#e01a00; }
+#galleryBtn:hover { color:#e01a00; border-color:#e01a00; }
 </style>
 </head>
 <body>
@@ -390,6 +392,7 @@ let lastAoiTs = -9999;
 
 let fixationHistory = [];
 let currentFixation = null;
+let scanPathHistory = [];  // separate from fixationHistory — only records when SCANPATH mode active
 let saccadeHistory  = [];
 let saccadeActive   = false;
 let saccadeStart    = null;
@@ -819,8 +822,14 @@ function updateFixations(ts) {
     if (currentFixation) {
       const duration = ts - currentFixation.startTs;
       if (duration >= FIX_MIN_DURATION) {
-        fixationHistory.push({ x:currentFixation.cx, y:currentFixation.cy, startTs:currentFixation.startTs, endTs:ts, duration });
+        const fixEntry = { x:currentFixation.cx, y:currentFixation.cy, startTs:currentFixation.startTs, endTs:ts, duration };
+        fixationHistory.push(fixEntry);
         if (fixationHistory.length > 50) fixationHistory.shift();
+        // scanPath only accumulates while that mode is active
+        if (activeMode === 'SCANPATH') {
+          scanPathHistory.push(fixEntry);
+          if (scanPathHistory.length > 14) scanPathHistory.shift();
+        }
       }
       currentFixation = null;
     }
@@ -877,8 +886,9 @@ function updateHeatmap() {
    ══════════════════════════════════════════════════════════════════════ */
 
 function updateFirstFix() {
+  if (activeMode !== 'FIRSTFIX') return;
   if (firstFixDone) return;
-  if (fixationHistory.length > 0) { firstFix=fixationHistory[0]; firstFixDone=true; }
+  if (fixationHistory.length > 0) { firstFix=fixationHistory[fixationHistory.length-1]; firstFixDone=true; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -922,12 +932,12 @@ function drawFixations(ts) {
     const cx=fix.x*W, cy=fix.y*H;
     const r=Math.min(8+fix.duration/80,44);
     dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
-    dotCtx.fillStyle=`rgba(224,26,0,${opacity*0.2})`; dotCtx.fill();
+    dotCtx.fillStyle=`rgba(224,26,0,${opacity*0.18})`; dotCtx.fill();
     dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
-    dotCtx.strokeStyle=`rgba(224,26,0,${opacity*0.75})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
+    dotCtx.strokeStyle=`rgba(224,26,0,${opacity})`; dotCtx.lineWidth=2; dotCtx.stroke();
     if (fix.duration>300) {
-      dotCtx.fillStyle=`rgba(224,26,0,${opacity*0.8})`;
-      dotCtx.font='9px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
+      dotCtx.fillStyle=`rgba(224,26,0,${opacity})`;
+      dotCtx.font='bold 9px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
       dotCtx.fillText(`${Math.round(fix.duration)}ms`,cx,cy+r+13);
     }
   }
@@ -935,7 +945,7 @@ function drawFixations(ts) {
     const pulse=3+Math.sin(ts/160)*3;
     const cx=currentFixation.cx*W, cy=currentFixation.cy*H;
     dotCtx.beginPath(); dotCtx.arc(cx,cy,pulse,0,Math.PI*2);
-    dotCtx.fillStyle='rgba(224,26,0,0.9)'; dotCtx.fill();
+    dotCtx.fillStyle='rgba(224,26,0,1)'; dotCtx.fill();
   }
 }
 
@@ -947,12 +957,12 @@ function drawSaccades(ts) {
   const W=dotCanvas.width, H=dotCanvas.height;
   for (const sac of saccadeHistory.slice(-8)) {
     const age=ts-sac.endTs;
-    const opacity=Math.max(0,0.9*(1-age/2500));
+    const opacity=Math.max(0,1-age/2500);
     if (opacity<=0) continue;
     const fx=sac.fromX*W, fy=sac.fromY*H, tx=sac.toX*W, ty=sac.toY*H;
     dotCtx.beginPath(); dotCtx.moveTo(fx,fy); dotCtx.lineTo(tx,ty);
-    dotCtx.strokeStyle=`rgba(224,26,0,${opacity})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
-    const angle=Math.atan2(ty-fy,tx-fx), aLen=8;
+    dotCtx.strokeStyle=`rgba(224,26,0,${opacity})`; dotCtx.lineWidth=2; dotCtx.stroke();
+    const angle=Math.atan2(ty-fy,tx-fx), aLen=10;
     dotCtx.beginPath();
     dotCtx.moveTo(tx,ty);
     dotCtx.lineTo(tx-aLen*Math.cos(angle-Math.PI/6),ty-aLen*Math.sin(angle-Math.PI/6));
@@ -963,7 +973,7 @@ function drawSaccades(ts) {
   if (saccadeActive && saccadeStart) {
     dotCtx.save(); dotCtx.setLineDash([4,4]);
     dotCtx.beginPath(); dotCtx.moveTo(saccadeStart.x*W,saccadeStart.y*H); dotCtx.lineTo(sGX*W,sGY*H);
-    dotCtx.strokeStyle='rgba(224,26,0,0.45)'; dotCtx.lineWidth=1; dotCtx.stroke();
+    dotCtx.strokeStyle='rgba(224,26,0,0.6)'; dotCtx.lineWidth=1.5; dotCtx.stroke();
     dotCtx.setLineDash([]); dotCtx.restore();
   }
 }
@@ -973,13 +983,13 @@ function drawSaccades(ts) {
    ══════════════════════════════════════════════════════════════════════ */
 
 function drawScanPath(ts) {
-  const recent=fixationHistory.slice(-14);
+  const recent=scanPathHistory.slice(-14);
   if (recent.length<1) return;
   const W=dotCanvas.width, H=dotCanvas.height, total=recent.length;
-  // dashed lines
+  // dashed connecting lines
   if (recent.length>=2) {
     dotCtx.save(); dotCtx.setLineDash([4,6]);
-    dotCtx.strokeStyle='rgba(224,26,0,0.35)'; dotCtx.lineWidth=1;
+    dotCtx.strokeStyle='rgba(224,26,0,0.6)'; dotCtx.lineWidth=1.5;
     dotCtx.beginPath();
     for (let i=0;i<recent.length;i++) {
       const {x,y}=recent[i];
@@ -987,17 +997,17 @@ function drawScanPath(ts) {
     }
     dotCtx.stroke(); dotCtx.setLineDash([]); dotCtx.restore();
   }
-  // numbered circles
+  // numbered circles — no background fill, just stroke + number
   for (let i=0;i<total;i++) {
     const {x,y}=recent[i];
     const cx=x*W, cy=y*H;
-    const alpha=0.15+0.85*(i/Math.max(total-1,1));
     const isNewest=i===total-1;
-    const r=isNewest ? 11+Math.sin(ts/300)*2+2 : 11;
+    const r=isNewest ? 12+Math.sin(ts/300)*2 : 11;
+    // circle: transparent fill, red stroke
     dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
-    dotCtx.fillStyle=`rgba(255,255,255,${alpha})`; dotCtx.fill();
-    dotCtx.strokeStyle=`rgba(224,26,0,${alpha})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
-    dotCtx.fillStyle=`rgba(224,26,0,${alpha})`;
+    dotCtx.strokeStyle='rgba(224,26,0,1)'; dotCtx.lineWidth=2; dotCtx.stroke();
+    // number: solid red, no background
+    dotCtx.fillStyle='rgba(224,26,0,1)';
     dotCtx.font='bold 9px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='middle';
     dotCtx.fillText(i+1,cx,cy);
     dotCtx.textBaseline='alphabetic';
@@ -1027,7 +1037,7 @@ function drawHeatmap() {
   }
   heatCtx.putImageData(img,0,0);
   const W=dotCanvas.width, H=dotCanvas.height;
-  dotCtx.globalAlpha=0.58;
+  dotCtx.globalAlpha=0.72;
   dotCtx.drawImage(heatCanvas,0,0,W,H);
   dotCtx.globalAlpha=1;
 }
@@ -1039,25 +1049,30 @@ function drawHeatmap() {
 function drawFirstFix(ts) {
   const W=dotCanvas.width, H=dotCanvas.height;
   if (!firstFix) {
-    dotCtx.fillStyle='rgba(180,180,180,0.55)';
+    dotCtx.fillStyle='rgba(150,150,150,0.7)';
     dotCtx.font='300 11px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='middle';
     dotCtx.fillText('WAITING FOR FIRST FIXATION',W/2,H/2);
     dotCtx.textBaseline='alphabetic';
     return;
   }
   const cx=firstFix.x*W, cy=firstFix.y*H;
-  const pulse=18+Math.sin(ts/380)*5;
+  const pulse=20+Math.sin(ts/400)*5;
+  // pulsing outer ring
   dotCtx.beginPath(); dotCtx.arc(cx,cy,pulse,0,Math.PI*2);
-  dotCtx.strokeStyle='rgba(255,196,0,0.45)'; dotCtx.lineWidth=1.5; dotCtx.stroke();
+  dotCtx.strokeStyle='rgba(224,26,0,0.35)'; dotCtx.lineWidth=1.5; dotCtx.stroke();
+  // solid red filled circle
   dotCtx.beginPath(); dotCtx.arc(cx,cy,14,0,Math.PI*2);
-  dotCtx.fillStyle='rgba(255,196,0,0.3)'; dotCtx.fill();
-  dotCtx.strokeStyle='rgba(255,196,0,0.9)'; dotCtx.lineWidth=2; dotCtx.stroke();
+  dotCtx.fillStyle='rgba(224,26,0,1)'; dotCtx.fill();
+  dotCtx.strokeStyle='rgba(224,26,0,1)'; dotCtx.lineWidth=2; dotCtx.stroke();
+  // text clearly above the circle, no transparency
   const offset=(firstFix.startTs-sessionStartTs)/1000;
+  const textY = cy - 30;
   dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
-  dotCtx.fillStyle='rgba(160,110,0,0.9)'; dotCtx.font='bold 10px Heebo';
-  dotCtx.fillText('FIRST FIXATION',cx,cy-22);
-  dotCtx.font='300 9px Heebo'; dotCtx.fillStyle='rgba(160,110,0,0.7)';
-  dotCtx.fillText(`+${offset.toFixed(2)}s`,cx,cy-10);
+  dotCtx.fillStyle='rgba(224,26,0,1)';
+  dotCtx.font='bold 11px Heebo';
+  dotCtx.fillText('FIRST FIXATION', cx, textY);
+  dotCtx.font='300 9px Heebo';
+  dotCtx.fillText(`+${offset.toFixed(2)}s`, cx, textY + 14);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1335,6 +1350,8 @@ async function showModeScreen(){
     document.getElementById('modeBeginBtn').addEventListener('click',()=>{
       const sel=screen.querySelector('.mode-card.selected');
       activeMode=sel?sel.dataset.mode:'GAZE';
+      if(activeMode==='FIRSTFIX'){ firstFix=null; firstFixDone=false; }
+      if(activeMode==='SCANPATH'){ scanPathHistory=[]; }
       screen.style.display='none';
       resolve();
     },{once:true});
@@ -1352,7 +1369,15 @@ function setActiveMode(id){
   document.querySelectorAll('.pill-mode-row').forEach(row=>{
     row.classList.toggle('active',row.dataset.mode===id);
   });
-  // When switching away from GAZE mode, clear annLayer
+  // Reset FIRST FIXATION so it starts fresh from this mode selection
+  if(id==='FIRSTFIX'){
+    firstFix=null; firstFixDone=false;
+  }
+  // Reset SCAN PATH so it starts fresh from this mode selection
+  if(id==='SCANPATH'){
+    scanPathHistory=[];
+  }
+  // annLayer and gazeDot only in GAZE mode
   if(id!=='GAZE'){
     annLayer.style.opacity='0';
     gazeDot.style.display='none';
@@ -1575,8 +1600,8 @@ function renderGallery(data){
 
 galleryBtn.addEventListener('click',()=>{galleryOpen=true;galleryOverlay.style.display='flex';ghostContainer.style.display='none';renderGallery(latestData);});
 galleryClose.addEventListener('click',()=>{galleryOpen=false;galleryOverlay.style.display='none';ghostContainer.style.display='block';});
-galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.background='#e01a00';galleryBtn.style.borderColor='#e01a00';});
-galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.background='#111111';galleryBtn.style.borderColor='#111111';});
+galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#e01a00';galleryBtn.style.borderColor='#e01a00';});
+galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#111111';galleryBtn.style.borderColor='#dddddd';});
 
 async function startApp(){
   await showNameScreen();
@@ -1598,19 +1623,17 @@ startApp();
 </div>
 
 <!-- ── gallery overlay ── -->
-<div id="galleryOverlay" style="display:none;position:fixed;inset:0;z-index:1500;background:#000000;flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;">
+<div id="galleryOverlay" style="display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;">
   <div class="gallery-inner">
-    <div class="gallery-heading">GAZE SESSIONS</div>
+    <div class="gallery-heading">SESSION DATA</div>
     <div class="gallery-divider"></div>
     <div id="galleryList"></div>
-    <button id="galleryClose" class="va-btn va-btn-secondary" style="margin-top:52px;"
-      onmouseover="this.style.background='#ffffff';this.style.color='#000000';"
-      onmouseout="this.style.background='#000000';this.style.color='#ffffff';">CLOSE</button>
+    <button id="galleryClose" class="va-btn va-btn-secondary" style="margin-top:52px;">CLOSE</button>
   </div>
 </div>
 
 <!-- ── gallery trigger ── -->
-<div id="galleryBtn">[ GALLERY ]</div>
+<div id="galleryBtn">DATA</div>
 
 <!-- ── ghost cursors ── -->
 <div id="ghostContainer" style="position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;"></div>
