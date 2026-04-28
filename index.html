@@ -1356,7 +1356,7 @@ async function showModeScreen(){
     document.getElementById('modeBeginBtn').addEventListener('click',()=>{
       const sel=screen.querySelector('.mode-card.selected');
       activeMode=sel?sel.dataset.mode:'GAZE';
-      if(activeMode==='FIRSTFIX'){ firstFix=null; firstFixDone=false; firstFixModeTs=Date.now(); }
+      if(activeMode==='FIRSTFIX'){ firstFix=null; firstFixDone=false; firstFixModeTs=performance.now(); }
       if(activeMode==='SCANPATH'){ scanPathHistory=[]; }
       screen.style.display='none';
       resolve();
@@ -1377,7 +1377,7 @@ function setActiveMode(id){
   });
   // Reset FIRST FIXATION so it starts fresh from this mode selection
   if(id==='FIRSTFIX'){
-    firstFix=null; firstFixDone=false; firstFixModeTs=Date.now();
+    firstFix=null; firstFixDone=false; firstFixModeTs=performance.now();
   }
   // Reset SCAN PATH so it starts fresh from this mode selection
   if(id==='SCANPATH'){
