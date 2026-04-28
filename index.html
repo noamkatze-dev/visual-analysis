@@ -14,7 +14,6 @@ body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:no
 #dotCanvas { position:absolute; inset:0; pointer-events:none; z-index:1; }
 #annLayer  { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:2; }
 
-/* Bug 4: correct color, opacity, text-shadow — no rgba color assignments in JS */
 .ann {
   position:absolute;
   font-family:'Heebo',sans-serif;
@@ -97,6 +96,7 @@ const DOT_STEP   = 2;
 const DOT_THRESH = 10;
 const ANA_INTERVAL = 600;
 const REVEAL_FRAC  = 0.030;
+const DOT_FADE_MS  = 5000;  // dots fade after this ms — same as AOI
 
 const W_AOI        = 320;
 const H_AOI        = 180;
@@ -162,10 +162,54 @@ const BUF_MAX = 30;
 let calMap = null;
 
 /* ══════════════════════════════════════════════════════════════════════
+   SHARED CLASSIFIER — used by both dots and AOI
+   SEARCH PATTERN moved to last so it doesn't override specific states
+   ══════════════════════════════════════════════════════════════════════ */
+
+function currentStability() {
+  const N = Math.min(offXBuf.length, 20);
+  if (N < 8) return 0;
+  const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
+  const mx = xs.reduce((a,b) => a+b, 0) / N;
+  const my = ys.reduce((a,b) => a+b, 0) / N;
+  const vx = xs.reduce((a,b) => a+(b-mx)**2, 0) / N;
+  const vy = ys.reduce((a,b) => a+(b-my)**2, 0) / N;
+  return Math.max(0, Math.min(1, 1 - (vx+vy) / CAL_VAR_THRESH));
+}
+
+function detectSearchPattern() {
+  const h = window._gazeHistory || [];
+  if (h.length < 6) return false;
+  const recent = h.slice(-6);
+  const dxs = [], dys = [];
+  for (let i = 1; i < recent.length; i++) {
+    dxs.push(recent[i].x - recent[i-1].x);
+    dys.push(recent[i].y - recent[i-1].y);
+  }
+  const avgDx = dxs.reduce((a,b) => a+b, 0) / dxs.length;
+  const avgDy = dys.reduce((a,b) => a+b, 0) / dys.length;
+  const cX = dxs.every(d => Math.sign(d) === Math.sign(avgDx));
+  const cY = dys.every(d => Math.sign(d) === Math.sign(avgDy));
+  return (Math.abs(avgDx) > 0.02 || Math.abs(avgDy) > 0.02) && (cX || cY);
+}
+
+// SEARCH PATTERN is last — only fires when no other state matches
+function classify(a, ts, scanSpeed, microMovement) {
+  const stab = currentStability();
+  if (a.dwellTime > 900 && stab > 0.75)                              return 'ATTENTION LOCKED';
+  if (a.revisitCount >= 2 && a.totalDwellTime > 900)                 return 'REPEATED GLANCE';
+  if (a.revisitCount >= 2 && a.totalDwellTime < 900 && stab < 0.5)  return 'FOCUS UNSTABLE';
+  if (a.dwellTime > 500 && stab < 0.4 && microMovement > 0.015)     return 'VISUAL DRIFT';
+  if (scanSpeed > 8 && a.dwellTime < 150 && stab < 0.3)             return 'SCAN WITHOUT PROCESSING';
+  if (a.dwellTime > 200 && a.dwellTime < 700 && stab < 0.6)         return 'LOW ENGAGEMENT';
+  if (detectSearchPattern() && scanSpeed >= 2)                       return 'SEARCH PATTERN';
+  return 'UNCLASSIFIED';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    LAYER 1 — SOBEL DOTS
    ══════════════════════════════════════════════════════════════════════ */
 
-/* Bug 1 + Bug 2: behavioral tracking fields + deterministic jitter per slot */
 function buildDotPool() {
   annLayer.innerHTML = '';
   dotPool = [];
@@ -181,8 +225,8 @@ function buildDotPool() {
       jitterX, jitterY,
       labelX: 0.5, labelY: 0.5,
       active: false,
-      // Bug 1: same behavioral fields as AOI
       visible: false,
+      shownAt: 0,           // FIX: track reveal time for fade
       state: 'UNCLASSIFIED',
       dwellTime: 0, totalDwellTime: 0, revisitCount: 0, lastVisitTs: 0,
       timeBetweenVisits: 0, isNear: false, visitDwells: [],
@@ -205,9 +249,7 @@ function sobel(px, w, h) {
       const tl = g[i-w-1], tc = g[i-w], tr = g[i-w+1];
       const ml = g[i-1],               mr = g[i+1];
       const bl = g[i+w-1], bc = g[i+w], br = g[i+w+1];
-      const gx = (tr+2*mr+br)-(tl+2*ml+bl);
-      const gy = (bl+2*bc+br)-(tl+2*tc+tr);
-      mg[i] = Math.hypot(gx, gy);
+      mg[i] = Math.hypot((tr+2*mr+br)-(tl+2*ml+bl), (bl+2*bc+br)-(tl+2*tc+tr));
     }
   }
   return mg;
@@ -223,7 +265,6 @@ function drawDots(activePts) {
   dotCtx.fill();
 }
 
-/* Bug 1: removed makeLabel(), rStats(), rMotion() — dots use classifyAOI() */
 function analyzeDots() {
   if (mainVideo.readyState < 2) return;
   anaCtx.drawImage(mainVideo, 0, 0, W_ANA, H_ANA);
@@ -243,10 +284,9 @@ function analyzeDots() {
 
   const pts = [];
   for (const { i } of all) {
-    const bx = i % W_ANA, by = Math.floor(i / W_ANA);
     pts.push({
-      nx: Math.max(0.01, Math.min(0.99, bx / W_ANA)),
-      ny: Math.max(0.01, Math.min(0.99, by / H_ANA))
+      nx: Math.max(0.01, Math.min(0.99, (i % W_ANA) / W_ANA)),
+      ny: Math.max(0.01, Math.min(0.99, Math.floor(i / W_ANA) / H_ANA))
     });
   }
   window._dotPts = pts;
@@ -260,14 +300,13 @@ function analyzeDots() {
       if (!a.visible) {
         const moved = Math.hypot(a.x - p.nx, a.y - p.ny) > 0.05;
         if (moved) {
-          // Reset behavioral state on significant position change
-          a.dwellTime = 0; a.totalDwellTime = 0; a.revisitCount = 0;
-          a.lastVisitTs = 0; a.timeBetweenVisits = 0; a.isNear = false;
-          a.visitDwells = []; a._visitStart = 0; a._lastClassifyTs = 0;
-          a.classificationBuffer = []; a.classificationStableTime = 0; a.stableFor = 0;
+          a.dwellTime=0; a.totalDwellTime=0; a.revisitCount=0;
+          a.lastVisitTs=0; a.timeBetweenVisits=0; a.isNear=false;
+          a.visitDwells=[]; a._visitStart=0; a._lastClassifyTs=0;
+          a.classificationBuffer=[]; a.classificationStableTime=0; a.stableFor=0;
+          a.shownAt=0;
         }
         a.x = p.nx; a.y = p.ny;
-        // Bug 2: apply per-slot jitter to label position
         a.labelX = Math.max(0.01, Math.min(0.99, p.nx + a.jitterX));
         a.labelY = Math.max(0.01, Math.min(0.99, p.ny + a.jitterY));
       }
@@ -276,7 +315,7 @@ function analyzeDots() {
       if (!a.visible) {
         a.el.textContent = '';
         a.el.style.opacity = '0';
-        a.el.style.filter = 'none';
+        a.el.style.filter  = 'none';
       }
     }
   }
@@ -285,26 +324,39 @@ function analyzeDots() {
   prevPx = preCtx.getImageData(0, 0, W_ANA, H_ANA).data.slice();
 }
 
-/* Bug 1: permanent reveal via classification, no blur animation */
-function revealDot(a, label) {
+function revealDot(a, label, ts) {
   a.state   = label;
   a.visible = true;
+  a.shownAt = ts;   // FIX: store reveal time so fade works
   a.el.textContent = label;
   a.el.style.left      = (a.labelX * 100).toFixed(2) + '%';
   a.el.style.top       = (a.labelY * 100).toFixed(2) + '%';
   a.el.style.transform = a.labelX > 0.62
     ? 'translate(calc(-100% - 12px), -50%)'
     : 'translate(12px, -50%)';
-  a.el.style.opacity = '1';  // Bug 4: always '1', never partial
+  a.el.style.opacity = '1';
   a.el.style.filter  = 'none';
 }
 
-/* Bug 1: classifyAOI-based reveal, same logic as AOI layer */
+function hideDot(a) {
+  a.visible = false;
+  a.shownAt = 0;
+  a.el.style.transition = 'opacity 0.8s ease, filter 0.8s ease';
+  a.el.style.opacity    = '0';
+  a.el.style.filter     = 'blur(4px)';
+}
+
 function applyDotGaze(ts, gpx, gpy, W, H, scanSpeed, microMovement) {
   const revR = Math.min(W, H) * REVEAL_FRAC;
 
   for (const a of dotPool) {
     if (!a.active) continue;
+
+    // FIX: fade out dot after DOT_FADE_MS, same as AOI
+    if (a.visible && a.shownAt > 0 && ts - a.shownAt > DOT_FADE_MS) {
+      hideDot(a);
+      continue;
+    }
 
     const d    = Math.hypot(a.x * W - gpx, a.y * H - gpy);
     const near = d < revR;
@@ -320,7 +372,7 @@ function applyDotGaze(ts, gpx, gpy, W, H, scanSpeed, microMovement) {
       a.dwellTime = ts - a._visitStart;
       if (ts - a._lastClassifyTs > 200) {
         a._lastClassifyTs = ts;
-        const live = classifyAOI(a, ts, scanSpeed, microMovement);
+        const live = classify(a, ts, scanSpeed, microMovement);
         if (live !== 'UNCLASSIFIED') {
           a.classificationBuffer.push(live);
           if (a.classificationBuffer.length > 5) a.classificationBuffer.shift();
@@ -329,7 +381,7 @@ function applyDotGaze(ts, gpx, gpy, W, H, scanSpeed, microMovement) {
             ? (a.classificationStableTime += 200)
             : (a.classificationStableTime = 0);
           if (!a.visible && a.classificationStableTime > 250) {
-            revealDot(a, live);
+            revealDot(a, live, ts);
           } else if (a.visible && live !== a.state && a.classificationStableTime > 250) {
             a.state = live;
             a.el.textContent = live;
@@ -345,15 +397,15 @@ function applyDotGaze(ts, gpx, gpy, W, H, scanSpeed, microMovement) {
       a.lastVisitTs = ts;
       a.dwellTime   = 0;
       if (!a.visible) {
-        const exitState = classifyAOI(a, ts, scanSpeed, microMovement);
-        if (exitState !== 'UNCLASSIFIED') revealDot(a, exitState);
+        const exitState = classify(a, ts, scanSpeed, microMovement);
+        if (exitState !== 'UNCLASSIFIED') revealDot(a, exitState, ts);
       }
     }
   }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   LAYER 2 — AOI REGIONS + GAZE CLASSIFICATION
+   LAYER 2 — AOI REGIONS
    ══════════════════════════════════════════════════════════════════════ */
 
 function sobelMag(px, w, h) {
@@ -397,25 +449,25 @@ function detectAOI(px, w, h) {
     for (let j = i+1; j < pts.length; j++) {
       if (used[j]) continue;
       if (Math.hypot(pts[j].nx - seed.nx, pts[j].ny - seed.ny) < CLUSTER_DIST) {
-        x0 = Math.min(x0, pts[j].nx); x1 = Math.max(x1, pts[j].nx);
-        y0 = Math.min(y0, pts[j].ny); y1 = Math.max(y1, pts[j].ny);
-        count++; used[j] = 1;
+        x0=Math.min(x0,pts[j].nx); x1=Math.max(x1,pts[j].nx);
+        y0=Math.min(y0,pts[j].ny); y1=Math.max(y1,pts[j].ny);
+        count++; used[j]=1;
       }
     }
     if (count < 4) continue;
     const pad = 0.022;
-    const rx  = Math.max(0, x0 - pad), ry = Math.max(0, y0 - pad);
-    const rw  = Math.min(1, x1 + pad) - rx;
-    const rh  = Math.min(1, y1 + pad) - ry;
+    const rx  = Math.max(0, x0-pad), ry = Math.max(0, y0-pad);
+    const rw  = Math.min(1, x1+pad) - rx;
+    const rh  = Math.min(1, y1+pad) - ry;
     if (rw < AOI_MIN_W || rh < AOI_MIN_H || rw > AOI_MAX_SIZE || rh > AOI_MAX_SIZE) continue;
-    regions.push({ x: rx, y: ry, w: rw, h: rh, cx: rx+rw/2, cy: ry+rh/2 });
+    regions.push({ x:rx, y:ry, w:rw, h:rh, cx:rx+rw/2, cy:ry+rh/2 });
   }
 
   const kept = [];
   for (const r of regions) {
     let dup = false;
     for (const k of kept) {
-      if (Math.hypot(r.cx - k.cx, r.cy - k.cy) < CLUSTER_DIST * 1.4) { dup = true; break; }
+      if (Math.hypot(r.cx-k.cx, r.cy-k.cy) < CLUSTER_DIST*1.4) { dup=true; break; }
     }
     if (!dup) kept.push(r);
     if (kept.length >= MAX_AOI) break;
@@ -427,31 +479,30 @@ function analyzeAOI() {
   if (mainVideo.readyState < 2) return;
   aoiCtx.drawImage(mainVideo, 0, 0, W_AOI, H_AOI);
   const id      = aoiCtx.getImageData(0, 0, W_AOI, H_AOI);
-  const px      = id.data;
-  const regions = detectAOI(px, W_AOI, H_AOI);
+  const regions = detectAOI(id.data, W_AOI, H_AOI);
   const newPool = [];
 
   for (const r of regions) {
     let matched = null, bestD = 999;
     for (const a of aoiPool) {
-      const d = Math.hypot(r.cx - (a.x + a.w/2), r.cy - (a.y + a.h/2));
-      if (d < bestD && d < CLUSTER_DIST * 1.3) { bestD = d; matched = a; }
+      const d = Math.hypot(r.cx - (a.x+a.w/2), r.cy - (a.y+a.h/2));
+      if (d < bestD && d < CLUSTER_DIST*1.3) { bestD=d; matched=a; }
     }
     if (matched) {
-      matched.x = r.x; matched.y = r.y; matched.w = r.w; matched.h = r.h;
-      matched.cx = r.cx; matched.cy = r.cy; matched.active = true;
+      matched.x=r.x; matched.y=r.y; matched.w=r.w; matched.h=r.h;
+      matched.cx=r.cx; matched.cy=r.cy; matched.active=true;
       newPool.push(matched);
     } else {
       const el = document.createElement('span');
       el.className = 'ann';
       annLayer.appendChild(el);
       newPool.push({
-        el, x: r.x, y: r.y, w: r.w, h: r.h, cx: r.cx, cy: r.cy,
-        active: true, visible: false, state: 'UNCLASSIFIED', shownAt: 0,
-        dwellTime: 0, totalDwellTime: 0, revisitCount: 0, lastVisitTs: 0,
-        timeBetweenVisits: 0, isInside: false, visitDwells: [],
-        _visitStart: 0, _lastClassifyTs: 0,
-        classificationBuffer: [], classificationStableTime: 0, stableFor: 0
+        el, x:r.x, y:r.y, w:r.w, h:r.h, cx:r.cx, cy:r.cy,
+        active:true, visible:false, state:'UNCLASSIFIED', shownAt:0,
+        dwellTime:0, totalDwellTime:0, revisitCount:0, lastVisitTs:0,
+        timeBetweenVisits:0, isInside:false, visitDwells:[],
+        _visitStart:0, _lastClassifyTs:0,
+        classificationBuffer:[], classificationStableTime:0, stableFor:0
       });
     }
   }
@@ -461,64 +512,20 @@ function analyzeAOI() {
   aoiPCtx.drawImage(mainVideo, 0, 0, W_AOI, H_AOI);
 }
 
-/* ── shared gaze behaviour helpers ── */
-function currentStability() {
-  const N = Math.min(offXBuf.length, 20);
-  if (N < 8) return 0;
-  const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
-  const mx = xs.reduce((a,b) => a+b, 0) / N;
-  const my = ys.reduce((a,b) => a+b, 0) / N;
-  const vx = xs.reduce((a,b) => a+(b-mx)**2, 0) / N;
-  const vy = ys.reduce((a,b) => a+(b-my)**2, 0) / N;
-  return Math.max(0, Math.min(1, 1 - (vx+vy) / CAL_VAR_THRESH));
-}
-
-function detectSearchPattern() {
-  const h = window._gazeHistory || [];
-  if (h.length < 6) return false;
-  const recent = h.slice(-6);
-  const dxs = [], dys = [];
-  for (let i = 1; i < recent.length; i++) {
-    dxs.push(recent[i].x - recent[i-1].x);
-    dys.push(recent[i].y - recent[i-1].y);
-  }
-  const avgDx = dxs.reduce((a,b) => a+b, 0) / dxs.length;
-  const avgDy = dys.reduce((a,b) => a+b, 0) / dys.length;
-  const cX = dxs.every(d => Math.sign(d) === Math.sign(avgDx));
-  const cY = dys.every(d => Math.sign(d) === Math.sign(avgDy));
-  return (Math.abs(avgDx) > 0.02 || Math.abs(avgDy) > 0.02) && (cX || cY);
-}
-
-/* Bug 1: shared classifier used for both dots and AOI */
-function classifyAOI(a, ts, scanSpeed, microMovement) {
-  const stab = currentStability();
-  if (detectSearchPattern() && scanSpeed >= 2)                    return 'SEARCH PATTERN';
-  if (a.dwellTime > 900 && stab > 0.75)                          return 'ATTENTION LOCKED';
-  if (a.revisitCount >= 2 && a.totalDwellTime > 900)             return 'REPEATED GLANCE';
-  if (a.revisitCount >= 2 && a.totalDwellTime < 900 && stab < 0.5) return 'FOCUS UNSTABLE';
-  if (a.dwellTime > 500 && stab < 0.4 && microMovement > 0.015) return 'VISUAL DRIFT';
-  if (scanSpeed > 8 && a.dwellTime < 150 && stab < 0.3)         return 'SCAN WITHOUT PROCESSING';
-  if (a.dwellTime > 200 && a.dwellTime < 700 && stab < 0.6)     return 'LOW ENGAGEMENT';
-  return 'UNCLASSIFIED';
-}
-
-/* Bug 2: AOI label collision — shift 18px vertically if within 80px horizontally */
 function revealAOI(a, label, ts) {
-  a.state = label; a.visible = true; a.shownAt = ts;
-  a.el.textContent = label;
+  a.state=label; a.visible=true; a.shownAt=ts;
+  a.el.textContent=label;
 
-  const edgeX  = a.x + a.w;
-  const W      = dotCanvas.width, H = dotCanvas.height;
-  const myPxX  = edgeX * W;
-  let   myPxY  = (a.y + a.h * 0.5) * H;
+  const edgeX = a.x + a.w;
+  const W     = dotCanvas.width, H = dotCanvas.height;
+  let myPxY   = (a.y + a.h * 0.5) * H;
+  const myPxX = edgeX * W;
 
   for (const b of aoiPool) {
     if (b === a || !b.visible) continue;
     const bX = (b.x + b.w) * W;
     const bY = (b.y + b.h * 0.5) * H;
-    if (Math.abs(myPxX - bX) < 80 && Math.abs(myPxY - bY) < 18) {
-      myPxY += 18;
-    }
+    if (Math.abs(myPxX - bX) < 80 && Math.abs(myPxY - bY) < 18) myPxY += 18;
   }
 
   a.el.style.left      = (edgeX * 100).toFixed(2) + '%';
@@ -530,13 +537,13 @@ function revealAOI(a, label, ts) {
   a.el.style.filter  = 'blur(4px)';
   requestAnimationFrame(() => {
     a.el.style.transition = 'opacity 0.5s ease, filter 0.5s ease';
-    a.el.style.opacity    = '1';  // Bug 4: always '1'
+    a.el.style.opacity    = '1';
     a.el.style.filter     = 'blur(0px)';
   });
 }
 
 function hideAOI(a) {
-  a.visible = false; a.shownAt = 0;
+  a.visible=false; a.shownAt=0;
   a.el.style.transition = 'opacity 0.8s ease, filter 0.8s ease';
   a.el.style.opacity    = '0';
   a.el.style.filter     = 'blur(4px)';
@@ -545,78 +552,85 @@ function hideAOI(a) {
 function applyAOIGaze(ts, scanSpeed, microMovement, dt) {
   for (const a of aoiPool) {
     if (!a.active) continue;
-    const inside = sGX > a.x && sGX < a.x+a.w && sGY > a.y && sGY < a.y+a.h;
+
+    if (a.visible && a.shownAt > 0 && ts - a.shownAt > AOI_FADE_MS) {
+      hideAOI(a);
+      continue;
+    }
+
+    const inside = sGX>a.x && sGX<a.x+a.w && sGY>a.y && sGY<a.y+a.h;
 
     if (inside && !a.isInside) {
-      a.isInside = true; a.revisitCount++;
-      if (a.lastVisitTs > 0) a.timeBetweenVisits = ts - a.lastVisitTs;
-      a._visitStart = ts;
+      a.isInside=true; a.revisitCount++;
+      if (a.lastVisitTs>0) a.timeBetweenVisits=ts-a.lastVisitTs;
+      a._visitStart=ts;
     }
 
     if (inside && a.isInside) {
       a.dwellTime = ts - a._visitStart;
       const stab  = currentStability();
-      a.stableFor = stab > 0.6 ? (a.stableFor + dt * 1000) : 0;
+      a.stableFor = stab > 0.6 ? (a.stableFor + dt*1000) : 0;
 
       if (ts - a._lastClassifyTs > 200) {
         a._lastClassifyTs = ts;
-        const live = classifyAOI(a, ts, scanSpeed, microMovement);
+        const live = classify(a, ts, scanSpeed, microMovement);
         if (live !== 'UNCLASSIFIED') {
           a.classificationBuffer.push(live);
           if (a.classificationBuffer.length > 5) a.classificationBuffer.shift();
           const consistent = a.classificationBuffer.every(v => v === live);
           consistent
-            ? (a.classificationStableTime += dt * 1000)
+            ? (a.classificationStableTime += dt*1000)
             : (a.classificationStableTime = 0);
           if (!a.visible && a.classificationStableTime > 250) revealAOI(a, live, ts);
           if (a.visible && live !== a.state && a.classificationStableTime > 250) {
-            a.state = live; a.el.textContent = live;
+            a.state=live; a.el.textContent=live;
           }
         }
       }
     }
 
     if (!inside && a.isInside) {
-      a.isInside = false;
+      a.isInside=false;
       a.visitDwells.push(a.dwellTime);
-      a.totalDwellTime += a.dwellTime;
-      a.lastVisitTs = ts; a.dwellTime = 0; a.stableFor = 0;
+      a.totalDwellTime+=a.dwellTime;
+      a.lastVisitTs=ts; a.dwellTime=0; a.stableFor=0;
       if (!a.visible) {
-        const exitState = classifyAOI(a, ts, scanSpeed, microMovement);
+        const exitState = classify(a, ts, scanSpeed, microMovement);
         if (exitState !== 'UNCLASSIFIED') revealAOI(a, exitState, ts);
       }
     }
-
-    if (a.visible && a.shownAt > 0 && ts - a.shownAt > AOI_FADE_MS) hideAOI(a);
   }
 }
 
-/* Bug 3: remove ghost/hidden AOI drawing — only draw when a
-.visible === true */
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW FRAME
+   ══════════════════════════════════════════════════════════════════════ */
+
 function drawFrame() {
   const W = dotCanvas.width, H = dotCanvas.height;
   if (!W || !H) return;
   dotCtx.clearRect(0, 0, W, H);
 
+  // Layer 1: Sobel dots
   if (window._dotPts) drawDots(window._dotPts);
 
-  // Bug 3: no else branch — ghost rectangles removed entirely
+  // Layer 2: AOI rectangles — only when visible
   for (const a of aoiPool) {
     if (!a.active || !a.visible) continue;
-    const sx = a.x*W, sy = a.y*H, sw = a.w*W, sh = a.h*H;
+    const sx=a.x*W, sy=a.y*H, sw=a.w*W, sh=a.h*H;
 
-    dotCtx.strokeStyle = 'rgba(224,26,0,0.7)';
-    dotCtx.lineWidth   = 1;
+    dotCtx.strokeStyle='rgba(224,26,0,0.7)';
+    dotCtx.lineWidth=1;
     dotCtx.strokeRect(sx, sy, sw, sh);
 
     const c = Math.min(sw, sh) * 0.25;
-    dotCtx.strokeStyle = 'rgba(224,26,0,0.9)';
-    dotCtx.lineWidth   = 1.5;
+    dotCtx.strokeStyle='rgba(224,26,0,0.9)';
+    dotCtx.lineWidth=1.5;
     [
-      [sx,    sy,    c,  0,  0,  c],
-      [sx+sw, sy,   -c,  0,  0,  c],
-      [sx,    sy+sh, c,  0,  0, -c],
-      [sx+sw, sy+sh,-c,  0,  0, -c]
+      [sx,    sy,     c,  0,  0,  c],
+      [sx+sw, sy,    -c,  0,  0,  c],
+      [sx,    sy+sh,  c,  0,  0, -c],
+      [sx+sw, sy+sh, -c,  0,  0, -c]
     ].forEach(([x,y,dx1,dy1,dx2,dy2]) => {
       dotCtx.beginPath();
       dotCtx.moveTo(x+dx1, y+dy1);
@@ -680,104 +694,77 @@ function stability() {
   const N = Math.min(offXBuf.length, 20);
   if (N < 8) return 0;
   const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
-  const mx = xs.reduce((a,b) => a+b, 0) / N;
-  const my = ys.reduce((a,b) => a+b, 0) / N;
-  const vx = xs.reduce((a,b) => a+(b-mx)**2, 0) / N;
-  const vy = ys.reduce((a,b) => a+(b-my)**2, 0) / N;
+  const mx = xs.reduce((a,b)=>a+b,0)/N, my = ys.reduce((a,b)=>a+b,0)/N;
+  const vx = xs.reduce((a,b)=>a+(b-mx)**2,0)/N;
+  const vy = ys.reduce((a,b)=>a+(b-my)**2,0)/N;
   return Math.max(0, Math.min(1, 1-(vx+vy)/CAL_VAR_THRESH));
 }
 
 function fitAffine(data) {
   let A00=0,A01=0,A02=0,A11=0,A12=0,Bx0=0,Bx1=0,Bx2=0,By0=0,By1=0,By2=0;
-  const n = data.length;
+  const n=data.length;
   for (const d of data) {
     A00+=d.ox*d.ox; A01+=d.ox*d.oy; A02+=d.ox;
     A11+=d.oy*d.oy; A12+=d.oy;
     Bx0+=d.ox*d.sx; Bx1+=d.oy*d.sx; Bx2+=d.sx;
     By0+=d.ox*d.sy; By1+=d.oy*d.sy; By2+=d.sy;
   }
-  const M   = [[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
-  const inv = inv3(M);
-  if (!inv) return null;
-  const [ax,bx,cx] = mv3(inv, [Bx0,Bx1,Bx2]);
-  const [ay,by,cy] = mv3(inv, [By0,By1,By2]);
-  return { ax,bx,cx,ay,by,cy };
+  const M=[[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
+  const inv=inv3(M); if(!inv) return null;
+  const[ax,bx,cx]=mv3(inv,[Bx0,Bx1,Bx2]);
+  const[ay,by,cy]=mv3(inv,[By0,By1,By2]);
+  return{ax,bx,cx,ay,by,cy};
 }
-function inv3(m) {
-  const [[a,b,c],[d,e,f],[g,h,k]] = m;
-  const det = a*(e*k-f*h)-b*(d*k-f*g)+c*(d*h-e*g);
-  if (Math.abs(det) < 1e-12) return null;
-  const s = 1/det;
-  return [
-    [(e*k-f*h)*s,(c*h-b*k)*s,(b*f-c*e)*s],
-    [(f*g-d*k)*s,(a*k-c*g)*s,(c*d-a*f)*s],
-    [(d*h-e*g)*s,(b*g-a*h)*s,(a*e-b*d)*s]
-  ];
+function inv3(m){
+  const[[a,b,c],[d,e,f],[g,h,k]]=m;
+  const det=a*(e*k-f*h)-b*(d*k-f*g)+c*(d*h-e*g);
+  if(Math.abs(det)<1e-12)return null;
+  const s=1/det;
+  return[[(e*k-f*h)*s,(c*h-b*k)*s,(b*f-c*e)*s],
+         [(f*g-d*k)*s,(a*k-c*g)*s,(c*d-a*f)*s],
+         [(d*h-e*g)*s,(b*g-a*h)*s,(a*e-b*d)*s]];
 }
-function mv3(m, v) {
-  return [
-    m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
-    m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
-    m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]
-  ];
+function mv3(m,v){
+  return[m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+         m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+         m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
 }
 
-function resizeCal() { calCanvas.width=window.innerWidth; calCanvas.height=window.innerHeight; }
+function resizeCal(){calCanvas.width=window.innerWidth;calCanvas.height=window.innerHeight;}
 
-function drawIntro() {
-  const W=calCanvas.width, H=calCanvas.height;
-  calCtx.fillStyle='#ffffff'; calCtx.fillRect(0,0,W,H); calCtx.textAlign='center';
-  calCtx.fillStyle='#111111'; calCtx.font='bold 22px Heebo';
-  calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
-  calCtx.strokeStyle='#eeeeee'; calCtx.lineWidth=1;
-  calCtx.beginPath(); calCtx.moveTo(W/2-220,H/2-36); calCtx.lineTo(W/2+220,H/2-36); calCtx.stroke();
-  calCtx.fillStyle='#999999'; calCtx.font='14px Heebo';
-  calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);
-  calCtx.fillText('until the ring fills completely',W/2,H/2+8);
-  calCtx.fillStyle='#cccccc'; calCtx.font='12px Heebo';
-  calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
+function drawIntro(){
+  const W=calCanvas.width,H=calCanvas.height;
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
+  calCtx.strokeStyle='#eeeeee';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
+  calCtx.fillStyle='#999999';calCtx.font='14px Heebo';calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);calCtx.fillText('until the ring fills completely',W/2,H/2+8);
+  calCtx.fillStyle='#cccccc';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
 }
 
-function drawDone() {
-  const W=calCanvas.width, H=calCanvas.height;
-  calCtx.fillStyle='#ffffff'; calCtx.fillRect(0,0,W,H); calCtx.textAlign='center';
-  calCtx.fillStyle='#111111'; calCtx.font='bold 24px Heebo';
-  calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
-  calCtx.fillStyle='#999999'; calCtx.font='13px Heebo';
-  calCtx.fillText('Calibration complete',W/2,H/2+18);
+function drawDone(){
+  const W=calCanvas.width,H=calCanvas.height;
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
+  calCtx.fillStyle='#999999';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
 }
 
-function awaitDot(px, py, index) {
-  return new Promise(resolve => {
-    let progress=0, prevTs=null;
-    const samples=[];
-    function frame(ts) {
-      const dt=prevTs?Math.min((ts-prevTs)/1000,0.05):0; prevTs=ts;
-      const stab=stability();
-      progress+=stab*CAL_FILL_RATE*dt; progress-=(1-stab)*CAL_DRAIN_RATE*dt;
-      progress=Math.max(0,Math.min(1,progress));
-      if (stab>0.45) samples.push({ox:curOffX,oy:curOffY});
-      const W=calCanvas.width, H=calCanvas.height;
-      calCtx.fillStyle='#ffffff'; calCtx.fillRect(0,0,W,H);
-      calCtx.textAlign='right'; calCtx.fillStyle='#cccccc'; calCtx.font='14px Heebo';
-      calCtx.fillText(`${index+1}  /  ${CAL_PTS.length}`,W-28,36);
-      calCtx.textAlign='center'; calCtx.fillStyle='#cccccc'; calCtx.font='13px Heebo';
-      calCtx.fillText('POINT HEAD AT DOT · HOLD STILL',W/2,H-26);
-      calCtx.beginPath(); calCtx.arc(px,py,22,0,Math.PI*2);
-      calCtx.strokeStyle='#e8e8e8'; calCtx.lineWidth=1.5; calCtx.stroke();
-      if (progress>0) {
-        calCtx.beginPath(); calCtx.arc(px,py,22,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
-        calCtx.strokeStyle=`rgba(224,26,0,${0.35+stab*0.65})`; calCtx.lineWidth=2; calCtx.stroke();
-      }
-      const r=3.5+stab*2.5;
-      calCtx.beginPath(); calCtx.arc(px,py,r,0,Math.PI*2);
-      calCtx.fillStyle=`rgba(224,26,0,${0.2+stab*0.8})`; calCtx.fill();
-      if (progress>=1) {
-        calCtx.beginPath(); calCtx.arc(px,py,22,0,Math.PI*2);
-        calCtx.strokeStyle='rgba(224,26,0,0.9)'; calCtx.lineWidth=2; calCtx.stroke();
-        const n=samples.length||1;
-        const ox=samples.reduce((s,v)=>s+v.ox,0)/n;
-        const oy=samples.reduce((s,v)=>s+v.oy,0)/n;
+function awaitDot(px,py,index){
+  return new Promise(resolve=>{
+    let progress=0,prevTs=null;const samples=[];
+    function frame(ts){
+      const dt=prevTs?Math.min((ts-prevTs)/1000,0.05):0;prevTs=ts;const stab=stability();
+      progress+=stab*CAL_FILL_RATE*dt;progress-=(1-stab)*CAL_DRAIN_RATE*dt;progress=Math.max(0,Math.min(1,progress));
+      if(stab>0.45)samples.push({ox:curOffX,oy:curOffY});
+      const W=calCanvas.width,H=calCanvas.height;
+      calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);
+      calCtx.textAlign='right';calCtx.fillStyle='#cccccc';calCtx.font='14px Heebo';calCtx.fillText(`${index+1}  /  ${CAL_PTS.length}`,W-28,36);
+      calCtx.textAlign='center';calCtx.fillStyle='#cccccc';calCtx.font='13px Heebo';calCtx.fillText('POINT HEAD AT DOT · HOLD STILL',W/2,H-26);
+      calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);calCtx.strokeStyle='#e8e8e8';calCtx.lineWidth=1.5;calCtx.stroke();
+      if(progress>0){calCtx.beginPath();calCtx.arc(px,py,22,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);calCtx.strokeStyle=`rgba(224,26,0,${0.35+stab*0.65})`;calCtx.lineWidth=2;calCtx.stroke();}
+      const r=3.5+stab*2.5;calCtx.beginPath();calCtx.arc(px,py,r,0,Math.PI*2);calCtx.fillStyle=`rgba(224,26,0,${0.2+stab*0.8})`;calCtx.fill();
+      if(progress>=1){
+        calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);calCtx.strokeStyle='rgba(224,26,0,0.9)';calCtx.lineWidth=2;calCtx.stroke();
+        const n=samples.length||1;const ox=samples.reduce((s,v)=>s+v.ox,0)/n;const oy=samples.reduce((s,v)=>s+v.oy,0)/n;
         setTimeout(()=>resolve({ox,oy}),280);
       } else requestAnimationFrame(frame);
     }
@@ -785,105 +772,79 @@ function awaitDot(px, py, index) {
   });
 }
 
-async function runCalibration() {
-  resizeCal(); window.addEventListener('resize',resizeCal); drawIntro();
+async function runCalibration(){
+  resizeCal();window.addEventListener('resize',resizeCal);drawIntro();
   calStartBtn.style.display='block';
-  await new Promise(r => calStartBtn.addEventListener('click',r,{once:true}));
+  await new Promise(r=>calStartBtn.addEventListener('click',r,{once:true}));
   calStartBtn.style.display='none';
   const calData=[];
-  for (let i=0; i<CAL_PTS.length; i++) {
-    const [nx,ny]=CAL_PTS[i];
-    const px=nx*window.innerWidth, py=ny*window.innerHeight;
-    if (i>0) await new Promise(r=>setTimeout(r,320));
-    const {ox,oy}=await awaitDot(px,py,i);
-    calData.push({sx:nx,sy:ny,ox,oy});
+  for(let i=0;i<CAL_PTS.length;i++){
+    const[nx,ny]=CAL_PTS[i];const px=nx*window.innerWidth,py=ny*window.innerHeight;
+    if(i>0)await new Promise(r=>setTimeout(r,320));
+    const{ox,oy}=await awaitDot(px,py,i);calData.push({sx:nx,sy:ny,ox,oy});
   }
-  if (calData.length>=4) calMap=fitAffine(calData);
-  drawDone();
-  await new Promise(r=>setTimeout(r,900));
-  calOverlay.style.display='none';
+  if(calData.length>=4)calMap=fitAffine(calData);
+  drawDone();await new Promise(r=>setTimeout(r,900));calOverlay.style.display='none';
 }
 
-async function startHeadTracking() {
+async function startHeadTracking(){
   let fl;
-  try {
-    const fs=await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-    fl=await FaceLandmarker.createFromOptions(fs,{
-      baseOptions:{
-        modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-        delegate:'GPU'
-      },
-      outputFaceBlendshapes:false, runningMode:'VIDEO', numFaces:1
-    });
-  } catch(e) { console.warn('[head]',e); return false; }
-  try {
-    const stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}
-    });
-    webcamEl.srcObject=stream;
-    await new Promise(r=>{ webcamEl.onloadeddata=r; });
-  } catch(e) { console.warn('[head] webcam',e); return false; }
+  try{
+    const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    fl=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},outputFaceBlendshapes:false,runningMode:'VIDEO',numFaces:1});
+  }catch(e){console.warn('[head]',e);return false;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}});
+    webcamEl.srcObject=stream;await new Promise(r=>{webcamEl.onloadeddata=r;});
+  }catch(e){console.warn('[head] webcam',e);return false;}
   let lastCamT=-1;
-  function trackHead() {
-    if (webcamEl.readyState>=2 && webcamEl.currentTime!==lastCamT) {
+  function trackHead(){
+    if(webcamEl.readyState>=2&&webcamEl.currentTime!==lastCamT){
       lastCamT=webcamEl.currentTime;
-      try {
+      try{
         const res=fl.detectForVideo(webcamEl,performance.now());
-        if (res.faceLandmarks?.length>0) {
+        if(res.faceLandmarks?.length>0){
           const lm=res.faceLandmarks[0];
           const nose=lm[1],brow=lm[168],chin=lm[152],lChk=lm[234],rChk=lm[454];
           const hxRaw=(nose.x*4+brow.x+chin.x+lChk.x+rChk.x)/8;
           const hyRaw=(nose.y*4+brow.y+chin.y+lChk.y+rChk.y)/8;
-          const headX=1-hxRaw, headY=hyRaw;
-          curOffX=headX; curOffY=headY;
-          offXBuf.push(headX); if (offXBuf.length>BUF_MAX) offXBuf.shift();
-          offYBuf.push(headY); if (offYBuf.length>BUF_MAX) offYBuf.shift();
-          if (calMap) {
-            rawGX=calMap.ax*headX+calMap.bx*headY+calMap.cx;
-            rawGY=calMap.ay*headX+calMap.by*headY+calMap.cy;
-          } else { rawGX=headX; rawGY=headY; }
-          rawGX=Math.max(0,Math.min(1,rawGX));
-          rawGY=Math.max(0,Math.min(1,rawGY));
-          if (!gazeOn) { gazeOn=true; infoEl.style.opacity='0'; }
+          const headX=1-hxRaw,headY=hyRaw;
+          curOffX=headX;curOffY=headY;
+          offXBuf.push(headX);if(offXBuf.length>BUF_MAX)offXBuf.shift();
+          offYBuf.push(headY);if(offYBuf.length>BUF_MAX)offYBuf.shift();
+          if(calMap){rawGX=calMap.ax*headX+calMap.bx*headY+calMap.cx;rawGY=calMap.ay*headX+calMap.by*headY+calMap.cy;}
+          else{rawGX=headX;rawGY=headY;}
+          rawGX=Math.max(0,Math.min(1,rawGX));rawGY=Math.max(0,Math.min(1,rawGY));
+          if(!gazeOn){gazeOn=true;infoEl.style.opacity='0';}
         }
-      } catch(_) {}
+      }catch(_){}
     }
     requestAnimationFrame(trackHead);
   }
-  requestAnimationFrame(trackHead);
-  return true;
+  requestAnimationFrame(trackHead);return true;
 }
 
-function enablePointerFallback() {
+function enablePointerFallback(){
   infoEl.textContent='MOVE MOUSE TO EXPLORE · HOVER REGIONS TO REVEAL';
   const onMove=(cx,cy)=>{
     const rect=videoWrapper.getBoundingClientRect();
-    const nx=(cx-rect.left)/rect.width, ny=(cy-rect.top)/rect.height;
-    if (nx>=0&&nx<=1&&ny>=0&&ny<=1) {
-      rawGX=nx; rawGY=ny;
-      if (!gazeOn) { gazeOn=true; infoEl.style.opacity='0'; }
-    }
+    const nx=(cx-rect.left)/rect.width,ny=(cy-rect.top)/rect.height;
+    if(nx>=0&&nx<=1&&ny>=0&&ny<=1){rawGX=nx;rawGY=ny;if(!gazeOn){gazeOn=true;infoEl.style.opacity='0';}}
   };
   document.addEventListener('mousemove',e=>onMove(e.clientX,e.clientY));
-  document.addEventListener('touchmove',e=>{
-    e.preventDefault(); onMove(e.touches[0].clientX,e.touches[0].clientY);
-  },{passive:false});
+  document.addEventListener('touchmove',e=>{e.preventDefault();onMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 }
 
-function sizeWrapper() { dotCanvas.width=window.innerWidth; dotCanvas.height=window.innerHeight; }
+function sizeWrapper(){dotCanvas.width=window.innerWidth;dotCanvas.height=window.innerHeight;}
 
-async function boot() {
-  buildDotPool();
-  sizeWrapper();
+async function boot(){
+  buildDotPool();sizeWrapper();
   mainVideo.addEventListener('loadedmetadata',sizeWrapper);
   window.addEventListener('resize',sizeWrapper);
-  if (mainVideo.readyState<2)
-    await new Promise(r=>mainVideo.addEventListener('canplay',r,{once:true}));
+  if(mainVideo.readyState<2)await new Promise(r=>mainVideo.addEventListener('canplay',r,{once:true}));
   const ok=await startHeadTracking();
-  if (ok) { await runCalibration(); }
-  else    { calOverlay.style.display='none'; enablePointerFallback(); }
-  analyzeDots(); analyzeAOI();
+  if(ok){await runCalibration();}else{calOverlay.style.display='none';enablePointerFallback();}
+  analyzeDots();analyzeAOI();
   lastAnaTs=lastAoiTs=performance.now();
   requestAnimationFrame(mainLoop);
 }
@@ -892,111 +853,77 @@ async function boot() {
    MULTI-USER GAZE GALLERY
    ══════════════════════════════════════════════════════════════════════ */
 
-let currentUser='', ws=null, latestData={}, galleryOpen=false;
+let currentUser='',ws=null,latestData={},galleryOpen=false;
 
-async function showNameScreen() {
-  return new Promise(resolve => {
+async function showNameScreen(){
+  return new Promise(resolve=>{
     const screen=document.getElementById('nameScreen');
-    const input =document.getElementById('nameInput');
-    const btn   =document.getElementById('nameContinue');
-    screen.style.display='flex'; input.focus();
-    function proceed() {
-      const v=input.value.trim();
-      if (!v) { input.focus(); return; }
-      currentUser=v; screen.style.display='none'; resolve();
-    }
+    const input=document.getElementById('nameInput');
+    const btn=document.getElementById('nameContinue');
+    screen.style.display='flex';input.focus();
+    function proceed(){const v=input.value.trim();if(!v){input.focus();return;}currentUser=v;screen.style.display='none';resolve();}
     btn.addEventListener('click',proceed);
-    input.addEventListener('keydown',e=>{ if(e.key==='Enter') proceed(); });
+    input.addEventListener('keydown',e=>{if(e.key==='Enter')proceed();});
   });
 }
 
-function connectWS() {
-  try {
+function connectWS(){
+  try{
     ws=new WebSocket(location.origin.replace('https','wss').replace('http','ws'));
-    ws.addEventListener('message',e=>{
-      try {
-        const msg=JSON.parse(e.data);
-        if (msg.type==='sessions') {
-          latestData=msg.data;
-          updateGhostsFromData(msg.data);
-          if (galleryOpen) renderGallery(msg.data);
-        }
-      } catch(_) {}
-    });
+    ws.addEventListener('message',e=>{try{const msg=JSON.parse(e.data);if(msg.type==='sessions'){latestData=msg.data;updateGhostsFromData(msg.data);if(galleryOpen)renderGallery(msg.data);}}catch(_){}});
     ws.addEventListener('error',()=>{});
-  } catch(_) {}
+  }catch(_){}
 }
 
-function startGazeSend() {
+function startGazeSend(){
   setInterval(()=>{
-    if (document.visibilityState==='hidden'||!ws||ws.readyState!==WebSocket.OPEN) return;
-    try { ws.send(JSON.stringify({type:'gaze',name:currentUser,x:sGX,y:sGY})); } catch(_) {}
+    if(document.visibilityState==='hidden'||!ws||ws.readyState!==WebSocket.OPEN)return;
+    try{ws.send(JSON.stringify({type:'gaze',name:currentUser,x:sGX,y:sGY}));}catch(_){}
   },2000);
 }
 
 const ghostContainer=document.getElementById('ghostContainer');
-function updateGhostsFromData(data) {
-  ghostContainer.innerHTML='';
-  const now=Date.now();
-  for (const [name,entry] of Object.entries(data)) {
-    if (name===currentUser||now-entry.ts>30000) continue;
+function updateGhostsFromData(data){
+  ghostContainer.innerHTML='';const now=Date.now();
+  for(const[name,entry]of Object.entries(data)){
+    if(name===currentUser||now-entry.ts>30000)continue;
     const ghost=document.createElement('div');
     ghost.style.cssText='position:absolute;pointer-events:none;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;';
-    ghost.style.left=(entry.x*window.innerWidth)+'px';
-    ghost.style.top =(entry.y*window.innerHeight)+'px';
-    const circle=document.createElement('div');
-    circle.style.cssText='width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
-    const lbl=document.createElement('div');
-    lbl.style.cssText='font-family:"Heebo",sans-serif;font-size:8px;color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
-    lbl.textContent=name;
-    ghost.appendChild(circle); ghost.appendChild(lbl); ghostContainer.appendChild(ghost);
+    ghost.style.left=(entry.x*window.innerWidth)+'px';ghost.style.top=(entry.y*window.innerHeight)+'px';
+    const circle=document.createElement('div');circle.style.cssText='width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
+    const lbl=document.createElement('div');lbl.style.cssText='font-family:"Heebo",sans-serif;font-size:8px;color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
+    lbl.textContent=name;ghost.appendChild(circle);ghost.appendChild(lbl);ghostContainer.appendChild(ghost);
   }
 }
 
 const galleryOverlay=document.getElementById('galleryOverlay');
-const galleryList   =document.getElementById('galleryList');
-const galleryClose  =document.getElementById('galleryClose');
-const galleryBtn    =document.getElementById('galleryBtn');
+const galleryList=document.getElementById('galleryList');
+const galleryClose=document.getElementById('galleryClose');
+const galleryBtn=document.getElementById('galleryBtn');
 
-function timeAgo(ts) {
-  const s=Math.floor((Date.now()-ts)/1000);
-  return s<60?`${s}s ago`:`${Math.floor(s/60)}m ago`;
-}
+function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);return s<60?`${s}s ago`:`${Math.floor(s/60)}m ago`;}
 
-function renderGallery(data) {
-  galleryList.innerHTML='';
-  const entries=Object.entries(data);
-  if (!entries.length) {
-    galleryList.innerHTML='<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
-    return;
-  }
+function renderGallery(data){
+  galleryList.innerHTML='';const entries=Object.entries(data);
+  if(!entries.length){galleryList.innerHTML='<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';return;}
   const now=Date.now();
-  for (const [name,entry] of entries) {
-    const isOld=(now-entry.ts)>600000, isMe=name===currentUser;
-    const row=document.createElement('div');
-    row.style.cssText=`padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld?0.25:1};`;
-    const nameDiv=document.createElement('div');
-    nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;color:#111111;letter-spacing:0.05em;';
+  for(const[name,entry]of entries){
+    const isOld=(now-entry.ts)>600000,isMe=name===currentUser;
+    const row=document.createElement('div');row.style.cssText=`padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld?0.25:1};`;
+    const nameDiv=document.createElement('div');nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;color:#111111;letter-spacing:0.05em;';
     nameDiv.innerHTML=isMe?name+' <span style="color:#e01a00;">(YOU)</span>':name;
-    const detDiv=document.createElement('div');
-    detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
+    const detDiv=document.createElement('div');detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
     detDiv.textContent=`X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}  ·  ${timeAgo(entry.ts)}`;
-    row.appendChild(nameDiv); row.appendChild(detDiv); galleryList.appendChild(row);
+    row.appendChild(nameDiv);row.appendChild(detDiv);galleryList.appendChild(row);
   }
 }
 
-galleryBtn.addEventListener('click',()=>{
-  galleryOpen=true; galleryOverlay.style.display='flex';
-  ghostContainer.style.display='none'; renderGallery(latestData);
-});
-galleryClose.addEventListener('click',()=>{
-  galleryOpen=false; galleryOverlay.style.display='none';
-  ghostContainer.style.display='block';
-});
-galleryBtn.addEventListener('mouseenter',()=>{ galleryBtn.style.color='#e01a00'; });
-galleryBtn.addEventListener('mouseleave',()=>{ galleryBtn.style.color='#cccccc'; });
+galleryBtn.addEventListener('click',()=>{galleryOpen=true;galleryOverlay.style.display='flex';ghostContainer.style.display='none';renderGallery(latestData);});
+galleryClose.addEventListener('click',()=>{galleryOpen=false;galleryOverlay.style.display='none';ghostContainer.style.display='block';});
+galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#e01a00';});
+galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#cccccc';});
 
-async function startApp() {
+async function startApp(){
   await showNameScreen();
   connectWS();
   await boot();
