@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:none; font-family:'Heebo',sans-serif; }
+body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:none; font-family:'Heebo',sans-serif; }
 #scene { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
 #videoWrapper { position:relative; width:100vw; height:100vh; overflow:hidden; }
 #mainVideo { display:block; width:100%; height:100%; object-fit:cover; }
@@ -21,7 +21,7 @@ body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:no
   color:#e01a00;
   letter-spacing:0.06em;
   white-space:nowrap;
-  text-shadow:0 0 8px rgba(0,0,0,0.9),0 0 2px rgba(0,0,0,0.9);
+  text-shadow:0 0 8px rgba(255,255,255,0.95),0 0 2px rgba(255,255,255,0.95);
   pointer-events:none;
   opacity:0;
   transition:opacity 0.5s ease, filter 0.5s ease;
@@ -30,39 +30,41 @@ body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:no
 #gazeDot {
   position:fixed; width:22px; height:22px; border-radius:50%;
   border:2px solid rgba(224,26,0,0.85);
-  background:rgba(224,26,0,0.15);
+  background:rgba(224,26,0,0.12);
   transform:translate(-50%,-50%); pointer-events:none; z-index:50;
 }
 #webcamEl {
   position:fixed; bottom:8px; right:8px; width:96px; height:72px;
-  opacity:0.06; transform:scaleX(-1); border:1px solid #333; z-index:50;
+  opacity:0.05; transform:scaleX(-1); border:1px solid #ccc; z-index:50;
 }
 #info {
   position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
   font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
-  letter-spacing:0.22em; color:rgba(255,255,255,0.4); pointer-events:none;
+  letter-spacing:0.22em; color:rgba(0,0,0,0.35); pointer-events:none;
   transition:opacity 2s ease; white-space:nowrap; z-index:50;
 }
 
-/* ── shared btn style ── */
+/* ── shared button styles ── */
 .va-btn {
   font-family:'Heebo',sans-serif; letter-spacing:0.22em; cursor:pointer;
   transition:background 0.18s, color 0.18s, border-color 0.18s;
 }
+/* solid red — primary action */
 .va-btn-primary {
   background:#e01a00; color:#ffffff; border:2px solid #e01a00;
   font-size:13px; font-weight:700; padding:16px 52px;
 }
-.va-btn-primary:hover { background:#ff2200; border-color:#ff2200; }
+.va-btn-primary:hover { background:#c01500; border-color:#c01500; }
 
+/* black outline — secondary action */
 .va-btn-secondary {
-  background:#000000; color:#ffffff; border:2px solid #ffffff;
-  font-size:12px; font-weight:500; padding:14px 40px;
+  background:#ffffff; color:#111111; border:2px solid #111111;
+  font-size:12px; font-weight:700; padding:14px 40px;
 }
-.va-btn-secondary:hover { background:#ffffff; color:#000000; }
+.va-btn-secondary:hover { background:#111111; color:#ffffff; }
 
 /* ── calibration overlay ── */
-#calOverlay { position:fixed; inset:0; z-index:1000; background:#000000; }
+#calOverlay { position:fixed; inset:0; z-index:1000; background:#ffffff; }
 #calCanvas  { position:absolute; inset:0; width:100%; height:100%; }
 #calStartBtn {
   position:absolute; top:58%; left:50%; transform:translateX(-50%);
@@ -73,59 +75,57 @@ body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:no
 /* ── mode selection screen ── */
 #modeScreen {
   display:none; position:fixed; inset:0; z-index:1100;
-  background:rgba(0,0,0,0.92);
-  backdrop-filter:blur(2px);
+  background:#ffffff;
   flex-direction:column; align-items:center; justify-content:center;
 }
 .mode-screen-title {
-  font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
-  letter-spacing:0.55em; color:rgba(255,255,255,0.35);
-  margin-bottom:36px; text-transform:uppercase;
+  font-family:'Heebo',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:0.5em; color:#111111;
+  margin-bottom:32px; text-transform:uppercase;
 }
 .mode-grid {
   display:grid; grid-template-columns:repeat(3,1fr);
-  gap:2px; max-width:720px; width:92vw; margin-bottom:36px;
-  border:2px solid #222; outline:2px solid #222;
+  gap:0; max-width:720px; width:92vw; margin-bottom:40px;
+  border:2px solid #111111;
 }
 .mode-card {
-  background:#111111;
-  border:2px solid transparent;
+  background:#ffffff;
+  border:none;
+  border-right:1px solid #111111;
+  border-bottom:1px solid #111111;
   padding:24px 20px 20px;
   cursor:pointer;
-  transition:background 0.15s, border-color 0.15s;
+  transition:background 0.15s;
   position:relative;
 }
-.mode-card:hover {
-  background:#1a1a1a;
-  border-color:#555;
-}
+.mode-card:last-child  { border-right:none; }
+.mode-card:nth-child(3){ border-right:none; }
+.mode-card:nth-child(4),
+.mode-card:nth-child(5),
+.mode-card:nth-child(6){ border-bottom:none; }
+
+.mode-card:hover { background:#f5f5f5; }
+
 .mode-card.selected {
-  background:#1a0000;
-  border-color:#e01a00;
+  background:#e01a00;
 }
-.mode-card.selected .mode-num { color:#e01a00; }
+.mode-card.selected .mode-num  { color:rgba(255,255,255,0.5); }
 .mode-card.selected .mode-name { color:#ffffff; }
+.mode-card.selected .mode-desc { color:rgba(255,255,255,0.7); }
 
 .mode-num {
   font-family:'Heebo',sans-serif; font-size:11px; font-weight:300;
-  color:#444; letter-spacing:0.12em; margin-bottom:10px;
+  color:#bbbbbb; letter-spacing:0.12em; margin-bottom:10px;
   transition:color 0.15s;
 }
 .mode-name {
   font-family:'Heebo',sans-serif; font-size:13px; font-weight:700;
-  color:#888; letter-spacing:0.1em; line-height:1.2;
-  margin-bottom:10px; transition:color 0.15s;
+  color:#111111; letter-spacing:0.1em; line-height:1.2;
+  margin-bottom:8px; transition:color 0.15s;
 }
 .mode-desc {
   font-family:'Heebo',sans-serif; font-size:9px; font-weight:300;
-  color:#444; letter-spacing:0.05em; line-height:1.6;
-}
-.mode-card.selected .mode-desc { color:#666; }
-
-/* selected indicator bar */
-.mode-card.selected::before {
-  content:''; position:absolute; top:0; left:0; right:0;
-  height:2px; background:#e01a00;
+  color:#999999; letter-spacing:0.04em; line-height:1.6;
 }
 
 /* ── floating mode pill ── */
@@ -135,56 +135,57 @@ body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:no
 }
 #modePillCollapsed {
   display:flex; align-items:center; gap:6px;
-  background:#000000; border:1.5px solid #333;
-  padding:9px 14px; cursor:pointer; font-size:10px; font-weight:500;
+  background:#111111; border:2px solid #111111;
+  padding:10px 16px; cursor:pointer; font-size:10px; font-weight:700;
   color:#ffffff; letter-spacing:0.14em;
-  transition:border-color 0.15s, background 0.15s;
+  transition:background 0.15s;
   white-space:nowrap; user-select:none;
 }
-#modePillCollapsed:hover { border-color:#e01a00; background:#0d0000; }
+#modePillCollapsed:hover { background:#e01a00; border-color:#e01a00; }
 #modePillCollapsed .pill-dot { color:#e01a00; font-size:8px; }
+#modePillCollapsed:hover .pill-dot { color:#ffffff; }
 
 #modePillExpanded {
   display:none; flex-direction:column;
-  background:#000000; border:1.5px solid #333;
-  min-width:168px;
+  background:#ffffff; border:2px solid #111111;
+  min-width:178px;
 }
 .pill-mode-row {
-  padding:10px 14px; font-size:10px; font-weight:400; color:#666;
+  padding:10px 16px; font-size:10px; font-weight:500; color:#999999;
   letter-spacing:0.1em; cursor:pointer; border-left:3px solid transparent;
   transition:color 0.12s, background 0.12s; user-select:none;
 }
-.pill-mode-row:hover { color:#ffffff; background:#111; }
+.pill-mode-row:hover { color:#111111; background:#f5f5f5; }
 .pill-mode-row.active {
   border-left-color:#e01a00; font-weight:700;
-  color:#ffffff; background:#0d0000;
+  color:#e01a00; background:#fff5f5;
 }
 #pillSaveBtn {
   margin:6px 10px 10px; cursor:pointer;
   font-family:'Heebo',sans-serif; font-size:10px; font-weight:700;
-  letter-spacing:0.18em; padding:9px 12px;
-  background:#e01a00; color:#ffffff; border:none;
+  letter-spacing:0.18em; padding:10px 12px;
+  background:#111111; color:#ffffff; border:none;
   transition:background 0.15s;
 }
-#pillSaveBtn:hover { background:#ff2200; }
+#pillSaveBtn:hover { background:#e01a00; }
 
 /* ── name screen ── */
 #nameScreen {
   display:none; position:fixed; inset:0; z-index:2000;
-  background:#000000;
+  background:#ffffff;
   flex-direction:column; align-items:center; justify-content:center;
 }
 #nameScreen .ns-title {
   font-size:9px; font-weight:300; letter-spacing:0.55em;
-  color:rgba(255,255,255,0.25); margin-bottom:72px;
+  color:#bbbbbb; margin-bottom:72px;
 }
 #nameScreen label {
-  display:block; font-size:10px; font-weight:400;
-  letter-spacing:0.3em; color:#666; margin-bottom:18px;
+  display:block; font-size:10px; font-weight:700;
+  letter-spacing:0.3em; color:#111111; margin-bottom:18px;
 }
 #nameInput {
-  background:transparent; border:none; border-bottom:1px solid #333;
-  color:#ffffff; font-family:'Heebo',sans-serif; font-size:18px;
+  background:transparent; border:none; border-bottom:2px solid #111111;
+  color:#111111; font-family:'Heebo',sans-serif; font-size:18px;
   letter-spacing:0.15em; padding:10px 6px; text-align:center;
   width:280px; caret-color:#e01a00;
 }
@@ -192,26 +193,26 @@ body { background:#000000; overflow:hidden; width:100vw; height:100vh; cursor:no
 /* ── gallery overlay ── */
 #galleryOverlay {
   display:none; position:fixed; inset:0; z-index:1500;
-  background:#000000;
+  background:#ffffff;
   flex-direction:column; align-items:center;
   padding:72px 40px 48px; overflow-y:auto;
 }
 .gallery-inner { width:100%; max-width:560px; }
 .gallery-heading {
-  font-size:9px; font-weight:300; letter-spacing:0.55em;
-  color:rgba(255,255,255,0.25); margin-bottom:8px;
+  font-size:9px; font-weight:700; letter-spacing:0.5em;
+  color:#111111; margin-bottom:8px;
 }
-.gallery-divider { border-bottom:1px solid #1a1a1a; margin-bottom:38px; }
+.gallery-divider { border-bottom:2px solid #111111; margin-bottom:38px; }
 
 /* ── gallery trigger ── */
 #galleryBtn {
   position:fixed; bottom:16px; left:16px;
-  font-size:10px; font-weight:500; letter-spacing:0.18em;
-  color:#444; cursor:pointer; z-index:60;
-  transition:color 0.15s; user-select:none;
-  background:#000; border:1.5px solid #222; padding:7px 12px;
+  font-size:10px; font-weight:700; letter-spacing:0.18em;
+  color:#ffffff; cursor:pointer; z-index:60;
+  transition:background 0.15s; user-select:none;
+  background:#111111; border:2px solid #111111; padding:8px 14px;
 }
-#galleryBtn:hover { color:#ffffff; border-color:#555; }
+#galleryBtn:hover { background:#e01a00; border-color:#e01a00; }
 </style>
 </head>
 <body>
@@ -1189,19 +1190,19 @@ function resizeCal(){calCanvas.width=window.innerWidth;calCanvas.height=window.i
 
 function drawIntro(){
   const W=calCanvas.width,H=calCanvas.height;
-  calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
-  calCtx.fillStyle='#ffffff';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
-  calCtx.strokeStyle='#222222';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
+  calCtx.strokeStyle='#dddddd';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
   calCtx.fillStyle='#666666';calCtx.font='14px Heebo';calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);
   calCtx.fillText('until the ring fills completely',W/2,H/2+8);
-  calCtx.fillStyle='#444444';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
+  calCtx.fillStyle='#aaaaaa';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
 }
 
 function drawDone(){
   const W=calCanvas.width,H=calCanvas.height;
-  calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
-  calCtx.fillStyle='#ffffff';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
-  calCtx.fillStyle='#555555';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
+  calCtx.fillStyle='#aaaaaa';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
 }
 
 function awaitDot(px,py,index){
@@ -1214,13 +1215,13 @@ function awaitDot(px,py,index){
       progress=Math.max(0,Math.min(1,progress));
       if(stab>0.45)samples.push({ox:curOffX,oy:curOffY});
       const W=calCanvas.width,H=calCanvas.height;
-      calCtx.fillStyle='#000000';calCtx.fillRect(0,0,W,H);
-      calCtx.textAlign='right';calCtx.fillStyle='#333333';calCtx.font='14px Heebo';
+      calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);
+      calCtx.textAlign='right';calCtx.fillStyle='#aaaaaa';calCtx.font='14px Heebo';
       calCtx.fillText(`${index+1}  /  ${CAL_PTS.length}`,W-28,36);
-      calCtx.textAlign='center';calCtx.fillStyle='#444444';calCtx.font='13px Heebo';
+      calCtx.textAlign='center';calCtx.fillStyle='#aaaaaa';calCtx.font='13px Heebo';
       calCtx.fillText('POINT HEAD AT DOT · HOLD STILL',W/2,H-26);
       calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);
-      calCtx.strokeStyle='#333333';calCtx.lineWidth=1.5;calCtx.stroke();
+      calCtx.strokeStyle='#dddddd';calCtx.lineWidth=1.5;calCtx.stroke();
       if(progress>0){
         calCtx.beginPath();calCtx.arc(px,py,22,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
         calCtx.strokeStyle=`rgba(224,26,0,${0.35+stab*0.65})`;calCtx.lineWidth=2;calCtx.stroke();
@@ -1547,16 +1548,16 @@ function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);return s<60?`${s}s
 function renderGallery(data){
   galleryList.innerHTML='';const entries=Object.entries(data);
   if(!entries.length){
-    galleryList.innerHTML='<div style="color:#333;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
+    galleryList.innerHTML='<div style="color:#bbbbbb;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
     return;
   }
   const now=Date.now();
   for(const[name,entry]of entries){
     const isOld=(now-entry.ts)>600000,isMe=name===currentUser;
     const row=document.createElement('div');
-    row.style.cssText=`padding:20px 0;border-bottom:1px solid #111;opacity:${isOld?0.25:1};`;
+    row.style.cssText=`padding:20px 0;border-bottom:1px solid #eeeeee;opacity:${isOld?0.25:1};`;
     const nameDiv=document.createElement('div');
-    nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:700;color:#ffffff;letter-spacing:0.08em;';
+    nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:700;color:#111111;letter-spacing:0.08em;';
     nameDiv.innerHTML=isMe?name+' <span style="color:#e01a00;">(YOU)</span>':name;
     const parts=[
       `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}`,
@@ -1566,7 +1567,7 @@ function renderGallery(data){
       timeAgo(entry.ts)
     ].filter(Boolean);
     const detDiv=document.createElement('div');
-    detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#444;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
+    detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#aaaaaa;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
     detDiv.textContent=parts.join('  ·  ');
     row.appendChild(nameDiv);row.appendChild(detDiv);galleryList.appendChild(row);
   }
@@ -1574,8 +1575,8 @@ function renderGallery(data){
 
 galleryBtn.addEventListener('click',()=>{galleryOpen=true;galleryOverlay.style.display='flex';ghostContainer.style.display='none';renderGallery(latestData);});
 galleryClose.addEventListener('click',()=>{galleryOpen=false;galleryOverlay.style.display='none';ghostContainer.style.display='block';});
-galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#ffffff';galleryBtn.style.borderColor='#555';});
-galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#444';galleryBtn.style.borderColor='#222';});
+galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.background='#e01a00';galleryBtn.style.borderColor='#e01a00';});
+galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.background='#111111';galleryBtn.style.borderColor='#111111';});
 
 async function startApp(){
   await showNameScreen();
