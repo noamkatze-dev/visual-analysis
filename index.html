@@ -400,6 +400,7 @@ let heatmap         = new Float32Array(W_HEAT * H_HEAT);
 let heatCanvas, heatCtx;
 let firstFix        = null;
 let firstFixDone    = false;
+let firstFixModeTs  = 0;  // timestamp when FIRSTFIX mode was entered
 let sessionStartTs  = 0;
 let gazeLog         = [];
 
@@ -888,7 +889,12 @@ function updateHeatmap() {
 function updateFirstFix() {
   if (activeMode !== 'FIRSTFIX') return;
   if (firstFixDone) return;
-  if (fixationHistory.length > 0) { firstFix=fixationHistory[fixationHistory.length-1]; firstFixDone=true; }
+  // Only count fixations that started after we entered FIRSTFIX mode
+  const recent = fixationHistory.filter(f => f.startTs >= firstFixModeTs);
+  if (recent.length > 0) {
+    firstFix = recent[0];
+    firstFixDone = true;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1065,7 +1071,7 @@ function drawFirstFix(ts) {
   dotCtx.fillStyle='rgba(224,26,0,1)'; dotCtx.fill();
   dotCtx.strokeStyle='rgba(224,26,0,1)'; dotCtx.lineWidth=2; dotCtx.stroke();
   // text clearly above the circle, no transparency
-  const offset=(firstFix.startTs-sessionStartTs)/1000;
+  const offset = (firstFix.startTs - firstFixModeTs) / 1000;
   const textY = cy - 46;
   dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
   dotCtx.fillStyle='rgba(224,26,0,1)';
@@ -1350,7 +1356,7 @@ async function showModeScreen(){
     document.getElementById('modeBeginBtn').addEventListener('click',()=>{
       const sel=screen.querySelector('.mode-card.selected');
       activeMode=sel?sel.dataset.mode:'GAZE';
-      if(activeMode==='FIRSTFIX'){ firstFix=null; firstFixDone=false; }
+      if(activeMode==='FIRSTFIX'){ firstFix=null; firstFixDone=false; firstFixModeTs=Date.now(); }
       if(activeMode==='SCANPATH'){ scanPathHistory=[]; }
       screen.style.display='none';
       resolve();
@@ -1371,7 +1377,7 @@ function setActiveMode(id){
   });
   // Reset FIRST FIXATION so it starts fresh from this mode selection
   if(id==='FIRSTFIX'){
-    firstFix=null; firstFixDone=false;
+    firstFix=null; firstFixDone=false; firstFixModeTs=Date.now();
   }
   // Reset SCAN PATH so it starts fresh from this mode selection
   if(id==='SCANPATH'){
