@@ -7,305 +7,118 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  background: #ffffff;
-  overflow: hidden;
-  width: 100vw;
-  height: 100vh;
-  cursor: none;
-}
-
-#scene {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#videoWrapper {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-
-#mainVideo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-#dotCanvas {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-#annLayer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 2;
-  transition: opacity 0.3s;
-}
+body { background:#ffffff; overflow:hidden; width:100vw; height:100vh; cursor:none; }
+#scene { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+#videoWrapper { position:relative; width:100vw; height:100vh; overflow:hidden; }
+#mainVideo { display:block; width:100%; height:100%; object-fit:cover; }
+#dotCanvas { position:absolute; inset:0; pointer-events:none; z-index:1; }
+#annLayer  { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:2; transition:opacity 0.3s; }
 
 .ann {
-  position: absolute;
-  font-family: 'Heebo', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: #e01a00;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  text-shadow: 0 0 8px rgba(255,255,255,0.9);
-  pointer-events: none;
-  opacity: 0;
+  position:absolute;
+  font-family:'Heebo',sans-serif;
+  font-size:11px; font-weight:700;
+  color:#e01a00;
+  letter-spacing:0.06em;
+  white-space:nowrap;
+  text-shadow:0 0 8px rgba(255,255,255,0.95),0 0 2px rgba(255,255,255,0.95);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.5s ease, filter 0.5s ease;
 }
 
 #gazeDot {
-  position: fixed;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid rgba(224,26,0,0.7);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 50;
+  position:fixed; width:22px; height:22px; border-radius:50%;
+  border:2px solid rgba(224,26,0,0.7);
+  transform:translate(-50%,-50%); pointer-events:none; z-index:50;
 }
-
 #webcamEl {
-  position: fixed;
-  bottom: 8px;
-  right: 8px;
-  width: 96px;
-  height: 72px;
-  opacity: 0.04;
-  transform: scaleX(-1);
-  border: 1px solid #e8e8e8;
-  z-index: 50;
+  position:fixed; bottom:8px; right:8px; width:96px; height:72px;
+  opacity:0.04; transform:scaleX(-1); border:1px solid #e8e8e8; z-index:50;
 }
-
 #info {
-  position: fixed;
-  bottom: 11px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Heebo', sans-serif;
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.2em;
-  color: #bbbbbb;
-  pointer-events: none;
-  transition: opacity 2s ease;
-  white-space: nowrap;
-  z-index: 50;
+  position:fixed; bottom:11px; left:50%; transform:translateX(-50%);
+  font-family:'Heebo',sans-serif; font-size:10px; font-weight:300;
+  letter-spacing:0.2em; color:#bbbbbb; pointer-events:none;
+  transition:opacity 2s ease; white-space:nowrap; z-index:50;
 }
 
 /* ── calibration overlay ── */
-#calOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: #ffffff;
-}
-
-#calCanvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
+#calOverlay { position:fixed; inset:0; z-index:1000; background:#ffffff; }
+#calCanvas  { position:absolute; inset:0; width:100%; height:100%; }
 #calStartBtn {
-  position: absolute;
-  top: 58%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: transparent;
-  border: 1px solid #dddddd;
-  color: #999999;
-  font-family: 'Heebo', sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.25em;
-  padding: 14px 36px;
-  cursor: pointer;
-  z-index: 1001;
-  transition: border-color 0.2s, color 0.2s;
-  display: none;
+  position:absolute; top:58%; left:50%; transform:translateX(-50%);
+  background:transparent; border:1px solid #dddddd; color:#999999;
+  font-family:'Heebo',sans-serif; font-size:12px; letter-spacing:0.25em;
+  padding:14px 36px; cursor:pointer; z-index:1001;
+  transition:border-color 0.2s,color 0.2s; display:none;
 }
-
-#calStartBtn:hover {
-  border-color: #e01a00;
-  color: #e01a00;
-}
-
-#nameInput:focus {
-  border-bottom-color: #e01a00 !important;
-  outline: none;
-}
+#calStartBtn:hover { border-color:#e01a00; color:#e01a00; }
+#nameInput:focus   { border-bottom-color:#e01a00 !important; outline:none; }
 
 /* ── mode selection screen ── */
 #modeScreen {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 1100;
-  background: #ffffff;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display:none; position:fixed; inset:0; z-index:1100; background:#ffffff;
+  flex-direction:column; align-items:center; justify-content:center;
 }
-
 .mode-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  max-width: 700px;
-  width: 92vw;
-  margin-bottom: 40px;
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:14px; max-width:700px; width:92vw; margin-bottom:40px;
 }
-
 .mode-card {
-  border: 1px solid #eeeeee;
-  padding: 22px 18px 18px;
-  cursor: pointer;
-  transition: border-color 0.18s;
+  border:1px solid #eeeeee; padding:22px 18px 18px;
+  cursor:pointer; transition:border-color 0.18s;
 }
-
-.mode-card:hover { border-color: #dddddd; }
-.mode-card.selected { border-color: #e01a00; }
-
-.mode-num {
-  font-family: 'Heebo', sans-serif;
-  font-size: 20px;
-  font-weight: 300;
-  color: #dddddd;
-  letter-spacing: 0.04em;
-  margin-bottom: 9px;
-}
-
-.mode-name-en {
-  font-family: 'Heebo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  color: #111111;
-  letter-spacing: 0.1em;
-  line-height: 1.3;
-}
-
-.mode-name-he {
-  font-family: 'Heebo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  color: #111111;
-  margin-bottom: 10px;
-}
-
-.mode-desc {
-  font-family: 'Heebo', sans-serif;
-  font-size: 9.5px;
-  font-weight: 300;
-  color: #aaaaaa;
-  letter-spacing: 0.06em;
-  line-height: 1.55;
-}
-
+.mode-card:hover   { border-color:#dddddd; }
+.mode-card.selected { border-color:#e01a00; }
+.mode-num { font-family:'Heebo',sans-serif; font-size:20px; font-weight:300; color:#dddddd; letter-spacing:0.04em; margin-bottom:9px; }
+.mode-name-en { font-family:'Heebo',sans-serif; font-size:12px; font-weight:700; color:#111111; letter-spacing:0.1em; line-height:1.3; }
+.mode-name-he { font-family:'Heebo',sans-serif; font-size:12px; font-weight:700; color:#111111; margin-bottom:10px; }
+.mode-desc { font-family:'Heebo',sans-serif; font-size:9.5px; font-weight:300; color:#aaaaaa; letter-spacing:0.06em; line-height:1.55; }
 #modeBeginBtn {
-  background: transparent;
-  border: 1px solid #dddddd;
-  color: #999999;
-  font-family: 'Heebo', sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.25em;
-  padding: 14px 44px;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  background:transparent; border:1px solid #dddddd; color:#999999;
+  font-family:'Heebo',sans-serif; font-size:12px; letter-spacing:0.25em;
+  padding:14px 44px; cursor:pointer; transition:border-color 0.2s,color 0.2s;
 }
-
-#modeBeginBtn:hover {
-  border-color: #e01a00;
-  color: #e01a00;
-}
+#modeBeginBtn:hover { border-color:#e01a00; color:#e01a00; }
 
 /* ── floating mode pill ── */
 #modePill {
-  display: none;
-  position: fixed;
-  bottom: 48px;
-  right: 14px;
-  z-index: 60;
-  font-family: 'Heebo', sans-serif;
+  display:none; position:fixed; bottom:48px; right:14px; z-index:60;
+  font-family:'Heebo',sans-serif;
 }
-
 #modePillCollapsed {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid #e8e8e8;
-  padding: 7px 11px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 300;
-  color: #cccccc;
-  letter-spacing: 0.12em;
-  transition: border-color 0.2s, color 0.2s;
-  white-space: nowrap;
-  user-select: none;
+  display:flex; align-items:center; gap:5px; border:1px solid #e8e8e8;
+  padding:7px 11px; cursor:pointer; font-size:10px; font-weight:300;
+  color:#cccccc; letter-spacing:0.12em; transition:border-color 0.2s,color 0.2s;
+  white-space:nowrap; user-select:none;
 }
-
-#modePillCollapsed:hover { border-color: #e01a00; color: #e01a00; }
-
+#modePillCollapsed:hover { border-color:#e01a00; color:#e01a00; }
 #modePillExpanded {
-  display: none;
-  flex-direction: column;
-  border: 1px solid #e8e8e8;
-  background: #ffffff;
-  min-width: 154px;
+  display:none; flex-direction:column; border:1px solid #e8e8e8;
+  background:#ffffff; min-width:154px;
 }
-
 .pill-mode-row {
-  padding: 9px 14px;
-  font-size: 10px;
-  font-weight: 400;
-  color: #aaaaaa;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  border-left: 2px solid transparent;
-  transition: color 0.15s;
-  user-select: none;
+  padding:9px 14px; font-size:10px; font-weight:400; color:#aaaaaa;
+  letter-spacing:0.1em; cursor:pointer; border-left:2px solid transparent;
+  transition:color 0.15s; user-select:none;
 }
-
-.pill-mode-row:hover { color: #333333; }
-.pill-mode-row.active { border-left-color: #e01a00; font-weight: 700; color: #111111; }
-
+.pill-mode-row:hover { color:#333333; }
+.pill-mode-row.active { border-left-color:#e01a00; font-weight:700; color:#111111; }
 #pillSaveBtn {
-  margin: 6px 10px 10px;
-  background: transparent;
-  border: 1px solid #e8e8e8;
-  color: #aaaaaa;
-  font-family: 'Heebo', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  padding: 7px 10px;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  margin:6px 10px 10px; background:transparent; border:1px solid #e8e8e8;
+  color:#aaaaaa; font-family:'Heebo',sans-serif; font-size:10px;
+  letter-spacing:0.15em; padding:7px 10px; cursor:pointer;
+  transition:border-color 0.2s,color 0.2s;
 }
-
-#pillSaveBtn:hover { border-color: #e01a00; color: #e01a00; }
+#pillSaveBtn:hover { border-color:#e01a00; color:#e01a00; }
 </style>
 </head>
 <body>
 
 <div id="scene">
   <div id="videoWrapper">
-    <video id="mainVideo"
-           src="statue.mp4"
-           autoplay loop muted playsinline></video>
+    <video id="mainVideo" src="statue.mp4" autoplay loop muted playsinline></video>
     <canvas id="dotCanvas"></canvas>
     <div id="annLayer"></div>
   </div>
@@ -320,16 +133,21 @@ body {
   <button id="calStartBtn">BEGIN CALIBRATION</button>
 </div>
 
+<!-- hidden canvases for GAZE mode analysis -->
+<canvas id="anaC" style="display:none" width="160" height="90"></canvas>
+<canvas id="preC" style="display:none" width="160" height="90"></canvas>
+<canvas id="aoiC" style="display:none" width="320" height="180"></canvas>
+<canvas id="aoiP" style="display:none" width="320" height="180"></canvas>
+
 <!-- ── mode selection screen ── -->
 <div id="modeScreen">
-  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;
-              letter-spacing:0.5em;margin-bottom:44px;">SELECT ANALYSIS MODE</div>
+  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:44px;">SELECT ANALYSIS MODE</div>
   <div class="mode-grid">
-    <div class="mode-card" data-mode="GAZE">
+    <div class="mode-card selected" data-mode="GAZE">
       <div class="mode-num">01</div>
       <div class="mode-name-en">GAZE POINT</div>
       <div class="mode-name-he">נקודת מבט</div>
-      <div class="mode-desc">Real-time gaze position with behavioral dot classification</div>
+      <div class="mode-desc">Edge-detected annotation dots with behavioral classification overlay</div>
     </div>
     <div class="mode-card" data-mode="FIXATION">
       <div class="mode-num">02</div>
@@ -367,9 +185,7 @@ body {
 
 <!-- ── floating mode pill ── -->
 <div id="modePill">
-  <div id="modePillCollapsed">
-    ● <span id="modePillName">GAZE POINT</span> ▾
-  </div>
+  <div id="modePillCollapsed">● <span id="modePillName">GAZE POINT</span> ▾</div>
   <div id="modePillExpanded">
     <div id="pillModeRows"></div>
     <button id="pillSaveBtn">SAVE SESSION</button>
@@ -382,19 +198,30 @@ body {
 import { FaceLandmarker, FilesetResolver }
   from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
-/* ── constants ─────────────────────────────────────────────────────── */
-const GAZE_LERP      = 0.08;
+/* ══════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════════════════ */
 
-const CAL_PTS = [
-  [0.1, 0.1], [0.5, 0.1], [0.9, 0.1],
-  [0.9, 0.5], [0.5, 0.5], [0.1, 0.5],
-  [0.1, 0.9], [0.5, 0.9], [0.9, 0.9]
-];
-const CAL_VAR_THRESH  = 0.0012;
-const CAL_FILL_RATE   = 0.6;
-const CAL_DRAIN_RATE  = 0.8;
+// GAZE mode (Sobel + AOI)
+const W_ANA        = 160;
+const H_ANA        = 90;
+const N_ANN        = 250;
+const DOT_STEP     = 2;
+const DOT_THRESH   = 10;
+const ANA_INTERVAL = 600;
+const REVEAL_FRAC  = 0.030;
+const DOT_FADE_MS  = 5000;
+const W_AOI        = 320;
+const H_AOI        = 180;
+const AOI_INTERVAL = 900;
+const MAX_AOI      = 16;
+const AOI_FADE_MS  = 5000;
+const CLUSTER_DIST = 0.07;
+const AOI_MIN_W    = 0.04;
+const AOI_MIN_H    = 0.03;
+const AOI_MAX_SIZE = 0.40;
 
-/* ── analysis constants ─────────────────────────────────────────────── */
+// Analysis modes
 const FIX_DISPERSION   = 0.04;
 const FIX_MIN_DURATION = 150;
 const SAC_VELOCITY     = 0.8;
@@ -404,7 +231,21 @@ const HEAT_SIGMA  = 0.07;
 const HEAT_WEIGHT = 0.18;
 const HEAT_DECAY  = 0.9975;
 
-/* ── DOM refs ──────────────────────────────────────────────────────── */
+// Calibration
+const GAZE_LERP      = 0.08;
+const CAL_PTS = [
+  [0.1,0.1],[0.5,0.1],[0.9,0.1],
+  [0.9,0.5],[0.5,0.5],[0.1,0.5],
+  [0.1,0.9],[0.5,0.9],[0.9,0.9]
+];
+const CAL_VAR_THRESH = 0.0012;
+const CAL_FILL_RATE  = 0.6;
+const CAL_DRAIN_RATE = 0.8;
+
+/* ══════════════════════════════════════════════════════════════════════
+   DOM
+   ══════════════════════════════════════════════════════════════════════ */
+
 const mainVideo    = document.getElementById('mainVideo');
 const videoWrapper = document.getElementById('videoWrapper');
 const dotCanvas    = document.getElementById('dotCanvas');
@@ -418,8 +259,16 @@ const calCanvas    = document.getElementById('calCanvas');
 const calCtx       = calCanvas.getContext('2d');
 const calStartBtn  = document.getElementById('calStartBtn');
 
-/* ── mode state ─────────────────────────────────────────────────────── */
-let activeMode = 'GAZE'; // GAZE | FIXATION | SACCADE | SCANPATH | HEATMAP | FIRSTFIX
+const anaCtx  = document.getElementById('anaC').getContext('2d', { willReadFrequently:true });
+const preCtx  = document.getElementById('preC').getContext('2d', { willReadFrequently:true });
+const aoiCtx  = document.getElementById('aoiC').getContext('2d', { willReadFrequently:true });
+const aoiPCtx = document.getElementById('aoiP').getContext('2d', { willReadFrequently:true });
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODE STATE
+   ══════════════════════════════════════════════════════════════════════ */
+
+let activeMode = 'GAZE';
 
 const MODE_LABELS = {
   GAZE:     'GAZE POINT',
@@ -430,76 +279,62 @@ const MODE_LABELS = {
   FIRSTFIX: 'FIRST FIXATION'
 };
 
-/* ── analysis state ─────────────────────────────────────────────────── */
-let fixationHistory  = [];
-let currentFixation  = null;
-let saccadeHistory   = [];
-let saccadeActive    = false;
-let saccadeStart     = null;
-let heatmap          = new Float32Array(W_HEAT * H_HEAT);
-let heatCanvas, heatCtx;
-let firstFix         = null;
-let firstFixDone     = false;
-let sessionStartTs   = 0;
-let gazeLog          = [];
+/* ══════════════════════════════════════════════════════════════════════
+   GAZE MODE STATE — Sobel dots + AOI
+   ══════════════════════════════════════════════════════════════════════ */
 
-/* ── runtime state ─────────────────────────────────────────────────── */
-let pool       = [];
-let rawGX      = 0.5, rawGY = 0.5;
-let sGX        = 0.5, sGY  = 0.5;
+let dotPool  = [];
+let aoiPool  = [];
+let prevPx   = null;
+let lastAnaTs = -9999;
+let lastAoiTs = -9999;
+
+/* ══════════════════════════════════════════════════════════════════════
+   ANALYSIS STATE — modes 02–06
+   ══════════════════════════════════════════════════════════════════════ */
+
+let fixationHistory = [];
+let currentFixation = null;
+let saccadeHistory  = [];
+let saccadeActive   = false;
+let saccadeStart    = null;
+let heatmap         = new Float32Array(W_HEAT * H_HEAT);
+let heatCanvas, heatCtx;
+let firstFix        = null;
+let firstFixDone    = false;
+let sessionStartTs  = 0;
+let gazeLog         = [];
+
+/* ══════════════════════════════════════════════════════════════════════
+   RUNTIME STATE
+   ══════════════════════════════════════════════════════════════════════ */
+
+let rawGX = 0.5, rawGY = 0.5;
+let sGX   = 0.5, sGY   = 0.5;
 let gazeOn     = false;
 let lastGazeTs = 0;
 
 let curOffX = 0.5, curOffY = 0.5;
 const offXBuf = [], offYBuf = [];
 const BUF_MAX = 30;
-
 let calMap = null;
 
 window._gazeHistory = [];
+window._dotPts      = null;
 
-/* ── annotation pool ────────────────────────────────────────────────── */
-function buildPool() {
-  annLayer.innerHTML = '';
-  pool = [];
-  const COLS = 24;
-  const ROWS = 14;
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const nx = (col + 0.5) / COLS;
-      const ny = (row + 0.5) / ROWS;
-      const el = document.createElement('span');
-      el.className = 'ann';
-      el.style.opacity = '0';
-      annLayer.appendChild(el);
-      pool.push({
-        el, x: nx, y: ny,
-        visible: false,
-        state: 'UNCLASSIFIED',
-        dwellTime: 0, totalDwellTime: 0, revisitCount: 0, lastVisitTs: 0,
-        timeBetweenVisits: 0, isNear: false, visitDwells: [], _visitStart: 0,
-        _lastClassifyTs: 0
-      });
-    }
-  }
-}
+/* ══════════════════════════════════════════════════════════════════════
+   SHARED STABILITY + CLASSIFIER  (used by GAZE mode dots & AOI)
+   ══════════════════════════════════════════════════════════════════════ */
 
-/* ── sizing ──────────────────────────────────────────────────────────── */
-function sizeWrapper() {
-  dotCanvas.width  = window.innerWidth;
-  dotCanvas.height = window.innerHeight;
-}
-
-/* ── gaze behavior classification ───────────────────────────────────── */
 function currentStability() {
   const N = Math.min(offXBuf.length, 20);
   if (N < 8) return 0;
   const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
-  const mx = xs.reduce((a, b) => a + b, 0) / N;
-  const my = ys.reduce((a, b) => a + b, 0) / N;
-  const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0) / N;
-  const vy = ys.reduce((a, b) => a + (b - my) ** 2, 0) / N;
-  return Math.max(0, Math.min(1, 1 - (vx + vy) / CAL_VAR_THRESH));
+  const mx = xs.reduce((a,b) => a+b, 0) / N;
+  const my = ys.reduce((a,b) => a+b, 0) / N;
+  const vx = xs.reduce((a,b) => a+(b-mx)**2, 0) / N;
+  const vy = ys.reduce((a,b) => a+(b-my)**2, 0) / N;
+  return Math.max(0, Math.min(1, 1 - (vx+vy) / CAL_VAR_THRESH));
 }
 
 function detectSearchPattern() {
@@ -511,154 +346,385 @@ function detectSearchPattern() {
     dxs.push(recent[i].x - recent[i-1].x);
     dys.push(recent[i].y - recent[i-1].y);
   }
-  const avgDx = dxs.reduce((a, b) => a + b, 0) / dxs.length;
-  const avgDy = dys.reduce((a, b) => a + b, 0) / dys.length;
-  const consistentX = dxs.every(d => Math.sign(d) === Math.sign(avgDx));
-  const consistentY = dys.every(d => Math.sign(d) === Math.sign(avgDy));
-  const moving = Math.abs(avgDx) > 0.02 || Math.abs(avgDy) > 0.02;
-  return moving && (consistentX || consistentY);
+  const avgDx = dxs.reduce((a,b) => a+b, 0) / dxs.length;
+  const avgDy = dys.reduce((a,b) => a+b, 0) / dys.length;
+  const cX = dxs.every(d => Math.sign(d) === Math.sign(avgDx));
+  const cY = dys.every(d => Math.sign(d) === Math.sign(avgDy));
+  return (Math.abs(avgDx) > 0.02 || Math.abs(avgDy) > 0.02) && (cX || cY);
 }
 
-function classifyDot(a, ts, scanSpeed, microMovement) {
+function classify(a, ts, scanSpeed, microMovement) {
   const stab = currentStability();
-  const avgDwell = a.visitDwells.length
-    ? a.visitDwells.reduce((s, v) => s + v, 0) / a.visitDwells.length : a.dwellTime;
-
-  if (a.dwellTime > 1200 && stab > 0.7)                                    return 'ATTENTION LOCKED';
-  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime > 800)         return 'REPEATED GLANCE';
-  if (a.revisitCount >= 2 && a.totalDwellTime + a.dwellTime < 400)         return 'IGNORED AGAIN';
-  if (a.revisitCount >= 2 && avgDwell < 400 && scanSpeed > 3)              return 'FOCUS UNSTABLE';
-  if ((a.dwellTime > 400 || a.totalDwellTime > 400) && stab < 0.4 && microMovement > 0.01)
-                                                                            return 'VISUAL DRIFT';
-  if (scanSpeed > 5 && a.dwellTime < 200)                                  return 'SCAN WITHOUT PROCESSING';
-  if (a.dwellTime >= 150 && a.dwellTime <= 600 && a.revisitCount <= 1 && stab < 0.6)
-                                                                            return 'LOW ENGAGEMENT';
-  if (detectSearchPattern() && scanSpeed >= 2)                              return 'SEARCH PATTERN';
+  if (a.dwellTime > 900 && stab > 0.75)                             return 'ATTENTION LOCKED';
+  if (a.revisitCount >= 2 && a.totalDwellTime > 900)                return 'REPEATED GLANCE';
+  if (a.revisitCount >= 2 && a.totalDwellTime < 900 && stab < 0.5) return 'FOCUS UNSTABLE';
+  if (a.dwellTime > 500 && stab < 0.4 && microMovement > 0.015)    return 'VISUAL DRIFT';
+  if (scanSpeed > 8 && a.dwellTime < 150 && stab < 0.3)            return 'SCAN WITHOUT PROCESSING';
+  if (a.dwellTime > 200 && a.dwellTime < 700 && stab < 0.6)        return 'LOW ENGAGEMENT';
+  if (detectSearchPattern() && scanSpeed >= 2)                      return 'SEARCH PATTERN';
   return 'UNCLASSIFIED';
 }
 
-function revealDot(a, label) {
-  a.state = label;
-  a.visible = true;
+/* ══════════════════════════════════════════════════════════════════════
+   GAZE MODE — SOBEL DOT POOL
+   ══════════════════════════════════════════════════════════════════════ */
+
+function buildDotPool() {
+  annLayer.innerHTML = '';
+  dotPool = [];
+  for (let i = 0; i < N_ANN; i++) {
+    const el = document.createElement('span');
+    el.className = 'ann';
+    annLayer.appendChild(el);
+    const jitterX = ((i * 137.508) % 1 - 0.5) * 0.06;
+    const jitterY = ((i * 97.314)  % 1 - 0.5) * 0.03;
+    dotPool.push({
+      el,
+      x:0.5, y:0.5, jitterX, jitterY, labelX:0.5, labelY:0.5,
+      active:false, visible:false, shownAt:0,
+      state:'UNCLASSIFIED',
+      dwellTime:0, totalDwellTime:0, revisitCount:0, lastVisitTs:0,
+      timeBetweenVisits:0, isNear:false, visitDwells:[],
+      _visitStart:0, _lastClassifyTs:0,
+      classificationBuffer:[], classificationStableTime:0, stableFor:0
+    });
+  }
+}
+
+function sobel(px, w, h) {
+  const g  = new Float32Array(w * h);
+  const mg = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    g[i] = 0.299 * px[o] + 0.587 * px[o+1] + 0.114 * px[o+2];
+  }
+  for (let y = 1; y < h-1; y++) {
+    for (let x = 1; x < w-1; x++) {
+      const i  = y*w+x;
+      const tl = g[i-w-1], tc = g[i-w], tr = g[i-w+1];
+      const ml = g[i-1],               mr = g[i+1];
+      const bl = g[i+w-1], bc = g[i+w], br = g[i+w+1];
+      mg[i] = Math.hypot((tr+2*mr+br)-(tl+2*ml+bl), (bl+2*bc+br)-(tl+2*tc+tr));
+    }
+  }
+  return mg;
+}
+
+function analyzeDots() {
+  if (mainVideo.readyState < 2) return;
+  anaCtx.drawImage(mainVideo, 0, 0, W_ANA, H_ANA);
+  const id = anaCtx.getImageData(0, 0, W_ANA, H_ANA);
+  const mg = sobel(id.data, W_ANA, H_ANA);
+
+  const all = [];
+  for (let y = 1; y < H_ANA-1; y += DOT_STEP) {
+    for (let x = 1; x < W_ANA-1; x += DOT_STEP) {
+      const i = y * W_ANA + x;
+      if (mg[i] >= DOT_THRESH) all.push({ i, mag: mg[i] });
+    }
+  }
+  all.sort((a,b) => b.mag - a.mag);
+  if (all.length > N_ANN) all.length = N_ANN;
+
+  const pts = [];
+  for (const { i } of all) {
+    pts.push({
+      nx: Math.max(0.01, Math.min(0.99, (i % W_ANA) / W_ANA)),
+      ny: Math.max(0.01, Math.min(0.99, Math.floor(i / W_ANA) / H_ANA))
+    });
+  }
+  window._dotPts = pts;
+
+  const n = Math.min(pts.length, N_ANN);
+  for (let i = 0; i < N_ANN; i++) {
+    const a = dotPool[i];
+    if (i < n) {
+      const p = pts[i];
+      a.active = true;
+      if (!a.visible) {
+        const moved = Math.hypot(a.x - p.nx, a.y - p.ny) > 0.05;
+        if (moved) {
+          a.dwellTime=0; a.totalDwellTime=0; a.revisitCount=0;
+          a.lastVisitTs=0; a.timeBetweenVisits=0; a.isNear=false;
+          a.visitDwells=[]; a._visitStart=0; a._lastClassifyTs=0;
+          a.classificationBuffer=[]; a.classificationStableTime=0; a.stableFor=0;
+          a.shownAt=0;
+        }
+        a.x = p.nx; a.y = p.ny;
+        a.labelX = Math.max(0.01, Math.min(0.99, p.nx + a.jitterX));
+        a.labelY = Math.max(0.01, Math.min(0.99, p.ny + a.jitterY));
+      }
+    } else {
+      a.active = false;
+      if (!a.visible) { a.el.textContent = ''; a.el.style.opacity = '0'; a.el.style.filter = 'none'; }
+    }
+  }
+
+  preCtx.drawImage(mainVideo, 0, 0, W_ANA, H_ANA);
+  prevPx = preCtx.getImageData(0, 0, W_ANA, H_ANA).data.slice();
+}
+
+function revealDot(a, label, ts) {
+  a.state = label; a.visible = true; a.shownAt = ts;
   a.el.textContent = label;
-  a.el.style.left = (a.x * 100).toFixed(2) + '%';
-  a.el.style.top  = (a.y * 100).toFixed(2) + '%';
-  a.el.style.transform = a.x > 0.62
+  a.el.style.left      = (a.labelX * 100).toFixed(2) + '%';
+  a.el.style.top       = (a.labelY * 100).toFixed(2) + '%';
+  a.el.style.transform = a.labelX > 0.62
     ? 'translate(calc(-100% - 12px), -50%)'
     : 'translate(12px, -50%)';
   a.el.style.opacity = '1';
+  a.el.style.filter  = 'none';
 }
 
-/* ── gaze application ────────────────────────────────────────────────── */
-function applyGaze(ts) {
-  const dt = lastGazeTs ? Math.min((ts - lastGazeTs) / 1000, 0.05) : 0;
-  lastGazeTs = ts;
+function hideDot(a) {
+  a.visible = false; a.shownAt = 0;
+  a.el.style.transition = 'opacity 0.8s ease, filter 0.8s ease';
+  a.el.style.opacity    = '0';
+  a.el.style.filter     = 'blur(4px)';
+}
 
-  sGX += (rawGX - sGX) * GAZE_LERP;
-  sGY += (rawGY - sGY) * GAZE_LERP;
+function applyDotGaze(ts, gpx, gpy, W, H, scanSpeed, microMovement) {
+  const revR = Math.min(W, H) * REVEAL_FRAC;
+  for (const a of dotPool) {
+    if (!a.active) continue;
+    if (a.visible && a.shownAt > 0 && ts - a.shownAt > DOT_FADE_MS) { hideDot(a); continue; }
 
-  const W = videoWrapper.offsetWidth;
-  const H = videoWrapper.offsetHeight;
-  if (!W || !H) return;
-
-  const gpx = sGX * W, gpy = sGY * H;
-  const rect = videoWrapper.getBoundingClientRect();
-  gazeDot.style.left = (rect.left + gpx) + 'px';
-  gazeDot.style.top  = (rect.top  + gpy) + 'px';
-
-  // Always update gaze history
-  window._gazeHistory.push({ x: sGX, y: sGY, ts });
-  if (window._gazeHistory.length > 90) window._gazeHistory.shift();
-
-  // Pool management only in GAZE mode
-  if (activeMode !== 'GAZE') return;
-
-  const scanSpeed = pool.filter(a => a.lastVisitTs > ts - 2000).length;
-  const _gh = window._gazeHistory.slice(-8);
-  const _mx = _gh.reduce((s, p) => s + p.x, 0) / _gh.length;
-  const _my = _gh.reduce((s, p) => s + p.y, 0) / _gh.length;
-  const microMovement = _gh.reduce((s, p) => s + Math.hypot(p.x - _mx, p.y - _my), 0) / _gh.length;
-
-  const revR = Math.min(W, H) * 0.07;
-
-  for (const a of pool) {
     const d    = Math.hypot(a.x * W - gpx, a.y * H - gpy);
     const near = d < revR;
 
     if (near && !a.isNear) {
-      a.isNear = true;
-      a.revisitCount++;
+      a.isNear = true; a.revisitCount++;
       if (a.lastVisitTs > 0) a.timeBetweenVisits = ts - a.lastVisitTs;
       a._visitStart = ts;
     }
-
     if (near && a.isNear) {
       a.dwellTime = ts - a._visitStart;
       if (ts - a._lastClassifyTs > 200) {
         a._lastClassifyTs = ts;
-        const live = classifyDot(a, ts, scanSpeed, microMovement);
-        if (live !== 'UNCLASSIFIED' && !a.visible) {
-          revealDot(a, live);
+        const live = classify(a, ts, scanSpeed, microMovement);
+        if (live !== 'UNCLASSIFIED') {
+          a.classificationBuffer.push(live);
+          if (a.classificationBuffer.length > 5) a.classificationBuffer.shift();
+          const consistent = a.classificationBuffer.every(v => v === live);
+          consistent ? (a.classificationStableTime += 200) : (a.classificationStableTime = 0);
+          if (!a.visible && a.classificationStableTime > 250) revealDot(a, live, ts);
+          else if (a.visible && live !== a.state && a.classificationStableTime > 250) {
+            a.state = live; a.el.textContent = live;
+          }
         }
       }
     }
-
     if (!near && a.isNear) {
       a.isNear = false;
       a.visitDwells.push(a.dwellTime);
       a.totalDwellTime += a.dwellTime;
-      a.lastVisitTs = ts;
-      a.dwellTime = 0;
+      a.lastVisitTs = ts; a.dwellTime = 0;
       if (!a.visible) {
-        const exitState = classifyDot(a, ts, scanSpeed, microMovement);
-        if (exitState !== 'UNCLASSIFIED') revealDot(a, exitState);
+        const exitState = classify(a, ts, scanSpeed, microMovement);
+        if (exitState !== 'UNCLASSIFIED') revealDot(a, exitState, ts);
       }
-    }
-
-    if (!a.isNear && a.revisitCount === 0 && !a.visible && ts > 4000) {
-      const recentNear = window._gazeHistory
-        .filter(p => p.ts > ts - 3000)
-        .some(p => Math.hypot(p.x - a.x, p.y - a.y) < 0.12);
-      if (!recentNear) revealDot(a, 'SKIPPED AREA');
     }
   }
 }
 
-/* ── analysis: fixation I-DT ─────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   GAZE MODE — AOI REGIONS
+   ══════════════════════════════════════════════════════════════════════ */
+
+function sobelMag(px, w, h) {
+  const g  = new Float32Array(w * h);
+  const mg = new Float32Array(w * h);
+  for (let i = 0; i < w*h; i++) {
+    const o = i * 4;
+    g[i] = 0.299 * px[o] + 0.587 * px[o+1] + 0.114 * px[o+2];
+  }
+  for (let y = 1; y < h-1; y++) {
+    for (let x = 1; x < w-1; x++) {
+      const i  = y*w+x;
+      const tl = g[i-w-1], tc = g[i-w], tr = g[i-w+1];
+      const ml = g[i-1],               mr = g[i+1];
+      const bl = g[i+w-1], bc = g[i+w], br = g[i+w+1];
+      mg[i] = Math.hypot((tr+2*mr+br)-(tl+2*ml+bl), (bl+2*bc+br)-(tl+2*tc+tr));
+    }
+  }
+  return mg;
+}
+
+function detectAOI(px, w, h) {
+  const mg = sobelMag(px, w, h);
+  const THRESH = 20, STEP = 3;
+  const pts = [];
+  for (let y = 2; y < h-2; y += STEP) {
+    for (let x = 2; x < w-2; x += STEP) {
+      if (mg[y*w+x] >= THRESH) pts.push({ nx:x/w, ny:y/h, mag:mg[y*w+x] });
+    }
+  }
+  if (!pts.length) return [];
+  pts.sort((a,b) => b.mag - a.mag);
+
+  const used = new Uint8Array(pts.length);
+  const regions = [];
+  for (let i = 0; i < pts.length && regions.length < MAX_AOI*4; i++) {
+    if (used[i]) continue;
+    const seed = pts[i];
+    let x0=seed.nx, x1=seed.nx, y0=seed.ny, y1=seed.ny, count=1;
+    used[i] = 1;
+    for (let j = i+1; j < pts.length; j++) {
+      if (used[j]) continue;
+      if (Math.hypot(pts[j].nx-seed.nx, pts[j].ny-seed.ny) < CLUSTER_DIST) {
+        x0=Math.min(x0,pts[j].nx); x1=Math.max(x1,pts[j].nx);
+        y0=Math.min(y0,pts[j].ny); y1=Math.max(y1,pts[j].ny);
+        count++; used[j]=1;
+      }
+    }
+    if (count < 4) continue;
+    const pad=0.022;
+    const rx=Math.max(0,x0-pad), ry=Math.max(0,y0-pad);
+    const rw=Math.min(1,x1+pad)-rx, rh=Math.min(1,y1+pad)-ry;
+    if (rw<AOI_MIN_W || rh<AOI_MIN_H || rw>AOI_MAX_SIZE || rh>AOI_MAX_SIZE) continue;
+    regions.push({ x:rx,y:ry,w:rw,h:rh,cx:rx+rw/2,cy:ry+rh/2 });
+  }
+  const kept = [];
+  for (const r of regions) {
+    let dup = false;
+    for (const k of kept) {
+      if (Math.hypot(r.cx-k.cx,r.cy-k.cy) < CLUSTER_DIST*1.4) { dup=true; break; }
+    }
+    if (!dup) kept.push(r);
+    if (kept.length >= MAX_AOI) break;
+  }
+  return kept;
+}
+
+function analyzeAOI() {
+  if (mainVideo.readyState < 2) return;
+  aoiCtx.drawImage(mainVideo, 0, 0, W_AOI, H_AOI);
+  const id      = aoiCtx.getImageData(0, 0, W_AOI, H_AOI);
+  const regions = detectAOI(id.data, W_AOI, H_AOI);
+  const newPool = [];
+
+  for (const r of regions) {
+    let matched=null, bestD=999;
+    for (const a of aoiPool) {
+      const d = Math.hypot(r.cx-(a.x+a.w/2), r.cy-(a.y+a.h/2));
+      if (d < bestD && d < CLUSTER_DIST*1.3) { bestD=d; matched=a; }
+    }
+    if (matched) {
+      matched.x=r.x; matched.y=r.y; matched.w=r.w; matched.h=r.h;
+      matched.cx=r.cx; matched.cy=r.cy; matched.active=true;
+      newPool.push(matched);
+    } else {
+      const el = document.createElement('span');
+      el.className = 'ann';
+      annLayer.appendChild(el);
+      newPool.push({
+        el, x:r.x,y:r.y,w:r.w,h:r.h,cx:r.cx,cy:r.cy,
+        active:true, visible:false, state:'UNCLASSIFIED', shownAt:0,
+        dwellTime:0, totalDwellTime:0, revisitCount:0, lastVisitTs:0,
+        timeBetweenVisits:0, isInside:false, visitDwells:[],
+        _visitStart:0, _lastClassifyTs:0,
+        classificationBuffer:[], classificationStableTime:0, stableFor:0
+      });
+    }
+  }
+  for (const a of aoiPool) { if (!newPool.includes(a)) a.el.remove(); }
+  aoiPool = newPool;
+  aoiPCtx.drawImage(mainVideo, 0, 0, W_AOI, H_AOI);
+}
+
+function revealAOI(a, label, ts) {
+  a.state=label; a.visible=true; a.shownAt=ts;
+  a.el.textContent=label;
+  const edgeX = a.x + a.w;
+  const W=dotCanvas.width, H=dotCanvas.height;
+  let myPxY = (a.y + a.h*0.5) * H;
+  const myPxX = edgeX * W;
+  for (const b of aoiPool) {
+    if (b===a || !b.visible) continue;
+    const bX=(b.x+b.w)*W, bY=(b.y+b.h*0.5)*H;
+    if (Math.abs(myPxX-bX)<80 && Math.abs(myPxY-bY)<18) myPxY += 18;
+  }
+  a.el.style.left      = (edgeX*100).toFixed(2)+'%';
+  a.el.style.top       = ((myPxY/H)*100).toFixed(2)+'%';
+  a.el.style.transform = edgeX>0.62 ? 'translate(calc(-100% - 8px),-50%)' : 'translate(8px,-50%)';
+  a.el.style.opacity='0'; a.el.style.filter='blur(4px)';
+  requestAnimationFrame(() => {
+    a.el.style.transition='opacity 0.5s ease, filter 0.5s ease';
+    a.el.style.opacity='1'; a.el.style.filter='blur(0px)';
+  });
+}
+
+function hideAOI(a) {
+  a.visible=false; a.shownAt=0;
+  a.el.style.transition='opacity 0.8s ease, filter 0.8s ease';
+  a.el.style.opacity='0'; a.el.style.filter='blur(4px)';
+}
+
+function applyAOIGaze(ts, scanSpeed, microMovement, dt) {
+  for (const a of aoiPool) {
+    if (!a.active) continue;
+    if (a.visible && a.shownAt>0 && ts-a.shownAt>AOI_FADE_MS) { hideAOI(a); continue; }
+    const inside = sGX>a.x && sGX<a.x+a.w && sGY>a.y && sGY<a.y+a.h;
+    if (inside && !a.isInside) {
+      a.isInside=true; a.revisitCount++;
+      if (a.lastVisitTs>0) a.timeBetweenVisits=ts-a.lastVisitTs;
+      a._visitStart=ts;
+    }
+    if (inside && a.isInside) {
+      a.dwellTime=ts-a._visitStart;
+      const stab=currentStability();
+      a.stableFor = stab>0.6 ? (a.stableFor+dt*1000) : 0;
+      if (ts-a._lastClassifyTs>200) {
+        a._lastClassifyTs=ts;
+        const live=classify(a,ts,scanSpeed,microMovement);
+        if (live!=='UNCLASSIFIED') {
+          a.classificationBuffer.push(live);
+          if (a.classificationBuffer.length>5) a.classificationBuffer.shift();
+          const consistent=a.classificationBuffer.every(v=>v===live);
+          consistent ? (a.classificationStableTime+=dt*1000) : (a.classificationStableTime=0);
+          if (!a.visible && a.classificationStableTime>250) revealAOI(a,live,ts);
+          if (a.visible && live!==a.state && a.classificationStableTime>250) { a.state=live; a.el.textContent=live; }
+        }
+      }
+    }
+    if (!inside && a.isInside) {
+      a.isInside=false;
+      a.visitDwells.push(a.dwellTime);
+      a.totalDwellTime+=a.dwellTime;
+      a.lastVisitTs=ts; a.dwellTime=0; a.stableFor=0;
+      if (!a.visible) {
+        const exitState=classify(a,ts,scanSpeed,microMovement);
+        if (exitState!=='UNCLASSIFIED') revealAOI(a,exitState,ts);
+      }
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ANALYSIS — FIXATION I-DT (runs unconditionally)
+   ══════════════════════════════════════════════════════════════════════ */
+
 function updateFixations(ts) {
   const gh = window._gazeHistory;
   if (gh.length < 2) return;
-
   const win = gh.filter(p => p.ts > ts - 600);
   if (win.length < 2) return;
-
-  const xs = win.map(p => p.x);
-  const ys = win.map(p => p.y);
-  const dispersion =
-    (Math.max(...xs) - Math.min(...xs)) +
-    (Math.max(...ys) - Math.min(...ys));
-
+  const xs = win.map(p => p.x), ys = win.map(p => p.y);
+  const dispersion = (Math.max(...xs)-Math.min(...xs)) + (Math.max(...ys)-Math.min(...ys));
   if (dispersion < FIX_DISPERSION) {
-    const cx = xs.reduce((a, b) => a + b, 0) / xs.length;
-    const cy = ys.reduce((a, b) => a + b, 0) / ys.length;
+    const cx = xs.reduce((a,b)=>a+b,0)/xs.length;
+    const cy = ys.reduce((a,b)=>a+b,0)/ys.length;
     if (!currentFixation) {
-      currentFixation = { startTs: ts, cx, cy };
+      currentFixation = { startTs:ts, cx, cy };
     } else {
-      currentFixation.cx = cx;
-      currentFixation.cy = cy;
-      currentFixation.duration = ts - currentFixation.startTs;
+      currentFixation.cx=cx; currentFixation.cy=cy;
+      currentFixation.duration=ts-currentFixation.startTs;
     }
   } else {
     if (currentFixation) {
       const duration = ts - currentFixation.startTs;
       if (duration >= FIX_MIN_DURATION) {
-        fixationHistory.push({
-          x: currentFixation.cx,
-          y: currentFixation.cy,
-          startTs: currentFixation.startTs,
-          endTs: ts,
-          duration
-        });
+        fixationHistory.push({ x:currentFixation.cx, y:currentFixation.cy, startTs:currentFixation.startTs, endTs:ts, duration });
         if (fixationHistory.length > 50) fixationHistory.shift();
       }
       currentFixation = null;
@@ -666,1046 +732,787 @@ function updateFixations(ts) {
   }
 }
 
-/* ── analysis: saccade I-VT ──────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   ANALYSIS — SACCADE I-VT (runs unconditionally)
+   ══════════════════════════════════════════════════════════════════════ */
+
 function updateSaccades(ts) {
   const gh = window._gazeHistory;
   if (gh.length < 2) return;
-
-  const last = gh[gh.length - 1];
-  const prev = gh[gh.length - 2];
-  const dt = (last.ts - prev.ts) / 1000;
-  if (dt <= 0) return;
-
-  const velocity = Math.hypot(last.x - prev.x, last.y - prev.y) / dt;
-
+  const last=gh[gh.length-1], prev=gh[gh.length-2];
+  const dt=(last.ts-prev.ts)/1000;
+  if (dt<=0) return;
+  const velocity=Math.hypot(last.x-prev.x,last.y-prev.y)/dt;
   if (velocity >= SAC_VELOCITY) {
-    if (!saccadeActive) {
-      saccadeActive = true;
-      saccadeStart = { x: prev.x, y: prev.y, ts: prev.ts };
-    }
+    if (!saccadeActive) { saccadeActive=true; saccadeStart={x:prev.x,y:prev.y,ts:prev.ts}; }
   } else {
     if (saccadeActive && saccadeStart) {
-      const amp = Math.hypot(last.x - saccadeStart.x, last.y - saccadeStart.y);
-      if (amp >= SAC_MIN_AMP) {
-        saccadeHistory.push({
-          fromX: saccadeStart.x, fromY: saccadeStart.y,
-          toX: last.x, toY: last.y,
-          startTs: saccadeStart.ts, endTs: ts,
-          duration: ts - saccadeStart.ts
-        });
-        if (saccadeHistory.length > 20) saccadeHistory.shift();
+      const amp=Math.hypot(last.x-saccadeStart.x,last.y-saccadeStart.y);
+      if (amp>=SAC_MIN_AMP) {
+        saccadeHistory.push({ fromX:saccadeStart.x,fromY:saccadeStart.y, toX:last.x,toY:last.y, startTs:saccadeStart.ts,endTs:ts,duration:ts-saccadeStart.ts });
+        if (saccadeHistory.length>20) saccadeHistory.shift();
       }
-      saccadeActive = false;
-      saccadeStart  = null;
+      saccadeActive=false; saccadeStart=null;
     }
   }
 }
 
-/* ── analysis: heatmap ───────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   ANALYSIS — HEATMAP (runs unconditionally)
+   ══════════════════════════════════════════════════════════════════════ */
+
 function updateHeatmap() {
-  // Decay
-  for (let i = 0; i < heatmap.length; i++) heatmap[i] *= HEAT_DECAY;
-
-  // Gaussian blob
-  const gx    = sGX * W_HEAT;
-  const gy    = sGY * H_HEAT;
-  const sigma = HEAT_SIGMA * Math.max(W_HEAT, H_HEAT);
-  const r     = Math.ceil(3 * sigma);
-  const x0    = Math.max(0, Math.floor(gx - r));
-  const x1    = Math.min(W_HEAT - 1, Math.ceil(gx + r));
-  const y0    = Math.max(0, Math.floor(gy - r));
-  const y1    = Math.min(H_HEAT - 1, Math.ceil(gy + r));
-  const inv2s2 = 1 / (2 * sigma * sigma);
-
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      const d2 = (x - gx) ** 2 + (y - gy) ** 2;
-      heatmap[y * W_HEAT + x] += HEAT_WEIGHT * Math.exp(-d2 * inv2s2);
+  for (let i=0; i<heatmap.length; i++) heatmap[i]*=HEAT_DECAY;
+  const gx=sGX*W_HEAT, gy=sGY*H_HEAT;
+  const sigma=HEAT_SIGMA*Math.max(W_HEAT,H_HEAT);
+  const r=Math.ceil(3*sigma);
+  const x0=Math.max(0,Math.floor(gx-r)), x1=Math.min(W_HEAT-1,Math.ceil(gx+r));
+  const y0=Math.max(0,Math.floor(gy-r)), y1=Math.min(H_HEAT-1,Math.ceil(gy+r));
+  const inv2s2=1/(2*sigma*sigma);
+  for (let y=y0;y<=y1;y++) {
+    for (let x=x0;x<=x1;x++) {
+      const d2=(x-gx)**2+(y-gy)**2;
+      heatmap[y*W_HEAT+x]+=HEAT_WEIGHT*Math.exp(-d2*inv2s2);
     }
   }
 }
 
-/* ── analysis: first fixation ────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   ANALYSIS — FIRST FIXATION (runs unconditionally)
+   ══════════════════════════════════════════════════════════════════════ */
+
 function updateFirstFix() {
   if (firstFixDone) return;
-  if (fixationHistory.length > 0) {
-    firstFix     = fixationHistory[0];
-    firstFixDone = true;
-  }
+  if (fixationHistory.length > 0) { firstFix=fixationHistory[0]; firstFixDone=true; }
 }
 
-/* ── draw: heatmap layer ─────────────────────────────────────────────── */
-function drawHeatmap() {
-  let maxVal = 0;
-  for (let i = 0; i < heatmap.length; i++) {
-    if (heatmap[i] > maxVal) maxVal = heatmap[i];
-  }
-  if (maxVal < 0.01) return;
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — GAZE MODE (Sobel dots + AOI rectangles)
+   ══════════════════════════════════════════════════════════════════════ */
 
-  heatCtx.clearRect(0, 0, W_HEAT, H_HEAT);
-  const img = heatCtx.createImageData(W_HEAT, H_HEAT);
-  const d   = img.data;
-
-  for (let i = 0; i < W_HEAT * H_HEAT; i++) {
-    const val = heatmap[i] / maxVal;
-    if (val < 0.15) continue;
-    let r, g, b;
-    if (val < 0.25) {
-      const t = (val - 0.15) / 0.1;
-      r = 0; g = Math.round(t * 255); b = 255;
-    } else if (val < 0.5) {
-      const t = (val - 0.25) / 0.25;
-      r = 0; g = 255; b = Math.round((1 - t) * 255);
-    } else if (val < 0.75) {
-      const t = (val - 0.5) / 0.25;
-      r = Math.round(t * 255); g = 255; b = 0;
-    } else {
-      const t = (val - 0.75) / 0.25;
-      r = 255; g = Math.round((1 - t) * 255); b = 0;
-    }
-    d[i * 4]     = r;
-    d[i * 4 + 1] = g;
-    d[i * 4 + 2] = b;
-    d[i * 4 + 3] = Math.min(255, val * 220);
-  }
-
-  heatCtx.putImageData(img, 0, 0);
-  const W = dotCanvas.width, H = dotCanvas.height;
-  dotCtx.globalAlpha = 0.58;
-  dotCtx.drawImage(heatCanvas, 0, 0, W, H);
-  dotCtx.globalAlpha = 1;
-}
-
-/* ── draw: scan path lines ───────────────────────────────────────────── */
-function drawScanPathLines() {
-  const recent = fixationHistory.slice(-14);
-  if (recent.length < 2) return;
-  const W = dotCanvas.width, H = dotCanvas.height;
-
-  dotCtx.save();
-  dotCtx.setLineDash([4, 6]);
-  dotCtx.strokeStyle = 'rgba(224,26,0,0.35)';
-  dotCtx.lineWidth   = 1;
-  dotCtx.beginPath();
-  for (let i = 0; i < recent.length; i++) {
-    const { x, y } = recent[i];
-    if (i === 0) dotCtx.moveTo(x * W, y * H);
-    else         dotCtx.lineTo(x * W, y * H);
-  }
-  dotCtx.stroke();
-  dotCtx.setLineDash([]);
-  dotCtx.restore();
-}
-
-/* ── draw: scan path circles ─────────────────────────────────────────── */
-function drawScanPathCircles(ts) {
-  const recent = fixationHistory.slice(-14);
-  if (recent.length === 0) return;
-  const W = dotCanvas.width, H = dotCanvas.height;
-  const total = recent.length;
-
-  for (let i = 0; i < total; i++) {
-    const { x, y } = recent[i];
-    const cx    = x * W, cy = y * H;
-    const alpha = 0.15 + 0.85 * (i / Math.max(total - 1, 1));
-    const isNewest = i === total - 1;
-    const r = isNewest ? 11 + Math.sin(ts / 300) * 2 + 2 : 11;
-
+function drawGazeMode() {
+  const W=dotCanvas.width, H=dotCanvas.height;
+  // Sobel dots
+  if (window._dotPts) {
+    dotCtx.fillStyle='rgba(224,26,0,0.82)';
     dotCtx.beginPath();
-    dotCtx.arc(cx, cy, r, 0, Math.PI * 2);
-    dotCtx.fillStyle   = `rgba(255,255,255,${alpha})`;
-    dotCtx.fill();
-    dotCtx.strokeStyle = `rgba(224,26,0,${alpha})`;
-    dotCtx.lineWidth   = 1.5;
-    dotCtx.stroke();
-
-    dotCtx.fillStyle    = `rgba(224,26,0,${alpha})`;
-    dotCtx.font         = 'bold 9px Heebo';
-    dotCtx.textAlign    = 'center';
-    dotCtx.textBaseline = 'middle';
-    dotCtx.fillText(i + 1, cx, cy);
-    dotCtx.textBaseline = 'alphabetic';
-  }
-}
-
-/* ── draw: saccade arrows ────────────────────────────────────────────── */
-function drawSaccades(ts) {
-  const W = dotCanvas.width, H = dotCanvas.height;
-  const recent = saccadeHistory.slice(-8);
-
-  for (const sac of recent) {
-    const age     = ts - sac.endTs;
-    const opacity = Math.max(0, 0.9 * (1 - age / 2500));
-    if (opacity <= 0) continue;
-
-    const fx = sac.fromX * W, fy = sac.fromY * H;
-    const tx = sac.toX   * W, ty = sac.toY   * H;
-
-    dotCtx.beginPath();
-    dotCtx.moveTo(fx, fy);
-    dotCtx.lineTo(tx, ty);
-    dotCtx.strokeStyle = `rgba(224,26,0,${opacity})`;
-    dotCtx.lineWidth   = 1.5;
-    dotCtx.stroke();
-
-    const angle = Math.atan2(ty - fy, tx - fx);
-    const aLen  = 8;
-    dotCtx.beginPath();
-    dotCtx.moveTo(tx, ty);
-    dotCtx.lineTo(tx - aLen * Math.cos(angle - Math.PI / 6),
-                  ty - aLen * Math.sin(angle - Math.PI / 6));
-    dotCtx.lineTo(tx - aLen * Math.cos(angle + Math.PI / 6),
-                  ty - aLen * Math.sin(angle + Math.PI / 6));
-    dotCtx.closePath();
-    dotCtx.fillStyle = `rgba(224,26,0,${opacity})`;
+    for (const p of window._dotPts) dotCtx.rect(p.nx*W-1,p.ny*H-1,2,2);
     dotCtx.fill();
   }
-
-  // Live dashed line
-  if (saccadeActive && saccadeStart) {
-    dotCtx.save();
-    dotCtx.setLineDash([4, 4]);
-    dotCtx.beginPath();
-    dotCtx.moveTo(saccadeStart.x * W, saccadeStart.y * H);
-    dotCtx.lineTo(sGX * W, sGY * H);
-    dotCtx.strokeStyle = 'rgba(224,26,0,0.45)';
-    dotCtx.lineWidth   = 1
-        dotCtx.lineWidth   = 1;
-    dotCtx.stroke();
-    dotCtx.setLineDash([]);
-    dotCtx.restore();
+  // AOI rectangles
+  for (const a of aoiPool) {
+    if (!a.active||!a.visible) continue;
+    const sx=a.x*W,sy=a.y*H,sw=a.w*W,sh=a.h*H;
+    dotCtx.strokeStyle='rgba(224,26,0,0.7)'; dotCtx.lineWidth=1;
+    dotCtx.strokeRect(sx,sy,sw,sh);
+    const c=Math.min(sw,sh)*0.25;
+    dotCtx.strokeStyle='rgba(224,26,0,0.9)'; dotCtx.lineWidth=1.5;
+    [[sx,sy,c,0,0,c],[sx+sw,sy,-c,0,0,c],[sx,sy+sh,c,0,0,-c],[sx+sw,sy+sh,-c,0,0,-c]]
+      .forEach(([x,y,dx1,dy1,dx2,dy2])=>{
+        dotCtx.beginPath(); dotCtx.moveTo(x+dx1,y+dy1); dotCtx.lineTo(x,y); dotCtx.lineTo(x+dx2,y+dy2); dotCtx.stroke();
+      });
   }
 }
 
-/* ── draw: fixation circles ──────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — FIXATION MODE
+   ══════════════════════════════════════════════════════════════════════ */
+
 function drawFixations(ts) {
-  const W = dotCanvas.width, H = dotCanvas.height;
-  const recent = fixationHistory.slice(-10);
-
-  for (const fix of recent) {
-    const age     = ts - fix.endTs;
-    const opacity = Math.max(0, 1 - age / 4000);
-    if (opacity <= 0) continue;
-
-    const cx = fix.x * W, cy = fix.y * H;
-    const r  = Math.min(8 + fix.duration / 80, 44);
-
-    dotCtx.beginPath();
-    dotCtx.arc(cx, cy, r, 0, Math.PI * 2);
-    dotCtx.fillStyle = `rgba(224,26,0,${opacity * 0.2})`;
-    dotCtx.fill();
-
-    dotCtx.beginPath();
-    dotCtx.arc(cx, cy, r, 0, Math.PI * 2);
-    dotCtx.strokeStyle = `rgba(224,26,0,${opacity * 0.75})`;
-    dotCtx.lineWidth   = 1.5;
-    dotCtx.stroke();
-
-    if (fix.duration > 300) {
-      dotCtx.fillStyle    = `rgba(224,26,0,${opacity * 0.8})`;
-      dotCtx.font         = '9px Heebo';
-      dotCtx.textAlign    = 'center';
-      dotCtx.textBaseline = 'alphabetic';
-      dotCtx.fillText(`${Math.round(fix.duration)}ms`, cx, cy + r + 13);
+  const W=dotCanvas.width, H=dotCanvas.height;
+  for (const fix of fixationHistory.slice(-10)) {
+    const age=ts-fix.endTs;
+    const opacity=Math.max(0,1-age/4000);
+    if (opacity<=0) continue;
+    const cx=fix.x*W, cy=fix.y*H;
+    const r=Math.min(8+fix.duration/80,44);
+    dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
+    dotCtx.fillStyle=`rgba(224,26,0,${opacity*0.2})`; dotCtx.fill();
+    dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
+    dotCtx.strokeStyle=`rgba(224,26,0,${opacity*0.75})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
+    if (fix.duration>300) {
+      dotCtx.fillStyle=`rgba(224,26,0,${opacity*0.8})`;
+      dotCtx.font='9px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
+      dotCtx.fillText(`${Math.round(fix.duration)}ms`,cx,cy+r+13);
     }
   }
-
-  // Live pulsing dot for current fixation
   if (currentFixation) {
-    const pulse = 3 + Math.sin(ts / 160) * 3;
-    const cx    = currentFixation.cx * W;
-    const cy    = currentFixation.cy * H;
-    dotCtx.beginPath();
-    dotCtx.arc(cx, cy, pulse, 0, Math.PI * 2);
-    dotCtx.fillStyle = 'rgba(224,26,0,0.9)';
-    dotCtx.fill();
+    const pulse=3+Math.sin(ts/160)*3;
+    const cx=currentFixation.cx*W, cy=currentFixation.cy*H;
+    dotCtx.beginPath(); dotCtx.arc(cx,cy,pulse,0,Math.PI*2);
+    dotCtx.fillStyle='rgba(224,26,0,0.9)'; dotCtx.fill();
   }
 }
 
-/* ── draw: first fixation marker ─────────────────────────────────────── */
-function drawFirstFix(ts) {
-  const W = dotCanvas.width, H = dotCanvas.height;
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — SACCADE MODE
+   ══════════════════════════════════════════════════════════════════════ */
 
+function drawSaccades(ts) {
+  const W=dotCanvas.width, H=dotCanvas.height;
+  for (const sac of saccadeHistory.slice(-8)) {
+    const age=ts-sac.endTs;
+    const opacity=Math.max(0,0.9*(1-age/2500));
+    if (opacity<=0) continue;
+    const fx=sac.fromX*W, fy=sac.fromY*H, tx=sac.toX*W, ty=sac.toY*H;
+    dotCtx.beginPath(); dotCtx.moveTo(fx,fy); dotCtx.lineTo(tx,ty);
+    dotCtx.strokeStyle=`rgba(224,26,0,${opacity})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
+    const angle=Math.atan2(ty-fy,tx-fx), aLen=8;
+    dotCtx.beginPath();
+    dotCtx.moveTo(tx,ty);
+    dotCtx.lineTo(tx-aLen*Math.cos(angle-Math.PI/6),ty-aLen*Math.sin(angle-Math.PI/6));
+    dotCtx.lineTo(tx-aLen*Math.cos(angle+Math.PI/6),ty-aLen*Math.sin(angle+Math.PI/6));
+    dotCtx.closePath();
+    dotCtx.fillStyle=`rgba(224,26,0,${opacity})`; dotCtx.fill();
+  }
+  if (saccadeActive && saccadeStart) {
+    dotCtx.save(); dotCtx.setLineDash([4,4]);
+    dotCtx.beginPath(); dotCtx.moveTo(saccadeStart.x*W,saccadeStart.y*H); dotCtx.lineTo(sGX*W,sGY*H);
+    dotCtx.strokeStyle='rgba(224,26,0,0.45)'; dotCtx.lineWidth=1; dotCtx.stroke();
+    dotCtx.setLineDash([]); dotCtx.restore();
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — SCAN PATH MODE
+   ══════════════════════════════════════════════════════════════════════ */
+
+function drawScanPath(ts) {
+  const recent=fixationHistory.slice(-14);
+  if (recent.length<1) return;
+  const W=dotCanvas.width, H=dotCanvas.height, total=recent.length;
+  // dashed lines
+  if (recent.length>=2) {
+    dotCtx.save(); dotCtx.setLineDash([4,6]);
+    dotCtx.strokeStyle='rgba(224,26,0,0.35)'; dotCtx.lineWidth=1;
+    dotCtx.beginPath();
+    for (let i=0;i<recent.length;i++) {
+      const {x,y}=recent[i];
+      i===0 ? dotCtx.moveTo(x*W,y*H) : dotCtx.lineTo(x*W,y*H);
+    }
+    dotCtx.stroke(); dotCtx.setLineDash([]); dotCtx.restore();
+  }
+  // numbered circles
+  for (let i=0;i<total;i++) {
+    const {x,y}=recent[i];
+    const cx=x*W, cy=y*H;
+    const alpha=0.15+0.85*(i/Math.max(total-1,1));
+    const isNewest=i===total-1;
+    const r=isNewest ? 11+Math.sin(ts/300)*2+2 : 11;
+    dotCtx.beginPath(); dotCtx.arc(cx,cy,r,0,Math.PI*2);
+    dotCtx.fillStyle=`rgba(255,255,255,${alpha})`; dotCtx.fill();
+    dotCtx.strokeStyle=`rgba(224,26,0,${alpha})`; dotCtx.lineWidth=1.5; dotCtx.stroke();
+    dotCtx.fillStyle=`rgba(224,26,0,${alpha})`;
+    dotCtx.font='bold 9px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='middle';
+    dotCtx.fillText(i+1,cx,cy);
+    dotCtx.textBaseline='alphabetic';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — HEATMAP MODE
+   ══════════════════════════════════════════════════════════════════════ */
+
+function drawHeatmap() {
+  let maxVal=0;
+  for (let i=0;i<heatmap.length;i++) { if (heatmap[i]>maxVal) maxVal=heatmap[i]; }
+  if (maxVal<0.01) return;
+  heatCtx.clearRect(0,0,W_HEAT,H_HEAT);
+  const img=heatCtx.createImageData(W_HEAT,H_HEAT);
+  const d=img.data;
+  for (let i=0;i<W_HEAT*H_HEAT;i++) {
+    const val=heatmap[i]/maxVal;
+    if (val<0.15) continue;
+    let r,g,b;
+    if      (val<0.25) { const t=(val-0.15)/0.10; r=0; g=Math.round(t*255); b=255; }
+    else if (val<0.50) { const t=(val-0.25)/0.25; r=0; g=255; b=Math.round((1-t)*255); }
+    else if (val<0.75) { const t=(val-0.50)/0.25; r=Math.round(t*255); g=255; b=0; }
+    else               { const t=(val-0.75)/0.25; r=255; g=Math.round((1-t)*255); b=0; }
+    d[i*4]=r; d[i*4+1]=g; d[i*4+2]=b; d[i*4+3]=Math.min(255,val*220);
+  }
+  heatCtx.putImageData(img,0,0);
+  const W=dotCanvas.width, H=dotCanvas.height;
+  dotCtx.globalAlpha=0.58;
+  dotCtx.drawImage(heatCanvas,0,0,W,H);
+  dotCtx.globalAlpha=1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DRAW — FIRST FIXATION MODE
+   ══════════════════════════════════════════════════════════════════════ */
+
+function drawFirstFix(ts) {
+  const W=dotCanvas.width, H=dotCanvas.height;
   if (!firstFix) {
-    dotCtx.fillStyle    = 'rgba(180,180,180,0.55)';
-    dotCtx.font         = '300 11px Heebo';
-    dotCtx.textAlign    = 'center';
-    dotCtx.textBaseline = 'middle';
-    dotCtx.fillText('WAITING FOR FIRST FIXATION', W / 2, H / 2);
-    dotCtx.textBaseline = 'alphabetic';
+    dotCtx.fillStyle='rgba(180,180,180,0.55)';
+    dotCtx.font='300 11px Heebo'; dotCtx.textAlign='center'; dotCtx.textBaseline='middle';
+    dotCtx.fillText('WAITING FOR FIRST FIXATION',W/2,H/2);
+    dotCtx.textBaseline='alphabetic';
     return;
   }
-
-  const cx    = firstFix.x * W;
-  const cy    = firstFix.y * H;
-  const t     = ts / 1000;
-  const pulse = 18 + Math.sin(t * 3) * 5;
-
-  // Outer pulsing ring
-  dotCtx.beginPath();
-  dotCtx.arc(cx, cy, pulse, 0, Math.PI * 2);
-  dotCtx.strokeStyle = 'rgba(255,196,0,0.45)';
-  dotCtx.lineWidth   = 1.5;
-  dotCtx.stroke();
-
-  // Gold fill circle
-  dotCtx.beginPath();
-  dotCtx.arc(cx, cy, 14, 0, Math.PI * 2);
-  dotCtx.fillStyle   = 'rgba(255,196,0,0.3)';
-  dotCtx.fill();
-  dotCtx.strokeStyle = 'rgba(255,196,0,0.9)';
-  dotCtx.lineWidth   = 2;
-  dotCtx.stroke();
-
-  const offset = (firstFix.startTs - sessionStartTs) / 1000;
-  dotCtx.textAlign    = 'center';
-  dotCtx.textBaseline = 'alphabetic';
-  dotCtx.fillStyle    = 'rgba(160,110,0,0.9)';
-  dotCtx.font         = 'bold 10px Heebo';
-  dotCtx.fillText('FIRST FIXATION', cx, cy - 22);
-  dotCtx.font         = '300 9px Heebo';
-  dotCtx.fillStyle    = 'rgba(160,110,0,0.7)';
-  dotCtx.fillText(`+${offset.toFixed(2)}s`, cx, cy - 10);
+  const cx=firstFix.x*W, cy=firstFix.y*H;
+  const pulse=18+Math.sin(ts/380)*5;
+  dotCtx.beginPath(); dotCtx.arc(cx,cy,pulse,0,Math.PI*2);
+  dotCtx.strokeStyle='rgba(255,196,0,0.45)'; dotCtx.lineWidth=1.5; dotCtx.stroke();
+  dotCtx.beginPath(); dotCtx.arc(cx,cy,14,0,Math.PI*2);
+  dotCtx.fillStyle='rgba(255,196,0,0.3)'; dotCtx.fill();
+  dotCtx.strokeStyle='rgba(255,196,0,0.9)'; dotCtx.lineWidth=2; dotCtx.stroke();
+  const offset=(firstFix.startTs-sessionStartTs)/1000;
+  dotCtx.textAlign='center'; dotCtx.textBaseline='alphabetic';
+  dotCtx.fillStyle='rgba(160,110,0,0.9)'; dotCtx.font='bold 10px Heebo';
+  dotCtx.fillText('FIRST FIXATION',cx,cy-22);
+  dotCtx.font='300 9px Heebo'; dotCtx.fillStyle='rgba(160,110,0,0.7)';
+  dotCtx.fillText(`+${offset.toFixed(2)}s`,cx,cy-10);
 }
 
-/* ── draw: gaze annotation dots (canvas layer for GAZE mode) ─────────── */
-function drawGazeDots() {
-  const W = dotCanvas.width, H = dotCanvas.height;
-  dotCtx.fillStyle = 'rgba(224,26,0,0.82)';
-  dotCtx.beginPath();
-  for (const a of pool) {
-    if (!a.visible) continue;
-    dotCtx.rect(a.x * W - 1, a.y * H - 1, 2, 2);
-  }
-  dotCtx.fill();
-}
+/* ══════════════════════════════════════════════════════════════════════
+   MAIN DRAW FRAME
+   ══════════════════════════════════════════════════════════════════════ */
 
-/* ── main draw frame ─────────────────────────────────────────────────── */
 function drawFrame(ts) {
-  const W = dotCanvas.width, H = dotCanvas.height;
-  if (!W || !H) return;
-  dotCtx.clearRect(0, 0, W, H);
+  const W=dotCanvas.width, H=dotCanvas.height;
+  if (!W||!H) return;
+  dotCtx.clearRect(0,0,W,H);
 
-  /* Layer 1 — heatmap */
-  if (activeMode === 'HEATMAP')   drawHeatmap();
+  if (activeMode==='HEATMAP')   drawHeatmap();
+  if (activeMode==='SCANPATH')  drawScanPath(ts);
+  if (activeMode==='SACCADE')   drawSaccades(ts);
+  if (activeMode==='FIXATION')  drawFixations(ts);
+  if (activeMode==='FIRSTFIX')  drawFirstFix(ts);
+  if (activeMode==='GAZE')      drawGazeMode();
 
-  /* Layer 2 — scan path lines */
-  if (activeMode === 'SCANPATH')  drawScanPathLines();
-
-  /* Layer 3 — saccade arrows */
-  if (activeMode === 'SACCADE')   drawSaccades(ts);
-
-  /* Layer 4 — fixation circles */
-  if (activeMode === 'FIXATION')  drawFixations(ts);
-
-  /* Layer 5 — scan path numbered circles */
-  if (activeMode === 'SCANPATH')  drawScanPathCircles(ts);
-
-  /* Layer 6 — first fixation marker */
-  if (activeMode === 'FIRSTFIX')  drawFirstFix(ts);
-
-  /* Layer 7 — annotation dots (GAZE mode only) */
-  if (activeMode === 'GAZE')      drawGazeDots();
-
-  /* Layer 8 — visibility toggles */
-  annLayer.style.opacity    = activeMode === 'GAZE' ? '1' : '0';
-  gazeDot.style.display     = activeMode === 'GAZE' ? '' : 'none';
+  // annLayer visible only in GAZE mode
+  annLayer.style.opacity = activeMode==='GAZE' ? '1' : '0';
+  // gaze dot visible only in GAZE mode
+  gazeDot.style.display  = activeMode==='GAZE' ? '' : 'none';
 }
 
-/* ── main loop ───────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   GAZE APPLICATION
+   ══════════════════════════════════════════════════════════════════════ */
+
+function applyGaze(ts) {
+  const dt = lastGazeTs ? Math.min((ts-lastGazeTs)/1000,0.05) : 0;
+  lastGazeTs = ts;
+  sGX += (rawGX-sGX)*GAZE_LERP;
+  sGY += (rawGY-sGY)*GAZE_LERP;
+
+  const W=videoWrapper.offsetWidth, H=videoWrapper.offsetHeight;
+  if (!W||!H) return;
+
+  const gpx=sGX*W, gpy=sGY*H;
+  const rect=videoWrapper.getBoundingClientRect();
+  gazeDot.style.left=(rect.left+gpx)+'px';
+  gazeDot.style.top =(rect.top +gpy)+'px';
+
+  window._gazeHistory.push({x:sGX,y:sGY,ts});
+  if (window._gazeHistory.length>90) window._gazeHistory.shift();
+
+  // GAZE mode: apply dot and AOI logic
+  if (activeMode==='GAZE') {
+    const scanSpeed=aoiPool.filter(a=>a.lastVisitTs>ts-2000).length;
+    const _gh=window._gazeHistory.slice(-8);
+    const _mx=_gh.reduce((s,p)=>s+p.x,0)/_gh.length;
+    const _my=_gh.reduce((s,p)=>s+p.y,0)/_gh.length;
+    const microMovement=_gh.reduce((s,p)=>s+Math.hypot(p.x-_mx,p.y-_my),0)/_gh.length;
+    applyDotGaze(ts,gpx,gpy,W,H,scanSpeed,microMovement);
+    applyAOIGaze(ts,scanSpeed,microMovement,dt);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MAIN LOOP
+   ══════════════════════════════════════════════════════════════════════ */
+
 function mainLoop(ts) {
   applyGaze(ts);
 
-  /* Analysis — always unconditional */
+  // Analysis — always unconditional (all modes benefit)
   updateFixations(ts);
   updateSaccades(ts);
   updateHeatmap();
   updateFirstFix();
 
+  // GAZE mode: run Sobel + AOI on interval
+  if (activeMode==='GAZE') {
+    if (ts-lastAnaTs>ANA_INTERVAL) { analyzeDots(); lastAnaTs=ts; }
+    if (ts-lastAoiTs>AOI_INTERVAL) { analyzeAOI();  lastAoiTs=ts; }
+  }
+
   drawFrame(ts);
   requestAnimationFrame(mainLoop);
 }
 
-/* ── head stability ──────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   STABILITY + AFFINE FIT
+   ══════════════════════════════════════════════════════════════════════ */
+
 function stability() {
-  const N = Math.min(offXBuf.length, 20);
-  if (N < 8) return 0;
-  const xs = offXBuf.slice(-N), ys = offYBuf.slice(-N);
-  const mx = xs.reduce((a, b) => a + b, 0) / N;
-  const my = ys.reduce((a, b) => a + b, 0) / N;
-  const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0) / N;
-  const vy = ys.reduce((a, b) => a + (b - my) ** 2, 0) / N;
-  return Math.max(0, Math.min(1, 1 - (vx + vy) / CAL_VAR_THRESH));
+  const N=Math.min(offXBuf.length,20);
+  if (N<8) return 0;
+  const xs=offXBuf.slice(-N), ys=offYBuf.slice(-N);
+  const mx=xs.reduce((a,b)=>a+b,0)/N, my=ys.reduce((a,b)=>a+b,0)/N;
+  const vx=xs.reduce((a,b)=>a+(b-mx)**2,0)/N;
+  const vy=ys.reduce((a,b)=>a+(b-my)**2,0)/N;
+  return Math.max(0,Math.min(1,1-(vx+vy)/CAL_VAR_THRESH));
 }
 
-/* ── affine fit ──────────────────────────────────────────────────────── */
 function fitAffine(data) {
-  let A00=0, A01=0, A02=0, A11=0, A12=0;
-  let Bx0=0, Bx1=0, Bx2=0, By0=0, By1=0, By2=0;
-  const n = data.length;
+  let A00=0,A01=0,A02=0,A11=0,A12=0,Bx0=0,Bx1=0,Bx2=0,By0=0,By1=0,By2=0;
+  const n=data.length;
   for (const d of data) {
-    A00 += d.ox*d.ox; A01 += d.ox*d.oy; A02 += d.ox;
-    A11 += d.oy*d.oy; A12 += d.oy;
-    Bx0 += d.ox*d.sx; Bx1 += d.oy*d.sx; Bx2 += d.sx;
-    By0 += d.ox*d.sy; By1 += d.oy*d.sy; By2 += d.sy;
+    A00+=d.ox*d.ox; A01+=d.ox*d.oy; A02+=d.ox;
+    A11+=d.oy*d.oy; A12+=d.oy;
+    Bx0+=d.ox*d.sx; Bx1+=d.oy*d.sx; Bx2+=d.sx;
+    By0+=d.ox*d.sy; By1+=d.oy*d.sy; By2+=d.sy;
   }
-  const M = [[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
-  const inv = inv3(M);
-  if (!inv) return null;
-  const [ax,bx,cx] = mv3(inv, [Bx0,Bx1,Bx2]);
-  const [ay,by,cy] = mv3(inv, [By0,By1,By2]);
-  return { ax, bx, cx, ay, by, cy };
+  const M=[[A00,A01,A02],[A01,A11,A12],[A02,A12,n]];
+  const inv=inv3(M); if(!inv) return null;
+  const[ax,bx,cx]=mv3(inv,[Bx0,Bx1,Bx2]);
+  const[ay,by,cy]=mv3(inv,[By0,By1,By2]);
+  return{ax,bx,cx,ay,by,cy};
 }
-function inv3(m) {
-  const [[a,b,c],[d,e,f],[g,h,k]] = m;
-  const det = a*(e*k-f*h) - b*(d*k-f*g) + c*(d*h-e*g);
-  if (Math.abs(det) < 1e-12) return null;
-  const s = 1 / det;
-  return [
-    [(e*k-f*h)*s, (c*h-b*k)*s, (b*f-c*e)*s],
-    [(f*g-d*k)*s, (a*k-c*g)*s, (c*d-a*f)*s],
-    [(d*h-e*g)*s, (b*g-a*h)*s, (a*e-b*d)*s]
-  ];
+function inv3(m){
+  const[[a,b,c],[d,e,f],[g,h,k]]=m;
+  const det=a*(e*k-f*h)-b*(d*k-f*g)+c*(d*h-e*g);
+  if(Math.abs(det)<1e-12)return null;
+  const s=1/det;
+  return[[(e*k-f*h)*s,(c*h-b*k)*s,(b*f-c*e)*s],
+         [(f*g-d*k)*s,(a*k-c*g)*s,(c*d-a*f)*s],
+         [(d*h-e*g)*s,(b*g-a*h)*s,(a*e-b*d)*s]];
 }
-function mv3(m, v) {
-  return [
-    m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
-    m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
-    m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]
-  ];
+function mv3(m,v){
+  return[m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+         m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+         m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
 }
 
-/* ── calibration helpers ─────────────────────────────────────────────── */
-function resizeCal() {
-  calCanvas.width  = window.innerWidth;
-  calCanvas.height = window.innerHeight;
+/* ══════════════════════════════════════════════════════════════════════
+   CALIBRATION
+   ══════════════════════════════════════════════════════════════════════ */
+
+function resizeCal(){calCanvas.width=window.innerWidth;calCanvas.height=window.innerHeight;}
+
+function drawIntro(){
+  const W=calCanvas.width,H=calCanvas.height;
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 22px Heebo';calCtx.fillText('HEAD TRACKING CALIBRATION',W/2,H/2-52);
+  calCtx.strokeStyle='#eeeeee';calCtx.lineWidth=1;calCtx.beginPath();calCtx.moveTo(W/2-220,H/2-36);calCtx.lineTo(W/2+220,H/2-36);calCtx.stroke();
+  calCtx.fillStyle='#999999';calCtx.font='14px Heebo';calCtx.fillText('Point your head at each dot and hold still',W/2,H/2-14);
+  calCtx.fillText('until the ring fills completely',W/2,H/2+8);
+  calCtx.fillStyle='#cccccc';calCtx.font='12px Heebo';calCtx.fillText('Move only your head — keep your body still',W/2,H/2+34);
 }
 
-function drawIntro() {
-  const W = calCanvas.width, H = calCanvas.height;
-  calCtx.fillStyle = '#ffffff';
-  calCtx.fillRect(0, 0, W, H);
-  calCtx.textAlign = 'center';
-  calCtx.fillStyle = '#111111';
-  calCtx.font      = 'bold 22px Heebo';
-  calCtx.fillText('HEAD TRACKING CALIBRATION', W / 2, H / 2 - 52);
-  calCtx.strokeStyle = '#eeeeee';
-  calCtx.lineWidth   = 1;
-  calCtx.beginPath();
-  calCtx.moveTo(W / 2 - 220, H / 2 - 36);
-  calCtx.lineTo(W / 2 + 220, H / 2 - 36);
-  calCtx.stroke();
-  calCtx.fillStyle = '#999999';
-  calCtx.font      = '14px Heebo';
-  calCtx.fillText('Point your head at each dot and hold still', W / 2, H / 2 - 14);
-  calCtx.fillText('until the ring fills completely', W / 2, H / 2 + 8);
-  calCtx.fillStyle = '#cccccc';
-  calCtx.font      = '12px Heebo';
-  calCtx.fillText('Move only your head — keep your body still', W / 2, H / 2 + 34);
+function drawDone(){
+  const W=calCanvas.width,H=calCanvas.height;
+  calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);calCtx.textAlign='center';
+  calCtx.fillStyle='#111111';calCtx.font='bold 24px Heebo';calCtx.fillText('SYNCHRONIZED',W/2,H/2-8);
+  calCtx.fillStyle='#999999';calCtx.font='13px Heebo';calCtx.fillText('Calibration complete',W/2,H/2+18);
 }
 
-function drawDone() {
-  const W = calCanvas.width, H = calCanvas.height;
-  calCtx.fillStyle = '#ffffff';
-  calCtx.fillRect(0, 0, W, H);
-  calCtx.textAlign = 'center';
-  calCtx.fillStyle = '#111111';
-  calCtx.font      = 'bold 24px Heebo';
-  calCtx.fillText('SYNCHRONIZED', W / 2, H / 2 - 8);
-  calCtx.fillStyle = '#999999';
-  calCtx.font      = '13px Heebo';
-  calCtx.fillText('Calibration complete', W / 2, H / 2 + 18);
-}
-
-function awaitDot(px, py, index) {
-  return new Promise(resolve => {
-    let progress = 0, prevTs = null;
-    const samples = [];
-
-    function frame(ts) {
-      const dt   = prevTs ? Math.min((ts - prevTs) / 1000, 0.05) : 0;
-      prevTs     = ts;
-      const stab = stability();
-
-      progress += stab * CAL_FILL_RATE * dt;
-      progress -= (1 - stab) * CAL_DRAIN_RATE * dt;
-      progress  = Math.max(0, Math.min(1, progress));
-
-      if (stab > 0.45) samples.push({ ox: curOffX, oy: curOffY });
-
-      const W = calCanvas.width, H = calCanvas.height;
-      calCtx.fillStyle = '#ffffff';
-      calCtx.fillRect(0, 0, W, H);
-
-      calCtx.textAlign = 'right';
-      calCtx.fillStyle = '#cccccc';
-      calCtx.font      = '14px Heebo';
-      calCtx.fillText(`${index + 1}  /  ${CAL_PTS.length}`, W - 28, 36);
-
-      calCtx.textAlign = 'center';
-      calCtx.fillStyle = '#cccccc';
-      calCtx.font      = '13px Heebo';
-      calCtx.fillText('POINT HEAD AT DOT · HOLD STILL', W / 2, H - 26);
-
-      calCtx.beginPath();
-      calCtx.arc(px, py, 22, 0, Math.PI * 2);
-      calCtx.strokeStyle = '#e8e8e8';
-      calCtx.lineWidth   = 1.5;
-      calCtx.stroke();
-
-      if (progress > 0) {
-        calCtx.beginPath();
-        calCtx.arc(px, py, 22, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
-        calCtx.strokeStyle = `rgba(224,26,0,${0.35 + stab * 0.65})`;
-        calCtx.lineWidth   = 2;
-        calCtx.stroke();
+function awaitDot(px,py,index){
+  return new Promise(resolve=>{
+    let progress=0,prevTs=null;const samples=[];
+    function frame(ts){
+      const dt=prevTs?Math.min((ts-prevTs)/1000,0.05):0;prevTs=ts;
+      const stab=stability();
+      progress+=stab*CAL_FILL_RATE*dt;progress-=(1-stab)*CAL_DRAIN_RATE*dt;
+      progress=Math.max(0,Math.min(1,progress));
+      if(stab>0.45)samples.push({ox:curOffX,oy:curOffY});
+      const W=calCanvas.width,H=calCanvas.height;
+      calCtx.fillStyle='#ffffff';calCtx.fillRect(0,0,W,H);
+      calCtx.textAlign='right';calCtx.fillStyle='#cccccc';calCtx.font='14px Heebo';
+      calCtx.fillText(`${index+1}  /  ${CAL_PTS.length}`,W-28,36);
+      calCtx.textAlign='center';calCtx.fillStyle='#cccccc';calCtx.font='13px Heebo';
+      calCtx.fillText('POINT HEAD AT DOT · HOLD STILL',W/2,H-26);
+      calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);
+      calCtx.strokeStyle='#e8e8e8';calCtx.lineWidth=1.5;calCtx.stroke();
+      if(progress>0){
+        calCtx.beginPath();calCtx.arc(px,py,22,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
+        calCtx.strokeStyle=`rgba(224,26,0,${0.35+stab*0.65})`;calCtx.lineWidth=2;calCtx.stroke();
       }
-
-      const r = 3.5 + stab * 2.5;
-      calCtx.beginPath();
-      calCtx.arc(px, py, r, 0, Math.PI * 2);
-      calCtx.fillStyle = `rgba(224,26,0,${0.2 + stab * 0.8})`;
-      calCtx.fill();
-
-      if (progress >= 1) {
-        calCtx.beginPath();
-        calCtx.arc(px, py, 22, 0, Math.PI * 2);
-        calCtx.strokeStyle = 'rgba(224,26,0,0.9)';
-        calCtx.lineWidth   = 2;
-        calCtx.stroke();
-        const n  = samples.length || 1;
-        const ox = samples.reduce((s, v) => s + v.ox, 0) / n;
-        const oy = samples.reduce((s, v) => s + v.oy, 0) / n;
-        setTimeout(() => resolve({ ox, oy }), 280);
-      } else {
-        requestAnimationFrame(frame);
-      }
+      const r=3.5+stab*2.5;calCtx.beginPath();calCtx.arc(px,py,r,0,Math.PI*2);
+      calCtx.fillStyle=`rgba(224,26,0,${0.2+stab*0.8})`;calCtx.fill();
+      if(progress>=1){
+        calCtx.beginPath();calCtx.arc(px,py,22,0,Math.PI*2);
+        calCtx.strokeStyle='rgba(224,26,0,0.9)';calCtx.lineWidth=2;calCtx.stroke();
+        const n=samples.length||1;
+        const ox=samples.reduce((s,v)=>s+v.ox,0)/n;
+        const oy=samples.reduce((s,v)=>s+v.oy,0)/n;
+        setTimeout(()=>resolve({ox,oy}),280);
+      } else requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   });
 }
 
-/* ── calibration sequence ────────────────────────────────────────────── */
-async function runCalibration() {
-  resizeCal();
-  window.addEventListener('resize', resizeCal);
-
-  drawIntro();
-  calStartBtn.style.display = 'block';
-  await new Promise(r => calStartBtn.addEventListener('click', r, { once: true }));
-  calStartBtn.style.display = 'none';
-
-  const calData = [];
-  for (let i = 0; i < CAL_PTS.length; i++) {
-    const [nx, ny] = CAL_PTS[i];
-    const px = nx * window.innerWidth;
-    const py = ny * window.innerHeight;
-    if (i > 0) await new Promise(r => setTimeout(r, 320));
-    const { ox, oy } = await awaitDot(px, py, i);
-    calData.push({ sx: nx, sy: ny, ox, oy });
+async function runCalibration(){
+  resizeCal();window.addEventListener('resize',resizeCal);drawIntro();
+  calStartBtn.style.display='block';
+  await new Promise(r=>calStartBtn.addEventListener('click',r,{once:true}));
+  calStartBtn.style.display='none';
+  const calData=[];
+  for(let i=0;i<CAL_PTS.length;i++){
+    const[nx,ny]=CAL_PTS[i];
+    const px=nx*window.innerWidth,py=ny*window.innerHeight;
+    if(i>0)await new Promise(r=>setTimeout(r,320));
+    const{ox,oy}=await awaitDot(px,py,i);
+    calData.push({sx:nx,sy:ny,ox,oy});
   }
-
-  if (calData.length >= 4) calMap = fitAffine(calData);
-
-  drawDone();
-  await new Promise(r => setTimeout(r, 900));
-  calOverlay.style.display = 'none';
+  if(calData.length>=4)calMap=fitAffine(calData);
+  drawDone();await new Promise(r=>setTimeout(r,900));
+  calOverlay.style.display='none';
 }
 
-/* ── head tracking ───────────────────────────────────────────────────── */
-async function startHeadTracking() {
+/* ══════════════════════════════════════════════════════════════════════
+   HEAD TRACKING
+   ══════════════════════════════════════════════════════════════════════ */
+
+async function startHeadTracking(){
   let fl;
-  try {
-    const fs = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
-    );
-    fl = await FaceLandmarker.createFromOptions(fs, {
-      baseOptions: {
-        modelAssetPath:
-          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-        delegate: 'GPU'
+  try{
+    const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    fl=await FaceLandmarker.createFromOptions(fs,{
+      baseOptions:{
+        modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        delegate:'GPU'
       },
-      outputFaceBlendshapes: false,
-      runningMode: 'VIDEO',
-      numFaces: 1
+      outputFaceBlendshapes:false,runningMode:'VIDEO',numFaces:1
     });
-  } catch (e) { console.warn('[head] FaceLandmarker init failed:', e); return false; }
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
-    });
-    webcamEl.srcObject = stream;
-    await new Promise(r => { webcamEl.onloadeddata = r; });
-  } catch (e) { console.warn('[head] Webcam unavailable:', e); return false; }
-
-  let lastCamT = -1;
-  function trackHead() {
-    if (webcamEl.readyState >= 2 && webcamEl.currentTime !== lastCamT) {
-      lastCamT = webcamEl.currentTime;
-      try {
-        const res = fl.detectForVideo(webcamEl, performance.now());
-        if (res.faceLandmarks?.length > 0) {
-          const lm   = res.faceLandmarks[0];
-          const nose = lm[1], brow = lm[168], chin = lm[152];
-          const lChk = lm[234], rChk = lm[454];
-          const hxRaw = (nose.x*4 + brow.x + chin.x + lChk.x + rChk.x) / 8;
-          const hyRaw = (nose.y*4 + brow.y + chin.y + lChk.y + rChk.y) / 8;
-          const headX = 1 - hxRaw;
-          const headY = hyRaw;
-
-          curOffX = headX; curOffY = headY;
-          offXBuf.push(headX); if (offXBuf.length > BUF_MAX) offXBuf.shift();
-          offYBuf.push(headY); if (offYBuf.length > BUF_MAX) offYBuf.shift();
-
-          if (calMap) {
-            rawGX = calMap.ax*headX + calMap.bx*headY + calMap.cx;
-            rawGY = calMap.ay*headX + calMap.by*headY + calMap.cy;
-          } else {
-            rawGX = headX;
-            rawGY = headY;
-          }
-          rawGX = Math.max(0, Math.min(1, rawGX));
-          rawGY = Math.max(0, Math.min(1, rawGY));
-          if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
+  }catch(e){console.warn('[head]',e);return false;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}});
+    webcamEl.srcObject=stream;await new Promise(r=>{webcamEl.onloadeddata=r;});
+  }catch(e){console.warn('[head] webcam',e);return false;}
+  let lastCamT=-1;
+  function trackHead(){
+    if(webcamEl.readyState>=2&&webcamEl.currentTime!==lastCamT){
+      lastCamT=webcamEl.currentTime;
+      try{
+        const res=fl.detectForVideo(webcamEl,performance.now());
+        if(res.faceLandmarks?.length>0){
+          const lm=res.faceLandmarks[0];
+          const nose=lm[1],brow=lm[168],chin=lm[152],lChk=lm[234],rChk=lm[454];
+          const hxRaw=(nose.x*4+brow.x+chin.x+lChk.x+rChk.x)/8;
+          const hyRaw=(nose.y*4+brow.y+chin.y+lChk.y+rChk.y)/8;
+          const headX=1-hxRaw,headY=hyRaw;
+          curOffX=headX;curOffY=headY;
+          offXBuf.push(headX);if(offXBuf.length>BUF_MAX)offXBuf.shift();
+          offYBuf.push(headY);if(offYBuf.length>BUF_MAX)offYBuf.shift();
+          if(calMap){rawGX=calMap.ax*headX+calMap.bx*headY+calMap.cx;rawGY=calMap.ay*headX+calMap.by*headY+calMap.cy;}
+          else{rawGX=headX;rawGY=headY;}
+          rawGX=Math.max(0,Math.min(1,rawGX));rawGY=Math.max(0,Math.min(1,rawGY));
+          if(!gazeOn){gazeOn=true;infoEl.style.opacity='0';}
         }
-      } catch (_) {}
+      }catch(_){}
     }
     requestAnimationFrame(trackHead);
   }
-  requestAnimationFrame(trackHead);
-  return true;
+  requestAnimationFrame(trackHead);return true;
 }
 
-/* ── mouse / touch fallback ──────────────────────────────────────────── */
-function enablePointerFallback() {
-  infoEl.textContent = 'MOVE MOUSE TO EXPLORE · HOVER DOTS TO REVEAL';
-  const onMove = (cx, cy) => {
-    const rect = videoWrapper.getBoundingClientRect();
-    const nx = (cx - rect.left) / rect.width;
-    const ny = (cy - rect.top)  / rect.height;
-    if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) {
-      rawGX = nx; rawGY = ny;
-      if (!gazeOn) { gazeOn = true; infoEl.style.opacity = '0'; }
-    }
+function enablePointerFallback(){
+  infoEl.textContent='MOVE MOUSE TO EXPLORE · HOVER REGIONS TO REVEAL';
+  const onMove=(cx,cy)=>{
+    const rect=videoWrapper.getBoundingClientRect();
+    const nx=(cx-rect.left)/rect.width,ny=(cy-rect.top)/rect.height;
+    if(nx>=0&&nx<=1&&ny>=0&&ny<=1){rawGX=nx;rawGY=ny;if(!gazeOn){gazeOn=true;infoEl.style.opacity='0';}}
   };
-  document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
-  document.addEventListener('touchmove', e => {
-    e.preventDefault();
-    onMove(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: false });
+  document.addEventListener('mousemove',e=>onMove(e.clientX,e.clientY));
+  document.addEventListener('touchmove',e=>{e.preventDefault();onMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 }
 
-/* ── mode selection screen ───────────────────────────────────────────── */
-async function showModeScreen() {
-  return new Promise(resolve => {
-    const screen = document.getElementById('modeScreen');
-    screen.style.display = 'flex';
+/* ══════════════════════════════════════════════════════════════════════
+   MODE SELECTION SCREEN
+   ══════════════════════════════════════════════════════════════════════ */
 
-    const cards = screen.querySelectorAll('.mode-card');
-    cards[0].classList.add('selected'); // default: GAZE
-
-    cards.forEach(card => {
-      card.addEventListener('click', () => {
-        cards.forEach(c => c.classList.remove('selected'));
+async function showModeScreen(){
+  return new Promise(resolve=>{
+    const screen=document.getElementById('modeScreen');
+    screen.style.display='flex';
+    const cards=screen.querySelectorAll('.mode-card');
+    cards.forEach(card=>{
+      card.addEventListener('click',()=>{
+        cards.forEach(c=>c.classList.remove('selected'));
         card.classList.add('selected');
       });
     });
-
-    document.getElementById('modeBeginBtn').addEventListener('click', () => {
-      const sel = screen.querySelector('.mode-card.selected');
-      activeMode = sel ? sel.dataset.mode : 'GAZE';
-      screen.style.display = 'none';
+    document.getElementById('modeBeginBtn').addEventListener('click',()=>{
+      const sel=screen.querySelector('.mode-card.selected');
+      activeMode=sel?sel.dataset.mode:'GAZE';
+      screen.style.display='none';
       resolve();
-    }, { once: true });
+    },{once:true});
   });
 }
 
-/* ── mode pill ───────────────────────────────────────────────────────── */
-function setActiveMode(id) {
-  activeMode = id;
-  const nameEl = document.getElementById('modePillName');
-  if (nameEl) nameEl.textContent = MODE_LABELS[id] || id;
-  document.querySelectorAll('.pill-mode-row').forEach(row => {
-    row.classList.toggle('active', row.dataset.mode === id);
+/* ══════════════════════════════════════════════════════════════════════
+   MODE PILL
+   ══════════════════════════════════════════════════════════════════════ */
+
+function setActiveMode(id){
+  activeMode=id;
+  const nameEl=document.getElementById('modePillName');
+  if(nameEl)nameEl.textContent=MODE_LABELS[id]||id;
+  document.querySelectorAll('.pill-mode-row').forEach(row=>{
+    row.classList.toggle('active',row.dataset.mode===id);
   });
+  // When switching away from GAZE mode, clear annLayer
+  if(id!=='GAZE'){
+    annLayer.style.opacity='0';
+    gazeDot.style.display='none';
+  }
 }
 
-function initModePill() {
-  const collapsed    = document.getElementById('modePillCollapsed');
-  const expanded     = document.getElementById('modePillExpanded');
-  const rowsEl       = document.getElementById('pillModeRows');
-  const saveBtn      = document.getElementById('pillSaveBtn');
-  const pill         = document.getElementById('modePill');
-
-  const modeList = [
-    { id: 'GAZE',     label: '01  GAZE POINT'    },
-    { id: 'FIXATION', label: '02  FIXATION'       },
-    { id: 'SACCADE',  label: '03  SACCADE'        },
-    { id: 'SCANPATH', label: '04  SCAN PATH'      },
-    { id: 'HEATMAP',  label: '05  HEATMAP'        },
-    { id: 'FIRSTFIX', label: '06  FIRST FIXATION' }
+function initModePill(){
+  const collapsed=document.getElementById('modePillCollapsed');
+  const expanded =document.getElementById('modePillExpanded');
+  const rowsEl   =document.getElementById('pillModeRows');
+  const saveBtn  =document.getElementById('pillSaveBtn');
+  const pill     =document.getElementById('modePill');
+  const modeList=[
+    {id:'GAZE',    label:'01  GAZE POINT'},
+    {id:'FIXATION',label:'02  FIXATION'},
+    {id:'SACCADE', label:'03  SACCADE'},
+    {id:'SCANPATH',label:'04  SCAN PATH'},
+    {id:'HEATMAP', label:'05  HEATMAP'},
+    {id:'FIRSTFIX',label:'06  FIRST FIXATION'}
   ];
-
-  for (const m of modeList) {
-    const row = document.createElement('div');
-    row.className    = 'pill-mode-row' + (m.id === activeMode ? ' active' : '');
-    row.dataset.mode = m.id;
-    row.textContent  = m.label;
-    row.addEventListener('click', () => {
+  for(const m of modeList){
+    const row=document.createElement('div');
+    row.className='pill-mode-row'+(m.id===activeMode?' active':'');
+    row.dataset.mode=m.id;
+    row.textContent=m.label;
+    row.addEventListener('click',()=>{
       setActiveMode(m.id);
-      collapsed.style.display = 'flex';
-      expanded.style.display  = 'none';
+      collapsed.style.display='flex';
+      expanded.style.display='none';
     });
     rowsEl.appendChild(row);
   }
-
-  collapsed.addEventListener('click', () => {
-    collapsed.style.display = 'none';
-    expanded.style.display  = 'flex';
+  collapsed.addEventListener('click',()=>{
+    collapsed.style.display='none';
+    expanded.style.display='flex';
   });
-
-  saveBtn.addEventListener('click', saveSession);
-
-  // Sync label with initial activeMode
+  saveBtn.addEventListener('click',saveSession);
   setActiveMode(activeMode);
-  pill.style.display = 'block';
+  pill.style.display='block';
 }
 
-/* ── save session ────────────────────────────────────────────────────── */
-async function saveSession() {
-  const saveBtn = document.getElementById('pillSaveBtn');
-  const summary = {
-    user:            currentUser,
+/* ══════════════════════════════════════════════════════════════════════
+   SAVE SESSION
+   ══════════════════════════════════════════════════════════════════════ */
+
+async function saveSession(){
+  const saveBtn=document.getElementById('pillSaveBtn');
+  const summary={
+    user:currentUser,
     sessionStartTs,
-    sessionDuration: Date.now() - sessionStartTs,
+    sessionDuration:Date.now()-sessionStartTs,
     activeMode,
-    fixations:       fixationHistory,
-    saccades:        saccadeHistory,
+    fixations:fixationHistory,
+    saccades:saccadeHistory,
     firstFix,
     gazeLog
   };
-
-  try {
-    const resp = await fetch('/api/save-session', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ user: currentUser, data: summary })
+  try{
+    const resp=await fetch('/api/save-session',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user:currentUser,data:summary})
     });
-    if (resp.ok) {
-      const orig = saveBtn.textContent;
-      saveBtn.textContent = 'SESSION SAVED ✓';
-      setTimeout(() => { saveBtn.textContent = orig; }, 2500);
+    if(resp.ok){
+      const orig=saveBtn.textContent;
+      saveBtn.textContent='SESSION SAVED ✓';
+      setTimeout(()=>{saveBtn.textContent=orig;},2500);
     }
-  } catch (e) {
-    console.warn('[save] failed:', e);
-  }
+  }catch(e){console.warn('[save]',e);}
 }
 
-/* ── boot ────────────────────────────────────────────────────────────── */
-async function boot() {
-  buildPool();
+/* ══════════════════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════════════════ */
+
+function sizeWrapper(){dotCanvas.width=window.innerWidth;dotCanvas.height=window.innerHeight;}
+
+async function boot(){
+  buildDotPool();
   sizeWrapper();
-  mainVideo.addEventListener('loadedmetadata', sizeWrapper);
-  window.addEventListener('resize', sizeWrapper);
+  mainVideo.addEventListener('loadedmetadata',sizeWrapper);
+  window.addEventListener('resize',sizeWrapper);
+  if(mainVideo.readyState<2)await new Promise(r=>mainVideo.addEventListener('canplay',r,{once:true}));
 
-  if (mainVideo.readyState < 2)
-    await new Promise(r => mainVideo.addEventListener('canplay', r, { once: true }));
+  const ok=await startHeadTracking();
+  if(ok){await runCalibration();}
+  else{calOverlay.style.display='none';enablePointerFallback();}
 
-  const ok = await startHeadTracking();
-  if (ok) {
-    await runCalibration();
-  } else {
-    calOverlay.style.display = 'none';
-    enablePointerFallback();
-  }
+  // Init heatmap canvas once
+  heatCanvas=document.createElement('canvas');
+  heatCanvas.width=W_HEAT; heatCanvas.height=H_HEAT;
+  heatCtx=heatCanvas.getContext('2d');
 
-  // Init heatmap offscreen canvas
-  heatCanvas        = document.createElement('canvas');
-  heatCanvas.width  = W_HEAT;
-  heatCanvas.height = H_HEAT;
-  heatCtx           = heatCanvas.getContext('2d');
-
-  // Pause video while user picks a mode
+  // Pause while user picks mode
   mainVideo.pause();
   await showModeScreen();
-  mainVideo.play().catch(() => {});
+  mainVideo.play().catch(()=>{});
 
-  // Start session
-  sessionStartTs = Date.now();
+  sessionStartTs=Date.now();
 
   // 10 Hz gaze log
-  setInterval(() => {
-    if (!gazeOn) return;
+  setInterval(()=>{
+    if(!gazeOn)return;
     gazeLog.push({
-      t:    Date.now() - sessionStartTs,
-      x:    sGX,
-      y:    sGY,
-      mode: activeMode,
-      fix:  currentFixation ? 1 : 0,
-      sac:  saccadeActive   ? 1 : 0,
-      fixN: fixationHistory.length,
-      sacN: saccadeHistory.length
+      t:Date.now()-sessionStartTs,
+      x:sGX,y:sGY,mode:activeMode,
+      fix:currentFixation?1:0,
+      sac:saccadeActive?1:0,
+      fixN:fixationHistory.length,
+      sacN:saccadeHistory.length
     });
-  }, 100);
+  },100);
+
+  // First Sobel analysis
+  analyzeDots();analyzeAOI();
+  lastAnaTs=lastAoiTs=performance.now();
 
   initModePill();
-
   requestAnimationFrame(mainLoop);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   MULTI-USER GAZE GALLERY
+   MULTI-USER GALLERY
    ══════════════════════════════════════════════════════════════════════ */
 
-let currentUser  = '';
-let ws           = null;
-let latestData   = {};
-let galleryOpen  = false;
+let currentUser='',ws=null,latestData={},galleryOpen=false;
 
-/* ── name screen ── */
-async function showNameScreen() {
-  return new Promise(resolve => {
-    const screen = document.getElementById('nameScreen');
-    const input  = document.getElementById('nameInput');
-    const btn    = document.getElementById('nameContinue');
-    screen.style.display = 'flex';
-    input.focus();
-
-    function proceed() {
-      const v = input.value.trim();
-      if (!v) { input.focus(); return; }
-      currentUser = v;
-      screen.style.display = 'none';
-      resolve();
-    }
-    btn.addEventListener('click', proceed);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') proceed(); });
+async function showNameScreen(){
+  return new Promise(resolve=>{
+    const screen=document.getElementById('nameScreen');
+    const input=document.getElementById('nameInput');
+    const btn=document.getElementById('nameContinue');
+    screen.style.display='flex';input.focus();
+    function proceed(){const v=input.value.trim();if(!v){input.focus();return;}currentUser=v;screen.style.display='none';resolve();}
+    btn.addEventListener('click',proceed);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter')proceed();});
   });
 }
 
-/* ── WebSocket ── */
-function connectWS() {
-  try {
-    ws = new WebSocket(location.origin.replace('https', 'wss').replace('http', 'ws'));
-
-    ws.addEventListener('message', e => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'sessions') {
-          latestData = msg.data;
+function connectWS(){
+  try{
+    ws=new WebSocket(location.origin.replace('https','wss').replace('http','ws'));
+    ws.addEventListener('message',e=>{
+      try{
+        const msg=JSON.parse(e.data);
+        if(msg.type==='sessions'){
+          latestData=msg.data;
           updateGhostsFromData(msg.data);
-          if (galleryOpen) renderGallery(msg.data);
+          if(galleryOpen)renderGallery(msg.data);
         }
-      } catch (_) {}
+      }catch(_){}
     });
-
-    ws.addEventListener('error', () => {});
-  } catch (_) {}
+    ws.addEventListener('error',()=>{});
+  }catch(_){}
 }
 
-function startGazeSend() {
-  setInterval(() => {
-    if (document.visibilityState === 'hidden') return;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    try {
+function startGazeSend(){
+  setInterval(()=>{
+    if(document.visibilityState==='hidden'||!ws||ws.readyState!==WebSocket.OPEN)return;
+    try{
       ws.send(JSON.stringify({
-        type:           'gaze',
-        name:           currentUser,
-        x:              sGX,
-        y:              sGY,
-        fixationCount:  fixationHistory.length,
-        saccadeCount:   saccadeHistory.length,
-        firstFixTs:     firstFix ? firstFix.startTs : null,
-        sessionDuration: sessionStartTs ? Date.now() - sessionStartTs : 0
+        type:'gaze',name:currentUser,x:sGX,y:sGY,
+        fixationCount:fixationHistory.length,
+        saccadeCount:saccadeHistory.length,
+        firstFixTs:firstFix?firstFix.startTs:null,
+        sessionDuration:sessionStartTs?Date.now()-sessionStartTs:0
       }));
-    } catch (_) {}
-  }, 2000);
+    }catch(_){}
+  },2000);
 }
 
-/* ── ghost cursors ── */
-const ghostContainer = document.getElementById('ghostContainer');
-
-function updateGhostsFromData(data) {
-  ghostContainer.innerHTML = '';
-  const now = Date.now();
-  for (const [name, entry] of Object.entries(data)) {
-    if (name === currentUser) continue;
-    if (now - entry.ts > 30000) continue;
-
-    const ghost = document.createElement('div');
-    ghost.style.cssText =
-      'position:absolute;pointer-events:none;' +
-      'transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;';
-    ghost.style.left = (entry.x * window.innerWidth)  + 'px';
-    ghost.style.top  = (entry.y * window.innerHeight) + 'px';
-
-    const circle = document.createElement('div');
-    circle.style.cssText =
-      'width:14px;height:14px;border-radius:50%;' +
-      'border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
-
-    const lbl = document.createElement('div');
-    lbl.style.cssText =
-      'font-family:"Heebo",sans-serif;font-size:8px;' +
-      'color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
-    lbl.textContent = name;
-
-    ghost.appendChild(circle);
-    ghost.appendChild(lbl);
-    ghostContainer.appendChild(ghost);
+const ghostContainer=document.getElementById('ghostContainer');
+function updateGhostsFromData(data){
+  ghostContainer.innerHTML='';const now=Date.now();
+  for(const[name,entry]of Object.entries(data)){
+    if(name===currentUser||now-entry.ts>30000)continue;
+    const ghost=document.createElement('div');
+    ghost.style.cssText='position:absolute;pointer-events:none;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;';
+    ghost.style.left=(entry.x*window.innerWidth)+'px';ghost.style.top=(entry.y*window.innerHeight)+'px';
+    const circle=document.createElement('div');circle.style.cssText='width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(224,26,0,0.3);flex-shrink:0;';
+    const lbl=document.createElement('div');lbl.style.cssText='font-family:"Heebo",sans-serif;font-size:8px;color:rgba(224,26,0,0.5);margin-top:3px;white-space:nowrap;';
+    lbl.textContent=name;ghost.appendChild(circle);ghost.appendChild(lbl);ghostContainer.appendChild(ghost);
   }
 }
 
-/* ── gallery ── */
-const galleryOverlay = document.getElementById('galleryOverlay');
-const galleryList    = document.getElementById('galleryList');
-const galleryClose   = document.getElementById('galleryClose');
-const galleryBtn     = document.getElementById('galleryBtn');
+const galleryOverlay=document.getElementById('galleryOverlay');
+const galleryList   =document.getElementById('galleryList');
+const galleryClose  =document.getElementById('galleryClose');
+const galleryBtn    =document.getElementById('galleryBtn');
 
-function timeAgo(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`;
-}
+function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);return s<60?`${s}s ago`:`${Math.floor(s/60)}m ago`;}
 
-function renderGallery(data) {
-  galleryList.innerHTML = '';
-  const entries = Object.entries(data);
-  if (entries.length === 0) {
-    galleryList.innerHTML =
-      '<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;' +
-      'font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';
-    return;
-  }
-  const now = Date.now();
-  for (const [name, entry] of entries) {
-    const isOld = (now - entry.ts) > 600000;
-    const isMe  = name === currentUser;
-
-    const row = document.createElement('div');
-    row.style.cssText = `padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld ? 0.25 : 1};`;
-
-    const nameDiv = document.createElement('div');
-    nameDiv.style.cssText =
-      'font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;' +
-      'color:#111111;letter-spacing:0.05em;';
-    if (isMe) {
-      nameDiv.innerHTML = name + ' <span style="color:#e01a00;">(YOU)</span>';
-    } else {
-      nameDiv.textContent = name;
-    }
-
-    const parts = [
+function renderGallery(data){
+  galleryList.innerHTML='';const entries=Object.entries(data);
+  if(!entries.length){galleryList.innerHTML='<div style="color:#dddddd;font-family:\'Heebo\',sans-serif;font-size:12px;font-weight:300;letter-spacing:0.15em;">NO SESSIONS FOUND</div>';return;}
+  const now=Date.now();
+  for(const[name,entry]of entries){
+    const isOld=(now-entry.ts)>600000,isMe=name===currentUser;
+    const row=document.createElement('div');row.style.cssText=`padding:20px 0;border-bottom:1px solid #f5f5f5;opacity:${isOld?0.25:1};`;
+    const nameDiv=document.createElement('div');nameDiv.style.cssText='font-family:"Heebo",sans-serif;font-size:13px;font-weight:500;color:#111111;letter-spacing:0.05em;';
+    nameDiv.innerHTML=isMe?name+' <span style="color:#e01a00;">(YOU)</span>':name;
+    const parts=[
       `X: ${entry.x.toFixed(2)}  Y: ${entry.y.toFixed(2)}`,
-      entry.fixationCount !== undefined ? `FIX: ${entry.fixationCount}` : '',
-      entry.saccadeCount  !== undefined ? `SAC: ${entry.saccadeCount}`  : '',
-      entry.sessionDuration ? `${Math.round(entry.sessionDuration / 1000)}s` : '',
+      entry.fixationCount!==undefined?`FIX: ${entry.fixationCount}`:'',
+      entry.saccadeCount !==undefined?`SAC: ${entry.saccadeCount}` :'',
+      entry.sessionDuration?`${Math.round(entry.sessionDuration/1000)}s`:'',
       timeAgo(entry.ts)
     ].filter(Boolean);
-
-    const detDiv = document.createElement('div');
-    detDiv.style.cssText =
-      'font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;' +
-      'font-weight:300;letter-spacing:0.1em;margin-top:6px;';
-    detDiv.textContent = parts.join('  ·  ');
-
-    row.appendChild(nameDiv);
-    row.appendChild(detDiv);
-    galleryList.appendChild(row);
+    const detDiv=document.createElement('div');detDiv.style.cssText='font-family:"Heebo",sans-serif;color:#bbbbbb;font-size:10px;font-weight:300;letter-spacing:0.1em;margin-top:6px;';
+    detDiv.textContent=parts.join('  ·  ');
+    row.appendChild(nameDiv);row.appendChild(detDiv);galleryList.appendChild(row);
   }
 }
 
-galleryBtn.addEventListener('click', () => {
-  galleryOpen = true;
-  galleryOverlay.style.display = 'flex';
-  ghostContainer.style.display = 'none';
-  renderGallery(latestData);
-});
+galleryBtn.addEventListener('click',()=>{galleryOpen=true;galleryOverlay.style.display='flex';ghostContainer.style.display='none';renderGallery(latestData);});
+galleryClose.addEventListener('click',()=>{galleryOpen=false;galleryOverlay.style.display='none';ghostContainer.style.display='block';});
+galleryBtn.addEventListener('mouseenter',()=>{galleryBtn.style.color='#e01a00';});
+galleryBtn.addEventListener('mouseleave',()=>{galleryBtn.style.color='#cccccc';});
 
-galleryClose.addEventListener('click', () => {
-  galleryOpen = false;
-  galleryOverlay.style.display = 'none';
-  ghostContainer.style.display = 'block';
-});
-
-galleryBtn.addEventListener('mouseenter', () => { galleryBtn.style.color = '#e01a00'; });
-galleryBtn.addEventListener('mouseleave', () => { galleryBtn.style.color = '#cccccc'; });
-
-/* ── app entry point ── */
-async function startApp() {
+async function startApp(){
   await showNameScreen();
   connectWS();
   await boot();
   startGazeSend();
 }
-
 startApp();
 </script>
 
-<!-- ── name registration screen ── -->
-<div id="nameScreen" style="
-  display:none;position:fixed;inset:0;z-index:2000;background:#ffffff;
-  flex-direction:column;align-items:center;justify-content:center;
-">
-  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;
-              letter-spacing:0.5em;margin-bottom:64px;">
-    VISUAL ANALYSIS SYSTEM
-  </div>
-  <label for="nameInput" style="display:block;color:#999999;font-family:'Heebo',sans-serif;
-                                font-size:11px;font-weight:400;letter-spacing:0.28em;margin-bottom:16px;">
-    ENTER YOUR NAME
-  </label>
-  <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="
-    background:#ffffff;border:none;border-bottom:1px solid #e8e8e8;
-    color:#111111;font-family:'Heebo',sans-serif;font-size:16px;
-    letter-spacing:0.15em;padding:8px 6px;
-    text-align:center;width:270px;caret-color:#e01a00;
-  "/>
-  <button id="nameContinue" style="
-    margin-top:38px;background:transparent;border:1px solid #e8e8e8;
-    color:#999999;font-family:'Heebo',sans-serif;font-size:11px;
-    letter-spacing:0.28em;padding:13px 40px;cursor:pointer;
-    transition:border-color 0.2s,color 0.2s;
-  "
-  onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
-  onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#999999';"
-  >CONTINUE</button>
+<!-- ── name screen ── -->
+<div id="nameScreen" style="display:none;position:fixed;inset:0;z-index:2000;background:#ffffff;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="color:#dddddd;font-family:'Heebo',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:64px;">VISUAL ANALYSIS SYSTEM</div>
+  <label for="nameInput" style="display:block;color:#999999;font-family:'Heebo',sans-serif;font-size:11px;font-weight:400;letter-spacing:0.28em;margin-bottom:16px;">ENTER YOUR NAME</label>
+  <input id="nameInput" type="text" autocomplete="off" spellcheck="false" style="background:#ffffff;border:none;border-bottom:1px solid #e8e8e8;color:#111111;font-family:'Heebo',sans-serif;font-size:16px;letter-spacing:0.15em;padding:8px 6px;text-align:center;width:270px;caret-color:#e01a00;"/>
+  <button id="nameContinue" style="margin-top:38px;background:transparent;border:1px solid #e8e8e8;color:#999999;font-family:'Heebo',sans-serif;font-size:11px;letter-spacing:0.28em;padding:13px 40px;cursor:pointer;transition:border-color 0.2s,color 0.2s;"
+    onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+    onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#999999';">CONTINUE</button>
 </div>
 
 <!-- ── gallery overlay ── -->
-<div id="galleryOverlay" style="
-  display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;
-  flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;
-">
+<div id="galleryOverlay" style="display:none;position:fixed;inset:0;z-index:1500;background:#ffffff;flex-direction:column;align-items:center;padding:72px 40px 48px;overflow-y:auto;">
   <div style="width:100%;max-width:560px;font-family:'Heebo',sans-serif;">
-    <div style="color:#dddddd;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:8px;">
-      GAZE SESSIONS
-    </div>
+    <div style="color:#dddddd;font-size:9px;font-weight:300;letter-spacing:0.5em;margin-bottom:8px;">GAZE SESSIONS</div>
     <div style="border-bottom:1px solid #f0f0f0;margin-bottom:38px;"></div>
     <div id="galleryList"></div>
-    <button id="galleryClose" style="
-      margin-top:52px;background:transparent;border:1px solid #e8e8e8;
-      color:#bbbbbb;font-family:'Heebo',sans-serif;font-size:11px;
-      letter-spacing:0.25em;padding:12px 34px;cursor:pointer;
-      transition:border-color 0.2s,color 0.2s;
-    "
-    onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
-    onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#bbbbbb';"
-    >[ CLOSE ]</button>
+    <button id="galleryClose" style="margin-top:52px;background:transparent;border:1px solid #e8e8e8;color:#bbbbbb;font-family:'Heebo',sans-serif;font-size:11px;letter-spacing:0.25em;padding:12px 34px;cursor:pointer;transition:border-color 0.2s,color 0.2s;"
+      onmouseover="this.style.borderColor='#e01a00';this.style.color='#e01a00';"
+      onmouseout="this.style.borderColor='#e8e8e8';this.style.color='#bbbbbb';">[ CLOSE ]</button>
   </div>
 </div>
 
-<!-- ── gallery trigger ── -->
-<div id="galleryBtn" style="
-  position:fixed;bottom:14px;left:14px;font-family:'Heebo',sans-serif;
-  font-size:10px;font-weight:300;letter-spacing:0.15em;color:#cccccc;cursor:pointer;
-  z-index:60;transition:color 0.2s;user-select:none;
-">[ GALLERY ]</div>
+<!-- ── gallery button ── -->
+<div id="galleryBtn" style="position:fixed;bottom:14px;left:14px;font-family:'Heebo',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.15em;color:#cccccc;cursor:pointer;z-index:60;transition:color 0.2s;user-select:none;">[ GALLERY ]</div>
 
-<!-- ── ghost cursor layer ── -->
-<div id="ghostContainer" style="
-  position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;
-"></div>
+<!-- ── ghost cursors ── -->
+<div id="ghostContainer" style="position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden;"></div>
 
 </body>
 </html>
